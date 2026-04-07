@@ -1,0 +1,313 @@
+{
+  "@@locale": "en",
+  "appTitle": "MusicSync",
+  "homeModeTitle": "Mode",
+  "homeModeDescription": "Single-direction mirror sync over LAN.",
+  "homeSyncDirectionTitle": "Current Direction",
+  "homeSyncDirectionDescription": "Version 1 is fixed to: local directory -> remote directory. Listening and connecting only establish the session, not the copy direction.",
+  "homeLocalLibraryTitle": "Local Library",
+  "homeLocalSourceHint": "This directory is treated as the source. The remote side will be aligned to it.",
+  "directoryPreflightWarningTitle": "Preflight warning: this directory may be heavy and preview generation could be slow.",
+  "directoryPreflightSampleSummary": "Preflight sample: {children} top-level items, {directories} directories, {files} files.",
+  "@directoryPreflightSampleSummary": {
+    "placeholders": {
+      "children": {
+        "type": "int"
+      },
+      "directories": {
+        "type": "int"
+      },
+      "files": {
+        "type": "int"
+      }
+    }
+  },
+  "directoryPreflightManyRootChildren": "A large number of top-level items was detected, so full scanning may be slow.",
+  "directoryPreflightDenseNestedDirectory": "A dense shallow directory was detected, so full scanning may be slow.",
+  "directoryPreflightInaccessibleSubdirectory": "A shallow subdirectory appears to have access restrictions, so preview may warn or time out.",
+  "directoryPreflightSystemLikeDirectory": "This directory looks like a system or cache location and is not a good fit for a music library.",
+  "homeNoDirectorySelected": "No directory selected yet.",
+  "homePickDirectory": "Pick Directory",
+  "homeRecentDirectories": "Recent Directories",
+  "homeCleanupTempFiles": "Clean Incomplete Transfer Files",
+  "homeCleanupTempSuccess": "Removed {count} temporary file(s).",
+  "@homeCleanupTempSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeCleanupTempPartial": "Removed {deleted} temporary file(s), but {failed} item(s) could not be cleaned.",
+  "@homeCleanupTempPartial": {
+    "placeholders": {
+      "deleted": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      }
+    }
+  },
+  "homeCleanupTempFailed": "Failed to clean temporary files. Please try again later.",
+  "homeRecentAddresses": "Recent Addresses",
+  "homeDiscoveredDevices": "Discovered Devices",
+  "homeRemoteTargetTitle": "Remote Target",
+  "homeRemoteTargetHint": "Version 1 currently supports only local-to-remote sync.",
+  "homeRemoteDirectoryReady": "The remote shared directory is ready. You can refresh the index or build a remote preview.",
+  "homeRemoteDirectoryMissing": "The remote shared directory is not ready yet. Select a shared directory on the remote device, then refresh the index or build a remote preview.",
+  "homeListenerTitle": "Listener",
+  "homeListenerStart": "Start Listening",
+  "homeListenerStop": "Stop Listening",
+  "homeListenerPort": "Listening port: {port}",
+  "@homeListenerPort": {
+    "placeholders": {
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "homePeerAddressLabel": "Peer Address",
+  "homePeerAddressHint": "192.168.1.8:44888",
+  "homeConnect": "Connect",
+  "homeDisconnect": "Disconnect",
+  "homeConnectionStatus": "Status: {status}",
+  "@homeConnectionStatus": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "homePeerName": "Peer: {name}",
+  "@homePeerName": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "homeRefreshRemoteIndex": "Refresh Remote Index",
+  "homeRemoteRoot": "Remote root: {name}",
+  "@homeRemoteRoot": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "homeRemoteFiles": "Remote files: {count}",
+  "@homeRemoteFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeOpenPreview": "Open Preview",
+  "previewTitle": "Preview",
+  "previewSummaryTitle": "Summary",
+  "previewScopeLocal": "Local debug preview: local -> local target",
+  "previewScopeRemote": "LAN preview: local -> remote",
+  "previewStatus": "Status: {status}",
+  "@previewStatus": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "previewCopyCount": "Copy: {count}",
+  "@previewCopyCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "previewDeleteCount": "Delete: {count}",
+  "@previewDeleteCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "previewConflictCount": "Conflict: {count}",
+  "@previewConflictCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "previewCopyBytes": "Data to copy: {size}",
+  "@previewCopyBytes": {
+    "placeholders": {
+      "size": {}
+    }
+  },
+  "previewBuildPlan": "Build Preview",
+  "previewBuildRemotePlan": "Build Remote Preview",
+  "previewPlanItemsTitle": "Plan Items",
+  "previewEmptyPlan": "Copy, delete, and conflict items will appear here.",
+  "previewSectionCopy": "Copy Items",
+  "previewSectionDelete": "Delete Items",
+  "previewSectionConflict": "Conflicts",
+  "previewNoItemsInSection": "No items in this section.",
+  "previewFilterAll": "All types",
+  "previewFilterTitle": "File Type",
+  "previewStalePlan": "The selected directory changed. Rebuild preview.",
+  "previewSectionTitle": "Category",
+  "previewScanTimeout": "Scanning may be blocked by a large or inaccessible directory.",
+  "previewPartialScanWarning": "Scanning skipped {count} inaccessible subdirectories.",
+  "@previewPartialScanWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "previewPartialScanAdvice": "Preview can continue, but the result may be incomplete.",
+  "previewSkippedPath": "Skipped: {path}",
+  "@previewSkippedPath": {
+    "placeholders": {
+      "path": {}
+    }
+  },
+  "previewStartSync": "Start Sync",
+  "previewDirectoryRequired": "Select a local directory before building preview.",
+  "previewRemoteDirectoryRequired": "Connect to a peer and load its index before building remote preview.",
+  "errorRemoteDirectoryNotSelected": "The remote device has not selected a shared directory yet.",
+  "errorRemoteDeviceDisconnected": "The remote device disconnected. Keep the target device in foreground and reconnect.",
+  "errorConnectionRefused": "Connection was refused. Check the target address and ensure the remote listener is running.",
+  "errorConnectionTimedOut": "Connection timed out. Check that both devices are on the same LAN and try again.",
+  "errorRemoteProtocolInvalid": "The remote device responded with an incompatible or invalid protocol message.",
+  "errorNoRemoteDeviceConnected": "No remote device is connected.",
+  "errorScanTimedOut": "Scanning timed out. The folder may be too large or contain inaccessible subdirectories.",
+  "errorDirectoryUnavailable": "Unable to access the selected directory. Please choose another accessible folder.",
+  "errorDirectoryTreeAccessDenied": "Scanning failed because part of the directory tree is not accessible.",
+  "errorDirectoryAccessDenied": "Directory access was denied. Please choose a folder you can read.",
+  "executionConfirmDeleteTitle": "Confirm deletion",
+  "executionConfirmDeleteBody": "This sync will delete {count} extra items from the target directory. Continue?",
+  "@executionConfirmDeleteBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commonCancel": "Cancel",
+  "commonConfirm": "Confirm",
+  "executionTitle": "Execution",
+  "executionProgressTitle": "Progress",
+  "executionRemotePending": "Build a remote preview before running remote sync.",
+  "executionRemoteReady": "Remote preview is ready. The current plan can sync local files to the remote side.",
+  "executionKeepForeground": "When Android is the remote side, keep the target device in foreground. Do not background the app or lock the screen.",
+  "executionLocalPending": "Local debug copy is only for local preview mode and is not part of the main LAN sync flow.",
+  "executionProgressPlaceholder": "Transfer progress will appear here.",
+  "executionLogsTitle": "Logs",
+  "executionLogsPlaceholder": "Execution logs will appear here.",
+  "executionTargetTitle": "Local Debug Target",
+  "executionTargetHint": "Used only for local debug flow. It is not the actual LAN sync target.",
+  "executionNoTarget": "No target directory selected.",
+  "executionPickTarget": "Pick Target Directory",
+  "executionRun": "Run Local Copy",
+  "executionRunLocalDebug": "Run Local Debug Copy",
+  "executionRunRemote": "Run Remote Sync",
+  "executionStop": "Stop Sync",
+  "executionCancelled": "Sync was stopped manually. Incomplete temporary files were cleaned when possible.",
+  "executionCurrentFile": "Current file: {path}",
+  "@executionCurrentFile": {
+    "placeholders": {
+      "path": {}
+    }
+  },
+  "executionProgressFiles": "Files: {done}/{total}",
+  "@executionProgressFiles": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "executionTargetRequired": "Pick a local target directory before running.",
+  "executionPlanSummaryTitle": "Execution Scope",
+  "executionWillCopy": "Copy items to execute: {count}",
+  "@executionWillCopy": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "executionWillDelete": "Delete items to execute: {count}",
+  "@executionWillDelete": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "executionWillSkipConflict": "Conflict items will not be executed: {count}",
+  "@executionWillSkipConflict": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "executionOpenResult": "Open Result",
+  "resultTitle": "Result",
+  "resultSummaryTitle": "Summary",
+  "resultSummaryPlaceholder": "Sync result summary will appear here.",
+  "resultModeLabel": "Execution mode: {mode}",
+  "@resultModeLabel": {
+    "placeholders": {
+      "mode": {}
+    }
+  },
+  "resultModeLocal": "Local Debug Copy",
+  "resultModeRemote": "Remote Sync",
+  "resultModeUnknown": "Unknown",
+  "resultErrorTitle": "Error",
+  "resultAdviceTitle": "Advice",
+  "resultAdviceKeepForeground": "If the remote side is Android, keep it in foreground and retry.",
+  "resultAdviceRebuildPreview": "If directory access or contents changed, re-select the directory and rebuild the preview.",
+  "resultCopiedCount": "Copied: {count}",
+  "@resultCopiedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resultDeletedCount": "Deleted: {count}",
+  "@resultDeletedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resultFailedCount": "Failed: {count}",
+  "@resultFailedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resultTargetRoot": "Target: {path}",
+  "@resultTargetRoot": {
+    "placeholders": {
+      "path": {}
+    }
+  },
+  "settingsTitle": "Settings",
+  "settingsDefaultsTitle": "Defaults",
+  "settingsDefaultsPlaceholder": "Project-wide settings will live here.",
+  "statusIdle": "idle",
+  "statusListening": "listening",
+  "statusConnecting": "connecting",
+  "statusConnected": "connected",
+  "statusDisconnected": "disconnected",
+  "statusFailed": "failed",
+  "statusLoading": "loading",
+  "statusLoaded": "loaded"
+}

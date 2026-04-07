@@ -1,0 +1,313 @@
+{
+  "@@locale": "zh",
+  "appTitle": "MusicSync",
+  "homeModeTitle": "模式",
+  "homeModeDescription": "通过局域网执行单向镜像同步。",
+  "homeSyncDirectionTitle": "当前方向",
+  "homeSyncDirectionDescription": "第一版固定为：本机目录 -> 远端目录。监听与连接只负责建立会话，不代表复制方向。",
+  "homeLocalLibraryTitle": "本地音乐库",
+  "homeLocalSourceHint": "此目录会作为源目录，远端将向它对齐。",
+  "directoryPreflightWarningTitle": "预检提示：该目录可能较重，生成预览时可能较慢。",
+  "directoryPreflightSampleSummary": "预检样本：顶层条目 {children} 个，目录 {directories} 个，文件 {files} 个。",
+  "@directoryPreflightSampleSummary": {
+    "placeholders": {
+      "children": {
+        "type": "int"
+      },
+      "directories": {
+        "type": "int"
+      },
+      "files": {
+        "type": "int"
+      }
+    }
+  },
+  "directoryPreflightManyRootChildren": "检测到顶层条目很多，完整扫描可能较慢。",
+  "directoryPreflightDenseNestedDirectory": "检测到浅层目录中已有高密度子项，完整扫描可能较慢。",
+  "directoryPreflightInaccessibleSubdirectory": "检测到浅层子目录存在访问限制，预览时可能出现警告或超时。",
+  "directoryPreflightSystemLikeDirectory": "该目录看起来像系统或缓存目录，不太适合作为音乐库。",
+  "homeNoDirectorySelected": "尚未选择目录。",
+  "homePickDirectory": "选择目录",
+  "homeRecentDirectories": "最近目录",
+  "homeCleanupTempFiles": "清理未完成传输残留",
+  "homeCleanupTempSuccess": "已清理 {count} 个临时文件。",
+  "@homeCleanupTempSuccess": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeCleanupTempPartial": "已清理 {deleted} 个临时文件，另有 {failed} 个条目清理失败。",
+  "@homeCleanupTempPartial": {
+    "placeholders": {
+      "deleted": {
+        "type": "int"
+      },
+      "failed": {
+        "type": "int"
+      }
+    }
+  },
+  "homeCleanupTempFailed": "清理临时文件失败，请稍后重试。",
+  "homeRecentAddresses": "最近地址",
+  "homeDiscoveredDevices": "发现到的设备",
+  "homeRemoteTargetTitle": "远端目标",
+  "homeRemoteTargetHint": "当前第一版只支持从本机同步到远端。",
+  "homeRemoteDirectoryReady": "远端共享目录已就绪，可刷新索引或直接生成远端预览。",
+  "homeRemoteDirectoryMissing": "远端共享目录未就绪。请先在远端设备上选择共享目录，再刷新索引或生成远端预览。",
+  "homeListenerTitle": "监听",
+  "homeListenerStart": "开始监听",
+  "homeListenerStop": "停止监听",
+  "homeListenerPort": "监听端口：{port}",
+  "@homeListenerPort": {
+    "placeholders": {
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "homePeerAddressLabel": "设备地址",
+  "homePeerAddressHint": "192.168.1.8:44888",
+  "homeConnect": "连接",
+  "homeDisconnect": "断开连接",
+  "homeConnectionStatus": "状态：{status}",
+  "@homeConnectionStatus": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "homePeerName": "设备：{name}",
+  "@homePeerName": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "homeRefreshRemoteIndex": "刷新远端索引",
+  "homeRemoteRoot": "远端根目录：{name}",
+  "@homeRemoteRoot": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "homeRemoteFiles": "远端文件数：{count}",
+  "@homeRemoteFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeOpenPreview": "打开预览",
+  "previewTitle": "预览",
+  "previewSummaryTitle": "摘要",
+  "previewScopeLocal": "本地调试预览：本机 -> 本地目标",
+  "previewScopeRemote": "局域网预览：本机 -> 远端",
+  "previewStatus": "状态：{status}",
+  "@previewStatus": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "previewCopyCount": "复制：{count}",
+  "@previewCopyCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "previewDeleteCount": "删除：{count}",
+  "@previewDeleteCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "previewConflictCount": "冲突：{count}",
+  "@previewConflictCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "previewCopyBytes": "待复制数据量：{size}",
+  "@previewCopyBytes": {
+    "placeholders": {
+      "size": {}
+    }
+  },
+  "previewBuildPlan": "生成预览",
+  "previewBuildRemotePlan": "生成远端预览",
+  "previewPlanItemsTitle": "计划项",
+  "previewEmptyPlan": "复制、删除和冲突项会显示在这里。",
+  "previewSectionCopy": "复制项",
+  "previewSectionDelete": "删除项",
+  "previewSectionConflict": "冲突项",
+  "previewNoItemsInSection": "该分组没有条目。",
+  "previewFilterAll": "全部类型",
+  "previewFilterTitle": "文件类型",
+  "previewStalePlan": "已切换目录，请重新生成预览。",
+  "previewSectionTitle": "分组",
+  "previewScanTimeout": "扫描可能被超大目录或不可访问目录阻塞。",
+  "previewPartialScanWarning": "扫描时跳过了 {count} 个不可访问的子目录。",
+  "@previewPartialScanWarning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "previewPartialScanAdvice": "预览仍可继续，但结果可能不完整。",
+  "previewSkippedPath": "已跳过：{path}",
+  "@previewSkippedPath": {
+    "placeholders": {
+      "path": {}
+    }
+  },
+  "previewStartSync": "开始同步",
+  "previewDirectoryRequired": "请先选择本地目录再生成预览。",
+  "previewRemoteDirectoryRequired": "请先连接远端设备并加载其索引，再生成远端预览。",
+  "errorRemoteDirectoryNotSelected": "远端设备尚未选择共享目录。",
+  "errorRemoteDeviceDisconnected": "远端设备已断开连接。请保持目标设备前台运行后重连。",
+  "errorConnectionRefused": "连接被拒绝。请检查目标地址，并确认远端已开启监听。",
+  "errorConnectionTimedOut": "连接超时。请确认两台设备处于同一局域网后重试。",
+  "errorRemoteProtocolInvalid": "远端设备返回了不兼容或无效的协议消息。",
+  "errorNoRemoteDeviceConnected": "当前没有连接远端设备。",
+  "errorScanTimedOut": "扫描超时。目录可能过大，或其中包含不可访问的子目录。",
+  "errorDirectoryUnavailable": "无法访问当前选择的目录，请重新选择可访问的文件夹。",
+  "errorDirectoryTreeAccessDenied": "扫描失败，目录树中包含不可访问的子目录。",
+  "errorDirectoryAccessDenied": "目录访问被拒绝，请选择你有权限读取的文件夹。",
+  "executionConfirmDeleteTitle": "确认删除",
+  "executionConfirmDeleteBody": "本次同步将删除目标目录中多出的 {count} 个条目，是否继续？",
+  "@executionConfirmDeleteBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "commonCancel": "取消",
+  "commonConfirm": "确认",
+  "executionTitle": "执行",
+  "executionProgressTitle": "进度",
+  "executionRemotePending": "请先生成远端预览，再执行远端同步。",
+  "executionRemoteReady": "远端预览已就绪，可按当前预览将本机文件同步到远端。",
+  "executionKeepForeground": "Android 作为远端时，请保持目标设备前台运行，不要切到后台或锁屏。",
+  "executionLocalPending": "本地调试复制仅用于本地预览模式，不属于正式局域网同步流程。",
+  "executionProgressPlaceholder": "传输进度会显示在这里。",
+  "executionLogsTitle": "日志",
+  "executionLogsPlaceholder": "执行日志会显示在这里。",
+  "executionTargetTitle": "本地调试目标",
+  "executionTargetHint": "仅用于本地调试链路，不属于正式的局域网同步目标。",
+  "executionNoTarget": "尚未选择目标目录。",
+  "executionPickTarget": "选择目标目录",
+  "executionRun": "执行本地复制",
+  "executionRunLocalDebug": "执行本地调试复制",
+  "executionRunRemote": "执行远端同步",
+  "executionStop": "停止同步",
+  "executionCancelled": "同步已手动停止。未完成的临时文件已尽量清理。",
+  "executionCurrentFile": "当前文件：{path}",
+  "@executionCurrentFile": {
+    "placeholders": {
+      "path": {}
+    }
+  },
+  "executionProgressFiles": "文件：{done}/{total}",
+  "@executionProgressFiles": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "executionTargetRequired": "执行前请先选择本地目标目录。",
+  "executionPlanSummaryTitle": "执行范围",
+  "executionWillCopy": "将执行的复制项：{count}",
+  "@executionWillCopy": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "executionWillDelete": "将执行的删除项：{count}",
+  "@executionWillDelete": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "executionWillSkipConflict": "冲突项不会执行：{count}",
+  "@executionWillSkipConflict": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "executionOpenResult": "打开结果",
+  "resultTitle": "结果",
+  "resultSummaryTitle": "摘要",
+  "resultSummaryPlaceholder": "同步结果摘要会显示在这里。",
+  "resultModeLabel": "执行模式：{mode}",
+  "@resultModeLabel": {
+    "placeholders": {
+      "mode": {}
+    }
+  },
+  "resultModeLocal": "本地调试复制",
+  "resultModeRemote": "远端同步",
+  "resultModeUnknown": "未知",
+  "resultErrorTitle": "错误信息",
+  "resultAdviceTitle": "建议",
+  "resultAdviceKeepForeground": "如果远端是 Android，请保持前台运行后重试。",
+  "resultAdviceRebuildPreview": "如果目录权限或内容已变化，请重新选择目录并重新生成预览。",
+  "resultCopiedCount": "已复制：{count}",
+  "@resultCopiedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resultDeletedCount": "已删除：{count}",
+  "@resultDeletedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resultFailedCount": "失败：{count}",
+  "@resultFailedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resultTargetRoot": "目标目录：{path}",
+  "@resultTargetRoot": {
+    "placeholders": {
+      "path": {}
+    }
+  },
+  "settingsTitle": "设置",
+  "settingsDefaultsTitle": "默认值",
+  "settingsDefaultsPlaceholder": "项目级设置会放在这里。",
+  "statusIdle": "空闲",
+  "statusListening": "监听中",
+  "statusConnecting": "连接中",
+  "statusConnected": "已连接",
+  "statusDisconnected": "已断开",
+  "statusFailed": "失败",
+  "statusLoading": "加载中",
+  "statusLoaded": "已完成"
+}
