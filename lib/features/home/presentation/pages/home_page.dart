@@ -17,6 +17,7 @@ import 'package:music_sync/features/directory/state/directory_state.dart';
 import 'package:music_sync/features/execution/state/execution_controller.dart';
 import 'package:music_sync/features/execution/state/execution_state.dart';
 import 'package:music_sync/features/home/presentation/widgets/action_chip_button.dart';
+import 'package:music_sync/features/home/presentation/widgets/connection_section/connection_section.dart';
 import 'package:music_sync/features/home/presentation/widgets/preview_workbench_section/preview_workbench_section.dart';
 import 'package:music_sync/features/preview/presentation/widgets/plan_item_list.dart';
 import 'package:music_sync/features/preview/state/preview_controller.dart';
@@ -169,161 +170,26 @@ class _HomePageState extends ConsumerState<HomePage> {
         children: <Widget>[
           SectionCard(
             title: context.l10n.homeStepConnectionTitle,
-            child: Builder(
-              builder: (BuildContext context) {
-                final ColorScheme scheme = Theme.of(context).colorScheme;
-                final bool canStopConnection = hasConnectedPeer || isConnecting;
-                final bool canShareAddress = connectionState.listenPort != null;
-                final Color actionBackground = canStopConnection
-                    ? scheme.secondaryContainer
-                    : scheme.primary;
-                final Color actionForeground = canStopConnection
-                    ? scheme.onSecondaryContainer
-                    : scheme.onPrimary;
-
-                return DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: scheme.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: scheme.outlineVariant),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(context.l10n.homeStepConnectionHint),
-                        const SizedBox(height: 10),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: <Widget>[
-                              ActionChipButton(
-                                label: _connectionStateChipLabel(
-                                    context, connectionState),
-                                tone: _connectionStateChipTone(connectionState),
-                                onPressed: isConnectUiBusy
-                                    ? null
-                                    : () => _handleConnectionStateChipTap(
-                                        connectionState),
-                              ),
-                              const SizedBox(width: 8),
-                              ActionChipButton(
-                                label: context.l10n.homePortChipLabel(
-                                  connectionState.listenPort ?? 44888,
-                                ),
-                                tone: ActionChipTone.neutral,
-                                onPressed: isConnectUiBusy
-                                    ? null
-                                    : () => _showPortDialog(
-                                        connectionState.listenPort ?? 44888),
-                              ),
-                              const SizedBox(width: 8),
-                              Tooltip(
-                                message: context.l10n.homeShareTooltip,
-                                child: IconButton.filledTonal(
-                                  onPressed: canShareAddress
-                                      ? () => _showShareDialog(connectionState)
-                                      : null,
-                                  icon: const Icon(Icons.ios_share_outlined),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (connectionState.peer != null) ...<Widget>[
-                          const SizedBox(height: 12),
-                          Text(context.l10n
-                              .homePeerName(connectionState.peer!.deviceName)),
-                        ],
-                        if (connectionState.errorMessage != null) ...<Widget>[
-                          const SizedBox(height: 8),
-                          Text(
-                            _localizeUiError(
-                              context,
-                              connectionState.errorMessage!,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _addressController,
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: scheme.surface,
-                            labelText: context.l10n.homePeerAddressLabel,
-                            hintText: context.l10n.homePeerAddressHint,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: actionBackground,
-                              foregroundColor: actionForeground,
-                            ),
-                            onPressed: isConnectUiBusy
-                                ? null
-                                : () => _handleConnectButton(connectionState),
-                            child: Text(
-                              canStopConnection
-                                  ? context.l10n.homeConnectStop
-                                  : context.l10n.homeConnect,
-                            ),
-                          ),
-                        ),
-                        if (connectionState
-                            .recentAddresses.isNotEmpty) ...<Widget>[
-                          const SizedBox(height: 12),
-                          Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: Text(
-                                  context.l10n.homeRecentAddresses,
-                                  style: Theme.of(context).textTheme.titleSmall,
-                                ),
-                              ),
-                              IconButton(
-                                tooltip: context.l10n.homeManageRecentItems,
-                                onPressed: isConnectUiBusy
-                                    ? null
-                                    : () => _showRecentAddressManager(),
-                                icon: const Icon(Icons.tune_rounded),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: connectionState.recentAddresses
-                                .map((String address) {
-                              return ActionChip(
-                                backgroundColor: scheme.surface,
-                                side: BorderSide(color: scheme.outlineVariant),
-                                label: Text(
-                                  connectionState.recentLabels[address] ??
-                                      address,
-                                ),
-                                onPressed: isConnectUiBusy
-                                    ? null
-                                    : () {
-                                        _addressController.text = address;
-                                        _connectFromInput();
-                                      },
-                              );
-                            }).toList(),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                );
+            child: ConnectionSection(
+              connectionState: connectionState,
+              addressController: _addressController,
+              isConnectUiBusy: isConnectUiBusy,
+              isConnecting: isConnecting,
+              hasConnectedPeer: hasConnectedPeer,
+              onConnectionStateChipTap: () =>
+                  _handleConnectionStateChipTap(connectionState),
+              onPortTap: () =>
+                  _showPortDialog(connectionState.listenPort ?? 44888),
+              onShareTap: () => _showShareDialog(connectionState),
+              onConnectTap: () => _handleConnectButton(connectionState),
+              onManageRecentAddresses: _showRecentAddressManager,
+              onRecentAddressTap: (String address) {
+                _addressController.text = address;
+                _connectFromInput();
               },
+              localizeUiError: _localizeUiError,
+              connectionStateChipLabel: _connectionStateChipLabel,
+              connectionStateChipTone: _connectionStateChipTone,
             ),
           ),
           const SizedBox(height: 16),
