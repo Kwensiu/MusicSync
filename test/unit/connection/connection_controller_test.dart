@@ -106,6 +106,54 @@ void main() {
       expect(connectionState.errorMessage, isNull);
     });
 
+    test('passive disconnect clears remote state and keeps local target root',
+        () async {
+      final _FakeConnectionService connectionService = _FakeConnectionService(
+        snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
+      );
+      final ProviderContainer container = ProviderContainer(
+        overrides: <Override>[
+          connectionServiceProvider.overrideWithValue(connectionService),
+          listenerServiceProvider.overrideWithValue(_FakeListenerService()),
+          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+          fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(connectionControllerProvider.notifier).connect(
+            address: '192.168.1.2',
+            port: 44888,
+          );
+      container
+          .read(executionControllerProvider.notifier)
+          .setTargetRoot('local-target');
+      container.read(previewControllerProvider.notifier).loadPlan(
+            source: _localSnapshot(),
+            target: _remoteSnapshot('Remote A'),
+            deleteEnabled: true,
+          );
+
+      connectionService.onDisconnected?.call(null);
+      await Future<void>.delayed(Duration.zero);
+
+      final ConnectionState connectionState =
+          container.read(connectionControllerProvider);
+      final PreviewState previewState =
+          container.read(previewControllerProvider);
+      final ExecutionState executionState =
+          container.read(executionControllerProvider);
+
+      expect(connectionState.status, ConnectionStatus.disconnected);
+      expect(connectionState.peer, isNull);
+      expect(connectionState.remoteSnapshot, isNull);
+      expect(connectionState.isRemoteDirectoryReady, isFalse);
+      expect(connectionState.errorMessage, isNotEmpty);
+      expect(previewState.status, PreviewStatus.idle);
+      expect(executionState.status, ExecutionStatus.idle);
+      expect(executionState.targetRoot, 'local-target');
+    });
+
     test('incoming remote copy renames temp file on finish', () async {
       final _FakeListenerService listener = _FakeListenerService();
       final _TransferTrackingGateway gateway = _TransferTrackingGateway();
