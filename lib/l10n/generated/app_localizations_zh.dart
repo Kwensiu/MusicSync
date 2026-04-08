@@ -62,19 +62,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get homeStepSourceTitle => '步骤 2：选择本地源目录';
 
   @override
-  String get homeStepSourceHint => '这个目录会被同步到远端目标目录。';
+  String get homeStepSourceHint => '这个目录会被同步到目标端目录。';
 
   @override
   String get homeClearSelection => '清除';
 
   @override
-  String get homeSourcePendingBecauseRemoteReady => '远端目录已经准备好，现在只差选择本地源目录。';
+  String get homeSourcePendingBecauseRemoteReady => '目标端目录已经准备好，现在只差选择本地源目录。';
 
   @override
   String get homeStepPreviewTitle => '步骤 3：检查并同步';
 
   @override
-  String get homeStepPreviewHint => '目录就绪后会自动分析；如需重扫远端，可手动刷新索引。';
+  String get homeStepPreviewHint => '目录就绪后会自动分析；如需重扫目标端，可手动刷新索引。';
 
   @override
   String get homeAdvancedTitle => '高级与调试';
@@ -86,28 +86,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get homeConnectionActionsTitle => '连接操作';
 
   @override
-  String get homeAutoPreviewWaiting => '等待本地目录与远端目录都准备就绪后自动分析。';
+  String get homeAutoPreviewWaiting => '等待源端目录与目标端目录都准备就绪后自动分析。';
 
   @override
-  String get homeAutoPreviewWaitingLocal => '远端已就绪，等待选择本地源目录后自动分析。';
+  String get homeAutoPreviewWaitingLocal => '目标端已就绪，等待选择本地源目录后自动分析。';
 
   @override
-  String get homeAutoPreviewWaitingRemote => '本地源目录已就绪，等待远端选择共享目录后自动分析。';
+  String get homeAutoPreviewWaitingRemote => '本地源目录已就绪，等待远端设备选择目标端目录后自动分析。';
 
   @override
-  String get homeAutoPreviewRunning => '目录已就绪，正在自动生成远端预览。';
+  String get homeAutoPreviewRunning => '目录已就绪，正在自动生成目标端预览。';
 
   @override
-  String get homeAutoPreviewReady => '远端预览已是最新，可直接检查并执行同步。';
+  String get homeAutoPreviewReady => '目标端预览已是最新，可直接检查并执行同步。';
 
   @override
-  String get homeAutoPreviewRefresh => '如需强制重扫远端，可手动刷新远端索引。';
+  String get homeAutoPreviewRefresh => '如需强制重扫目标端，可手动刷新目标端索引。';
 
   @override
   String get homeLocalLibraryTitle => '本地音乐库';
 
   @override
-  String get homeLocalSourceHint => '此目录会作为源目录，远端将向它对齐。';
+  String get homeLocalSourceHint => '此目录会作为源端目录，目标端将向它对齐。';
 
   @override
   String get directoryPreflightWarningTitle => '预检提示：该目录可能较重，生成预览时可能较慢。';
@@ -192,13 +192,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get homeRecentAliasHint => '输入备注名称';
 
   @override
-  String get homeRemoteTargetTitle => '远端目标';
+  String get homeRemoteTargetTitle => '目标端';
 
   @override
-  String get homeRemoteTargetHint => '当前第一版只支持从本机同步到远端。';
+  String get homeRemoteTargetHint => '当前第一版只支持从本机同步到远端设备的目标端。';
 
   @override
-  String get homeRemoteIndexPending => '远端目录已就绪，正在同步索引。';
+  String get homeRemoteIndexPending => '目标端目录已就绪，正在同步索引。';
 
   @override
   String get homeRemoteManualRefreshTitle => '手动刷新';
@@ -240,24 +240,24 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get homeRefreshRemoteIndex => '刷新远端索引';
+  String get homeRefreshRemoteIndex => '刷新目标端索引';
 
   @override
-  String get homeRefreshRemoteIndexHint => '仅在你怀疑远端目录变化但自动刷新未跟上时使用。';
+  String get homeRefreshRemoteIndexHint => '仅在你怀疑目标端目录变化但自动刷新未跟上时使用。';
 
   @override
   String homeRemoteRoot(Object name) {
-    return '远端根目录：$name';
+    return '目标端根目录：$name';
   }
 
   @override
   String homeRemoteIndexedAt(Object value) {
-    return '远端索引时间：$value';
+    return '目标端索引时间：$value';
   }
 
   @override
   String homeRemoteFiles(int count) {
-    return '远端文件数：$count';
+    return '目标端文件数：$count';
   }
 
   @override
@@ -275,10 +275,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get previewDirectionRemote => '远端设备';
+  String get previewDirectionRemote => '目标端';
 
   @override
-  String get previewDirectionLocalTarget => '本地目标';
+  String get previewDirectionLocalTarget => '本地目标端';
 
   @override
   String previewStatus(Object status) {
@@ -320,7 +320,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get previewBuildPlan => '生成预览';
 
   @override
-  String get previewBuildRemotePlan => '生成远端预览';
+  String get previewBuildRemotePlan => '生成目标端预览';
 
   @override
   String get previewPlanItemsTitle => '计划项';
@@ -347,10 +347,88 @@ class AppLocalizationsZh extends AppLocalizations {
   String get previewWaitingLocalDirectory => '等待本地目录';
 
   @override
-  String get previewWaitingRemoteDirectory => '等待远端目录';
+  String get previewWaitingRemoteDirectory => '等待目标端目录';
 
   @override
   String get previewNoSyncItems => '当前没有可同步项目。';
+
+  @override
+  String get previewDetailOverviewTitle => '概览';
+
+  @override
+  String get previewDetailRelativePath => '相对路径';
+
+  @override
+  String get previewDetailSide => '来源范围';
+
+  @override
+  String get previewDetailSourceEntry => '源端条目';
+
+  @override
+  String get previewDetailTargetEntry => '目标端条目';
+
+  @override
+  String get previewDetailName => '名称';
+
+  @override
+  String get previewDetailLocation => '位置';
+
+  @override
+  String get previewDetailLocationLocal => '本机';
+
+  @override
+  String get previewDetailLocationRemote => '目标端';
+
+  @override
+  String get previewDetailPath => '路径';
+
+  @override
+  String get previewDetailSize => '文件大小';
+
+  @override
+  String get previewDetailModifiedTime => '修改时间';
+
+  @override
+  String get previewDetailEntryType => '条目类型';
+
+  @override
+  String get previewDetailEntryTypeDirectory => '文件夹';
+
+  @override
+  String get previewDetailEntryTypeFile => '文件';
+
+  @override
+  String get previewDetailAudioTitle => '标题';
+
+  @override
+  String get previewDetailAudioArtist => '歌手';
+
+  @override
+  String get previewDetailAudioAlbum => '专辑';
+
+  @override
+  String get previewDetailAudioLyrics => '歌词';
+
+  @override
+  String get previewDetailUnknownValue => '未知';
+
+  @override
+  String get previewDetailRefreshing => '正在刷新条目详情...';
+
+  @override
+  String get previewDetailRefreshFailed => '刷新条目详情失败，当前显示的是已有数据。';
+
+  @override
+  String get previewDetailSideSourceOnly => '仅源端';
+
+  @override
+  String get previewDetailSideTargetOnly => '仅目标端';
+
+  @override
+  String get previewDetailSideBoth => '源端与目标端';
+
+  @override
+  String get previewDetailSideUnknown => '未知';
 
   @override
   String get previewFilterAll => '全部类型';
@@ -403,10 +481,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get previewDirectoryRequired => '请先选择本地目录再生成预览。';
 
   @override
-  String get previewRemoteDirectoryRequired => '请先连接远端设备，并让远端选择共享目录。';
+  String get previewRemoteDirectoryRequired => '请先连接远端设备，并让远端设备选择目标端目录。';
 
   @override
-  String get errorRemoteDirectoryNotSelected => '远端设备尚未选择共享目录。';
+  String get errorRemoteDirectoryNotSelected => '远端设备尚未选择目标端目录。';
 
   @override
   String get errorRemoteDeviceDisconnected => '远端设备已断开连接。请保持目标设备前台运行后重连。';
@@ -484,6 +562,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get commonAdd => '添加';
 
   @override
+  String get commonYes => '是';
+
+  @override
+  String get commonNo => '否';
+
+  @override
   String get executionTitle => '执行';
 
   @override
@@ -495,13 +579,13 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get executionRemotePending => '请先等待远端预览完成，再执行远端同步。';
+  String get executionRemotePending => '请先等待目标端预览完成，再执行同步。';
 
   @override
-  String get executionRemoteReady => '远端预览已就绪，可按当前预览将本机文件同步到远端。';
+  String get executionRemoteReady => '目标端预览已就绪，可按当前预览将本机文件同步到目标端。';
 
   @override
-  String get executionKeepForeground => 'Android 作为远端时，请保持目标设备前台运行，不要切到后台或锁屏。';
+  String get executionKeepForeground => 'Android 作为目标端时，请保持目标设备前台运行，不要切到后台或锁屏。';
 
   @override
   String get executionLocalPending => '本地调试复制仅用于本地预览模式，不属于正式局域网同步流程。';
@@ -599,7 +683,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get resultModeLocal => '本地调试复制';
 
   @override
-  String get resultModeRemote => '远端同步';
+  String get resultModeRemote => '目标端同步';
 
   @override
   String get resultModeUnknown => '未知';
@@ -623,7 +707,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get resultAdviceTitle => '建议';
 
   @override
-  String get resultAdviceKeepForeground => '如果远端是 Android，请保持前台运行后重试。';
+  String get resultAdviceKeepForeground => '如果目标端是 Android，请保持前台运行后重试。';
 
   @override
   String get resultAdviceRebuildPreview => '如果目录权限或内容已变化，请重新选择目录并重新生成预览。';
@@ -741,7 +825,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get previewDirectoryStatusLocal => '本地';
 
   @override
-  String get previewDirectoryStatusRemote => '远端';
+  String get previewDirectoryStatusRemote => '目标端';
 
   @override
   String get diffTypeCopy => '复制';

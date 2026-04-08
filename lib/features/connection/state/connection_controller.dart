@@ -259,6 +259,17 @@ class ConnectionController extends StateNotifier<ConnectionState> {
     );
   }
 
+  Future<FileAccessEntry?> requestRemoteEntryStat(String entryId) async {
+    if (entryId.isEmpty || state.peer == null) {
+      return null;
+    }
+    try {
+      return await _service.requestRemoteEntryStat(entryId: entryId);
+    } catch (_) {
+      return null;
+    }
+  }
+
   void _clearPlanAndExecution() {
     _ref.read(previewControllerProvider.notifier).clear();
     _ref.read(executionControllerProvider.notifier).clearTransient();
@@ -362,6 +373,8 @@ class ConnectionController extends StateNotifier<ConnectionState> {
           return _handleAbortCopy(message);
         case 'deleteEntry':
           return _handleDeleteEntry(message);
+        case 'statEntry':
+          return _handleStatEntry(message);
         default:
           return ProtocolMessage(
             type: 'error',
@@ -647,6 +660,38 @@ class ConnectionController extends StateNotifier<ConnectionState> {
         type: 'ok',
         requestId: message.requestId,
         payload: const <String, Object?>{},
+      );
+    } catch (error) {
+      return ProtocolMessage(
+        type: 'error',
+        requestId: message.requestId,
+        payload: <String, Object?>{
+          'message': error.toString(),
+        },
+      );
+    }
+  }
+
+  Future<ProtocolMessage> _handleStatEntry(ProtocolMessage message) async {
+    try {
+      final String entryId = message.payload['entryId'] as String? ?? '';
+      if (entryId.isEmpty) {
+        throw const FormatException('Stat entry payload invalid.');
+      }
+      final FileAccessGateway gateway = _ref.read(fileAccessGatewayProvider);
+      final FileAccessEntry entry = await gateway.stat(entryId);
+      return ProtocolMessage(
+        type: 'statEntryResponse',
+        requestId: message.requestId,
+        payload: <String, Object?>{
+          'entry': <String, Object?>{
+            'entryId': entry.entryId,
+            'name': entry.name,
+            'isDirectory': entry.isDirectory,
+            'size': entry.size,
+            'modifiedTime': entry.modifiedTime.millisecondsSinceEpoch,
+          },
+        },
       );
     } catch (error) {
       return ProtocolMessage(

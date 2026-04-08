@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:music_sync/features/preview/models/diff_item_detail_view_data.dart';
+import 'package:music_sync/features/preview/presentation/widgets/diff_item_detail_sheet.dart';
 import 'package:music_sync/l10n/app_localizations_ext.dart';
 import 'package:music_sync/models/diff_item.dart';
 
@@ -10,6 +12,8 @@ class PlanItemList extends StatefulWidget {
     this.borderRadius = const BorderRadius.all(Radius.circular(18)),
     this.contentPadding = const EdgeInsets.all(8),
     this.showTopBorder = true,
+    this.sourceIsRemote = false,
+    this.targetIsRemote = false,
   });
 
   final List<DiffItem> items;
@@ -17,6 +21,8 @@ class PlanItemList extends StatefulWidget {
   final BorderRadius borderRadius;
   final EdgeInsets contentPadding;
   final bool showTopBorder;
+  final bool sourceIsRemote;
+  final bool targetIsRemote;
 
   @override
   State<PlanItemList> createState() => _PlanItemListState();
@@ -112,35 +118,51 @@ class _PlanItemListState extends State<PlanItemList> {
               itemCount: widget.items.length,
               itemBuilder: (BuildContext context, int index) {
                 final DiffItem item = widget.items[index];
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 6),
-                  decoration: BoxDecoration(
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Material(
                     color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: Theme.of(context)
-                          .dividerColor
-                          .withValues(alpha: 0.18),
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: Text(
-                            item.relativePath,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () => showDiffItemDetailSheet(
+                        context,
+                        data: DiffItemDetailViewData.fromDiffItem(
+                          item,
+                          sourceIsRemote: widget.sourceIsRemote,
+                          targetIsRemote: widget.targetIsRemote,
+                        ),
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: Theme.of(context)
+                                .dividerColor
+                                .withValues(alpha: 0.18),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        _TypeBadge(
-                          type: item.type,
-                          reason: item.reason,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: Text(
+                                  item.relativePath,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              _TypeBadge(
+                                type: item.type,
+                                reason: item.reason,
+                              ),
+                            ],
+                          ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 );

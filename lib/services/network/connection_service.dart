@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:music_sync/models/device_info.dart';
 import 'package:music_sync/models/scan_snapshot.dart';
+import 'package:music_sync/services/file_access/file_access_entry.dart';
 import 'package:music_sync/services/network/peer_session.dart';
 import 'package:music_sync/services/network/protocol/protocol_message.dart';
 
@@ -187,6 +188,43 @@ class ConnectionService {
       },
     );
     _ensureOk(response, 'Remote delete failed.');
+  }
+
+  Future<FileAccessEntry> requestRemoteEntryStat({
+    required String entryId,
+  }) async {
+    final PeerSession session = _requireSession();
+    final ProtocolMessage response = await session.sendRequest(
+      type: 'statEntry',
+      requestId: _nextRequestId(),
+      payload: <String, Object?>{
+        'entryId': entryId,
+      },
+    );
+    if (response.type == 'error') {
+      throw SocketException(
+        response.payload['message'] as String? ?? 'Remote stat failed.',
+      );
+    }
+    if (response.type != 'statEntryResponse') {
+      throw const SocketException('Remote stat response invalid.');
+    }
+    final Object? rawEntry = response.payload['entry'];
+    if (rawEntry is! Map<Object?, Object?>) {
+      throw const SocketException('Remote stat payload invalid.');
+    }
+    final Map<String, Object?> entry = rawEntry.map(
+      (Object? key, Object? value) => MapEntry(key.toString(), value),
+    );
+    return FileAccessEntry(
+      entryId: entry['entryId'] as String? ?? '',
+      name: entry['name'] as String? ?? '',
+      isDirectory: entry['isDirectory'] as bool? ?? false,
+      size: (entry['size'] as num?)?.toInt() ?? 0,
+      modifiedTime: DateTime.fromMillisecondsSinceEpoch(
+        (entry['modifiedTime'] as num?)?.toInt() ?? 0,
+      ),
+    );
   }
 
   PeerSession _requireSession() {

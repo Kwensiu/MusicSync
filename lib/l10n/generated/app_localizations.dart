@@ -203,7 +203,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeStepSourceHint.
   ///
   /// In en, this message translates to:
-  /// **'This directory will be synced to the remote target directory.'**
+  /// **'This directory will be synced to the target directory.'**
   String get homeStepSourceHint;
 
   /// No description provided for @homeClearSelection.
@@ -215,7 +215,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeSourcePendingBecauseRemoteReady.
   ///
   /// In en, this message translates to:
-  /// **'The remote directory is already ready. The only thing missing now is the local source directory.'**
+  /// **'The target directory is already ready. The only thing missing now is the local source directory.'**
   String get homeSourcePendingBecauseRemoteReady;
 
   /// No description provided for @homeStepPreviewTitle.
@@ -227,7 +227,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeStepPreviewHint.
   ///
   /// In en, this message translates to:
-  /// **'Analysis starts automatically after both directories are ready. Refresh the remote index only if needed.'**
+  /// **'Analysis starts automatically after both directories are ready. Refresh the target index only if needed.'**
   String get homeStepPreviewHint;
 
   /// No description provided for @homeAdvancedTitle.
@@ -251,37 +251,37 @@ abstract class AppLocalizations {
   /// No description provided for @homeAutoPreviewWaiting.
   ///
   /// In en, this message translates to:
-  /// **'Automatic analysis will start after both the local and remote directories are ready.'**
+  /// **'Automatic analysis will start after both the source and target directories are ready.'**
   String get homeAutoPreviewWaiting;
 
   /// No description provided for @homeAutoPreviewWaitingLocal.
   ///
   /// In en, this message translates to:
-  /// **'The remote side is ready. Automatic analysis will start after you pick the local source directory.'**
+  /// **'The target side is ready. Automatic analysis will start after you pick the local source directory.'**
   String get homeAutoPreviewWaitingLocal;
 
   /// No description provided for @homeAutoPreviewWaitingRemote.
   ///
   /// In en, this message translates to:
-  /// **'The local source directory is ready. Automatic analysis will start after the remote side picks a shared directory.'**
+  /// **'The local source directory is ready. Automatic analysis will start after the remote device picks a target directory.'**
   String get homeAutoPreviewWaitingRemote;
 
   /// No description provided for @homeAutoPreviewRunning.
   ///
   /// In en, this message translates to:
-  /// **'Directories are ready. Building the remote preview automatically.'**
+  /// **'Directories are ready. Building the target preview automatically.'**
   String get homeAutoPreviewRunning;
 
   /// No description provided for @homeAutoPreviewReady.
   ///
   /// In en, this message translates to:
-  /// **'Remote preview is up to date and ready for review.'**
+  /// **'Target preview is up to date and ready for review.'**
   String get homeAutoPreviewReady;
 
   /// No description provided for @homeAutoPreviewRefresh.
   ///
   /// In en, this message translates to:
-  /// **'Refresh the remote index manually if you need to force a rescan.'**
+  /// **'Refresh the target index manually if you need to force a rescan.'**
   String get homeAutoPreviewRefresh;
 
   /// No description provided for @homeLocalLibraryTitle.
@@ -293,7 +293,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeLocalSourceHint.
   ///
   /// In en, this message translates to:
-  /// **'This directory is treated as the source. The remote side will be aligned to it.'**
+  /// **'This directory is treated as the source. The target side will be aligned to it.'**
   String get homeLocalSourceHint;
 
   /// No description provided for @directoryPreflightWarningTitle.
@@ -444,19 +444,19 @@ abstract class AppLocalizations {
   /// No description provided for @homeRemoteTargetTitle.
   ///
   /// In en, this message translates to:
-  /// **'Remote Target'**
+  /// **'Target Side'**
   String get homeRemoteTargetTitle;
 
   /// No description provided for @homeRemoteTargetHint.
   ///
   /// In en, this message translates to:
-  /// **'Version 1 currently supports only local-to-remote sync.'**
+  /// **'Version 1 currently supports syncing only to the target side on a remote device.'**
   String get homeRemoteTargetHint;
 
   /// No description provided for @homeRemoteIndexPending.
   ///
   /// In en, this message translates to:
-  /// **'The remote directory is ready. Syncing the latest index now.'**
+  /// **'The target directory is ready. Syncing the latest index now.'**
   String get homeRemoteIndexPending;
 
   /// No description provided for @homeRemoteManualRefreshTitle.
@@ -528,31 +528,31 @@ abstract class AppLocalizations {
   /// No description provided for @homeRefreshRemoteIndex.
   ///
   /// In en, this message translates to:
-  /// **'Refresh Remote Index'**
+  /// **'Refresh Target Index'**
   String get homeRefreshRemoteIndex;
 
   /// No description provided for @homeRefreshRemoteIndexHint.
   ///
   /// In en, this message translates to:
-  /// **'Use this only when you think the remote directory changed but automatic refresh has not caught up yet.'**
+  /// **'Use this only when you think the target directory changed but automatic refresh has not caught up yet.'**
   String get homeRefreshRemoteIndexHint;
 
   /// No description provided for @homeRemoteRoot.
   ///
   /// In en, this message translates to:
-  /// **'Remote root: {name}'**
+  /// **'Target root: {name}'**
   String homeRemoteRoot(Object name);
 
   /// No description provided for @homeRemoteIndexedAt.
   ///
   /// In en, this message translates to:
-  /// **'Remote index time: {value}'**
+  /// **'Target index time: {value}'**
   String homeRemoteIndexedAt(Object value);
 
   /// No description provided for @homeRemoteFiles.
   ///
   /// In en, this message translates to:
-  /// **'Remote files: {count}'**
+  /// **'Target files: {count}'**
   String homeRemoteFiles(int count);
 
   /// No description provided for @homeOpenPreview.
@@ -582,7 +582,7 @@ abstract class AppLocalizations {
   /// No description provided for @previewDirectionRemote.
   ///
   /// In en, this message translates to:
-  /// **'Remote Device'**
+  /// **'Target Side'**
   String get previewDirectionRemote;
 
   /// No description provided for @previewDirectionLocalTarget.
@@ -648,7 +648,7 @@ abstract class AppLocalizations {
   /// No description provided for @previewBuildRemotePlan.
   ///
   /// In en, this message translates to:
-  /// **'Build Remote Preview'**
+  /// **'Build Target Preview'**
   String get previewBuildRemotePlan;
 
   /// No description provided for @previewPlanItemsTitle.
@@ -702,7 +702,7 @@ abstract class AppLocalizations {
   /// No description provided for @previewWaitingRemoteDirectory.
   ///
   /// In en, this message translates to:
-  /// **'Waiting for remote directory'**
+  /// **'Waiting for target directory'**
   String get previewWaitingRemoteDirectory;
 
   /// No description provided for @previewNoSyncItems.
@@ -710,6 +710,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No items to sync right now.'**
   String get previewNoSyncItems;
+
+  /// No description provided for @previewDetailOverviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get previewDetailOverviewTitle;
+
+  /// No description provided for @previewDetailRelativePath.
+  ///
+  /// In en, this message translates to:
+  /// **'Relative Path'**
+  String get previewDetailRelativePath;
+
+  /// No description provided for @previewDetailSide.
+  ///
+  /// In en, this message translates to:
+  /// **'Scope'**
+  String get previewDetailSide;
+
+  /// No description provided for @previewDetailSourceEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Source Entry'**
+  String get previewDetailSourceEntry;
+
+  /// No description provided for @previewDetailTargetEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Target Entry'**
+  String get previewDetailTargetEntry;
+
+  /// No description provided for @previewDetailName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get previewDetailName;
+
+  /// No description provided for @previewDetailLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get previewDetailLocation;
+
+  /// No description provided for @previewDetailLocationLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Local'**
+  String get previewDetailLocationLocal;
+
+  /// No description provided for @previewDetailLocationRemote.
+  ///
+  /// In en, this message translates to:
+  /// **'Target'**
+  String get previewDetailLocationRemote;
+
+  /// No description provided for @previewDetailPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Path'**
+  String get previewDetailPath;
+
+  /// No description provided for @previewDetailSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Size'**
+  String get previewDetailSize;
+
+  /// No description provided for @previewDetailModifiedTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Modified Time'**
+  String get previewDetailModifiedTime;
+
+  /// No description provided for @previewDetailEntryType.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry Type'**
+  String get previewDetailEntryType;
+
+  /// No description provided for @previewDetailEntryTypeDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder'**
+  String get previewDetailEntryTypeDirectory;
+
+  /// No description provided for @previewDetailEntryTypeFile.
+  ///
+  /// In en, this message translates to:
+  /// **'File'**
+  String get previewDetailEntryTypeFile;
+
+  /// No description provided for @previewDetailAudioTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get previewDetailAudioTitle;
+
+  /// No description provided for @previewDetailAudioArtist.
+  ///
+  /// In en, this message translates to:
+  /// **'Artist'**
+  String get previewDetailAudioArtist;
+
+  /// No description provided for @previewDetailAudioAlbum.
+  ///
+  /// In en, this message translates to:
+  /// **'Album'**
+  String get previewDetailAudioAlbum;
+
+  /// No description provided for @previewDetailAudioLyrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Lyrics'**
+  String get previewDetailAudioLyrics;
+
+  /// No description provided for @previewDetailUnknownValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get previewDetailUnknownValue;
+
+  /// No description provided for @previewDetailRefreshing.
+  ///
+  /// In en, this message translates to:
+  /// **'Refreshing entry details...'**
+  String get previewDetailRefreshing;
+
+  /// No description provided for @previewDetailRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to refresh entry details. Showing the existing data instead.'**
+  String get previewDetailRefreshFailed;
+
+  /// No description provided for @previewDetailSideSourceOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Source only'**
+  String get previewDetailSideSourceOnly;
+
+  /// No description provided for @previewDetailSideTargetOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Target only'**
+  String get previewDetailSideTargetOnly;
+
+  /// No description provided for @previewDetailSideBoth.
+  ///
+  /// In en, this message translates to:
+  /// **'Source and target'**
+  String get previewDetailSideBoth;
+
+  /// No description provided for @previewDetailSideUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get previewDetailSideUnknown;
 
   /// No description provided for @previewFilterAll.
   ///
@@ -798,13 +954,13 @@ abstract class AppLocalizations {
   /// No description provided for @previewRemoteDirectoryRequired.
   ///
   /// In en, this message translates to:
-  /// **'Connect to the remote device and make sure the remote side has picked a shared directory.'**
+  /// **'Connect to the remote device and make sure the remote device has picked a target directory.'**
   String get previewRemoteDirectoryRequired;
 
   /// No description provided for @errorRemoteDirectoryNotSelected.
   ///
   /// In en, this message translates to:
-  /// **'The remote device has not selected a shared directory yet.'**
+  /// **'The remote device has not selected a target directory yet.'**
   String get errorRemoteDirectoryNotSelected;
 
   /// No description provided for @errorRemoteDeviceDisconnected.
@@ -945,6 +1101,18 @@ abstract class AppLocalizations {
   /// **'Add'**
   String get commonAdd;
 
+  /// No description provided for @commonYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get commonYes;
+
+  /// No description provided for @commonNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get commonNo;
+
   /// No description provided for @executionTitle.
   ///
   /// In en, this message translates to:
@@ -966,19 +1134,19 @@ abstract class AppLocalizations {
   /// No description provided for @executionRemotePending.
   ///
   /// In en, this message translates to:
-  /// **'Wait for the remote preview to finish before running remote sync.'**
+  /// **'Wait for the target preview to finish before running sync.'**
   String get executionRemotePending;
 
   /// No description provided for @executionRemoteReady.
   ///
   /// In en, this message translates to:
-  /// **'Remote preview is ready. The current plan can sync local files to the remote side.'**
+  /// **'The target preview is ready. The current plan can sync local files to the target side.'**
   String get executionRemoteReady;
 
   /// No description provided for @executionKeepForeground.
   ///
   /// In en, this message translates to:
-  /// **'When Android is the remote side, keep the target device in foreground. Do not background the app or lock the screen.'**
+  /// **'When Android is the target side, keep the target device in foreground. Do not background the app or lock the screen.'**
   String get executionKeepForeground;
 
   /// No description provided for @executionLocalPending.
@@ -1146,7 +1314,7 @@ abstract class AppLocalizations {
   /// No description provided for @resultModeRemote.
   ///
   /// In en, this message translates to:
-  /// **'Remote Sync'**
+  /// **'Target Sync'**
   String get resultModeRemote;
 
   /// No description provided for @resultModeUnknown.
@@ -1194,7 +1362,7 @@ abstract class AppLocalizations {
   /// No description provided for @resultAdviceKeepForeground.
   ///
   /// In en, this message translates to:
-  /// **'If the remote side is Android, keep it in foreground and retry.'**
+  /// **'If the target side is Android, keep it in foreground and retry.'**
   String get resultAdviceKeepForeground;
 
   /// No description provided for @resultAdviceRebuildPreview.
@@ -1410,7 +1578,7 @@ abstract class AppLocalizations {
   /// No description provided for @previewDirectoryStatusRemote.
   ///
   /// In en, this message translates to:
-  /// **'Remote'**
+  /// **'Target'**
   String get previewDirectoryStatusRemote;
 
   /// No description provided for @diffTypeCopy.

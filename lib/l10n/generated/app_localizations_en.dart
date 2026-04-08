@@ -65,21 +65,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeStepSourceHint =>
-      'This directory will be synced to the remote target directory.';
+      'This directory will be synced to the target directory.';
 
   @override
   String get homeClearSelection => 'Clear';
 
   @override
   String get homeSourcePendingBecauseRemoteReady =>
-      'The remote directory is already ready. The only thing missing now is the local source directory.';
+      'The target directory is already ready. The only thing missing now is the local source directory.';
 
   @override
   String get homeStepPreviewTitle => 'Step 3: Review and Sync';
 
   @override
   String get homeStepPreviewHint =>
-      'Analysis starts automatically after both directories are ready. Refresh the remote index only if needed.';
+      'Analysis starts automatically after both directories are ready. Refresh the target index only if needed.';
 
   @override
   String get homeAdvancedTitle => 'Advanced and Debug';
@@ -92,34 +92,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeAutoPreviewWaiting =>
-      'Automatic analysis will start after both the local and remote directories are ready.';
+      'Automatic analysis will start after both the source and target directories are ready.';
 
   @override
   String get homeAutoPreviewWaitingLocal =>
-      'The remote side is ready. Automatic analysis will start after you pick the local source directory.';
+      'The target side is ready. Automatic analysis will start after you pick the local source directory.';
 
   @override
   String get homeAutoPreviewWaitingRemote =>
-      'The local source directory is ready. Automatic analysis will start after the remote side picks a shared directory.';
+      'The local source directory is ready. Automatic analysis will start after the remote device picks a target directory.';
 
   @override
   String get homeAutoPreviewRunning =>
-      'Directories are ready. Building the remote preview automatically.';
+      'Directories are ready. Building the target preview automatically.';
 
   @override
   String get homeAutoPreviewReady =>
-      'Remote preview is up to date and ready for review.';
+      'Target preview is up to date and ready for review.';
 
   @override
   String get homeAutoPreviewRefresh =>
-      'Refresh the remote index manually if you need to force a rescan.';
+      'Refresh the target index manually if you need to force a rescan.';
 
   @override
   String get homeLocalLibraryTitle => 'Local Library';
 
   @override
   String get homeLocalSourceHint =>
-      'This directory is treated as the source. The remote side will be aligned to it.';
+      'This directory is treated as the source. The target side will be aligned to it.';
 
   @override
   String get directoryPreflightWarningTitle =>
@@ -207,15 +207,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeRecentAliasHint => 'Enter a short name';
 
   @override
-  String get homeRemoteTargetTitle => 'Remote Target';
+  String get homeRemoteTargetTitle => 'Target Side';
 
   @override
   String get homeRemoteTargetHint =>
-      'Version 1 currently supports only local-to-remote sync.';
+      'Version 1 currently supports syncing only to the target side on a remote device.';
 
   @override
   String get homeRemoteIndexPending =>
-      'The remote directory is ready. Syncing the latest index now.';
+      'The target directory is ready. Syncing the latest index now.';
 
   @override
   String get homeRemoteManualRefreshTitle => 'Manual refresh';
@@ -257,25 +257,25 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get homeRefreshRemoteIndex => 'Refresh Remote Index';
+  String get homeRefreshRemoteIndex => 'Refresh Target Index';
 
   @override
   String get homeRefreshRemoteIndexHint =>
-      'Use this only when you think the remote directory changed but automatic refresh has not caught up yet.';
+      'Use this only when you think the target directory changed but automatic refresh has not caught up yet.';
 
   @override
   String homeRemoteRoot(Object name) {
-    return 'Remote root: $name';
+    return 'Target root: $name';
   }
 
   @override
   String homeRemoteIndexedAt(Object value) {
-    return 'Remote index time: $value';
+    return 'Target index time: $value';
   }
 
   @override
   String homeRemoteFiles(int count) {
-    return 'Remote files: $count';
+    return 'Target files: $count';
   }
 
   @override
@@ -293,7 +293,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get previewDirectionRemote => 'Remote Device';
+  String get previewDirectionRemote => 'Target Side';
 
   @override
   String get previewDirectionLocalTarget => 'Local Target';
@@ -338,7 +338,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get previewBuildPlan => 'Build Preview';
 
   @override
-  String get previewBuildRemotePlan => 'Build Remote Preview';
+  String get previewBuildRemotePlan => 'Build Target Preview';
 
   @override
   String get previewPlanItemsTitle => 'Plan Items';
@@ -366,10 +366,89 @@ class AppLocalizationsEn extends AppLocalizations {
   String get previewWaitingLocalDirectory => 'Waiting for local directory';
 
   @override
-  String get previewWaitingRemoteDirectory => 'Waiting for remote directory';
+  String get previewWaitingRemoteDirectory => 'Waiting for target directory';
 
   @override
   String get previewNoSyncItems => 'No items to sync right now.';
+
+  @override
+  String get previewDetailOverviewTitle => 'Overview';
+
+  @override
+  String get previewDetailRelativePath => 'Relative Path';
+
+  @override
+  String get previewDetailSide => 'Scope';
+
+  @override
+  String get previewDetailSourceEntry => 'Source Entry';
+
+  @override
+  String get previewDetailTargetEntry => 'Target Entry';
+
+  @override
+  String get previewDetailName => 'Name';
+
+  @override
+  String get previewDetailLocation => 'Location';
+
+  @override
+  String get previewDetailLocationLocal => 'Local';
+
+  @override
+  String get previewDetailLocationRemote => 'Target';
+
+  @override
+  String get previewDetailPath => 'Path';
+
+  @override
+  String get previewDetailSize => 'Size';
+
+  @override
+  String get previewDetailModifiedTime => 'Modified Time';
+
+  @override
+  String get previewDetailEntryType => 'Entry Type';
+
+  @override
+  String get previewDetailEntryTypeDirectory => 'Folder';
+
+  @override
+  String get previewDetailEntryTypeFile => 'File';
+
+  @override
+  String get previewDetailAudioTitle => 'Title';
+
+  @override
+  String get previewDetailAudioArtist => 'Artist';
+
+  @override
+  String get previewDetailAudioAlbum => 'Album';
+
+  @override
+  String get previewDetailAudioLyrics => 'Lyrics';
+
+  @override
+  String get previewDetailUnknownValue => 'Unknown';
+
+  @override
+  String get previewDetailRefreshing => 'Refreshing entry details...';
+
+  @override
+  String get previewDetailRefreshFailed =>
+      'Failed to refresh entry details. Showing the existing data instead.';
+
+  @override
+  String get previewDetailSideSourceOnly => 'Source only';
+
+  @override
+  String get previewDetailSideTargetOnly => 'Target only';
+
+  @override
+  String get previewDetailSideBoth => 'Source and target';
+
+  @override
+  String get previewDetailSideUnknown => 'Unknown';
 
   @override
   String get previewFilterAll => 'All types';
@@ -427,11 +506,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get previewRemoteDirectoryRequired =>
-      'Connect to the remote device and make sure the remote side has picked a shared directory.';
+      'Connect to the remote device and make sure the remote device has picked a target directory.';
 
   @override
   String get errorRemoteDirectoryNotSelected =>
-      'The remote device has not selected a shared directory yet.';
+      'The remote device has not selected a target directory yet.';
 
   @override
   String get errorRemoteDeviceDisconnected =>
@@ -522,6 +601,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonAdd => 'Add';
 
   @override
+  String get commonYes => 'Yes';
+
+  @override
+  String get commonNo => 'No';
+
+  @override
   String get executionTitle => 'Execution';
 
   @override
@@ -534,15 +619,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get executionRemotePending =>
-      'Wait for the remote preview to finish before running remote sync.';
+      'Wait for the target preview to finish before running sync.';
 
   @override
   String get executionRemoteReady =>
-      'Remote preview is ready. The current plan can sync local files to the remote side.';
+      'The target preview is ready. The current plan can sync local files to the target side.';
 
   @override
   String get executionKeepForeground =>
-      'When Android is the remote side, keep the target device in foreground. Do not background the app or lock the screen.';
+      'When Android is the target side, keep the target device in foreground. Do not background the app or lock the screen.';
 
   @override
   String get executionLocalPending =>
@@ -646,7 +731,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resultModeLocal => 'Local Debug Copy';
 
   @override
-  String get resultModeRemote => 'Remote Sync';
+  String get resultModeRemote => 'Target Sync';
 
   @override
   String get resultModeUnknown => 'Unknown';
@@ -671,7 +756,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get resultAdviceKeepForeground =>
-      'If the remote side is Android, keep it in foreground and retry.';
+      'If the target side is Android, keep it in foreground and retry.';
 
   @override
   String get resultAdviceRebuildPreview =>
@@ -797,7 +882,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get previewDirectoryStatusLocal => 'Local';
 
   @override
-  String get previewDirectoryStatusRemote => 'Remote';
+  String get previewDirectoryStatusRemote => 'Target';
 
   @override
   String get diffTypeCopy => 'COPY';

@@ -9,6 +9,7 @@ import 'package:music_sync/app/widgets/app_scaffold.dart';
 import 'package:music_sync/app/widgets/section_card.dart';
 import 'package:music_sync/core/errors/app_error_localizer.dart';
 import 'package:music_sync/core/utils/byte_format.dart';
+import 'package:music_sync/core/utils/path_display_format.dart';
 import 'package:music_sync/features/connection/state/connection_controller.dart';
 import 'package:music_sync/features/connection/state/connection_state.dart'
     as peer_connection;
@@ -334,7 +335,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ? null
                     : selectedHandle.entryId == selectedHandle.displayName
                         ? null
-                        : selectedHandle.entryId;
+                        : formatDisplayPath(selectedHandle.entryId);
 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1045,6 +1046,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         context,
                         items: activeItems,
                         conflictItems: filteredConflictItems,
+                        targetIsRemote: previewState.mode == PreviewMode.remote,
                       ),
                     ],
                     const SizedBox(height: 16),
@@ -1174,6 +1176,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     BuildContext context, {
     required List<DiffItem> items,
     required List<DiffItem> conflictItems,
+    required bool targetIsRemote,
   }) {
     if (items.isEmpty && conflictItems.isEmpty) {
       return PlanItemEmptyState(
@@ -1185,7 +1188,11 @@ class _HomePageState extends ConsumerState<HomePage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         if (items.isNotEmpty) ...<Widget>[
-          PlanItemList(items: items),
+          PlanItemList(
+            items: items,
+            sourceIsRemote: false,
+            targetIsRemote: targetIsRemote,
+          ),
         ],
         if (conflictItems.isNotEmpty) ...<Widget>[
           if (items.isNotEmpty) const SizedBox(height: 8),
@@ -1264,6 +1271,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                 child: PlanItemList(
                   items: conflictItems,
                   maxHeight: 220,
+                  sourceIsRemote: false,
+                  targetIsRemote: targetIsRemote,
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(12),
                     bottomRight: Radius.circular(12),
@@ -1891,8 +1900,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                                           ? null
                                           : record.handle.displayName ==
                                                   record.label
-                                              ? record.handle.entryId
-                                              : record.handle.displayName,
+                                              ? formatDisplayPath(
+                                                  record.handle.entryId,
+                                                )
+                                              : formatDisplayPath(
+                                                  record.handle.displayName,
+                                                ),
                                       dragHandle: ReorderableDragStartListener(
                                         index: index,
                                         child: Icon(

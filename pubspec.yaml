@@ -19,6 +19,7 @@ dependencies:
   path: ^1.9.1
   qr_flutter: ^4.1.0
   shared_preferences: ^2.5.3
+  dart_tags: ^0.4.1
 
 dev_dependencies:
   flutter_test:
