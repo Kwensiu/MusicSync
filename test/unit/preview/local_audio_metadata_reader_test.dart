@@ -2,9 +2,9 @@ import 'dart:typed_data';
 
 import 'package:dart_tags/dart_tags.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:music_sync/features/preview/services/local_audio_metadata_reader.dart';
 import 'package:music_sync/services/file_access/file_access_entry.dart';
 import 'package:music_sync/services/file_access/file_access_gateway.dart';
+import 'package:music_sync/services/media/audio_metadata_reader.dart';
 
 void main() {
   test('prefers ID3v2 metadata when ID3v1 and ID3v2 are both present',
@@ -35,7 +35,7 @@ void main() {
       <Tag>[id3v1, id3v2],
     );
 
-    final LocalAudioMetadataReader reader = LocalAudioMetadataReader(
+    final AudioMetadataReader reader = AudioMetadataReader(
       _FakeGateway(Uint8List.fromList(bytes)),
     );
 
@@ -48,7 +48,7 @@ void main() {
 
   test('returns null when prefix read stalls instead of hanging forever',
       () async {
-    final LocalAudioMetadataReader reader = LocalAudioMetadataReader(
+    final AudioMetadataReader reader = AudioMetadataReader(
       _StalledGateway(),
     );
 
@@ -79,7 +79,7 @@ void main() {
       <Tag>[id3v1],
     );
 
-    final LocalAudioMetadataReader reader = LocalAudioMetadataReader(
+    final AudioMetadataReader reader = AudioMetadataReader(
       _FakeGateway(Uint8List.fromList(bytes)),
     );
 

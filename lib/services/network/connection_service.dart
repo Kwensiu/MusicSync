@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:music_sync/models/device_info.dart';
 import 'package:music_sync/models/scan_snapshot.dart';
+import 'package:music_sync/features/preview/models/diff_item_detail_view_data.dart';
 import 'package:music_sync/services/file_access/file_access_entry.dart';
 import 'package:music_sync/services/network/peer_session.dart';
 import 'package:music_sync/services/network/protocol/protocol_message.dart';
@@ -193,6 +194,21 @@ class ConnectionService {
   Future<FileAccessEntry> requestRemoteEntryStat({
     required String entryId,
   }) async {
+    final DiffEntryDetailViewData detail = await requestRemoteEntryDetail(
+      entryId: entryId,
+    );
+    return FileAccessEntry(
+      entryId: detail.entryId,
+      name: detail.displayName,
+      isDirectory: detail.isDirectory,
+      size: detail.size,
+      modifiedTime: detail.modifiedTime,
+    );
+  }
+
+  Future<DiffEntryDetailViewData> requestRemoteEntryDetail({
+    required String entryId,
+  }) async {
     final PeerSession session = _requireSession();
     final ProtocolMessage response = await session.sendRequest(
       type: 'statEntry',
@@ -216,15 +232,36 @@ class ConnectionService {
     final Map<String, Object?> entry = rawEntry.map(
       (Object? key, Object? value) => MapEntry(key.toString(), value),
     );
-    return FileAccessEntry(
+    final Map<String, Object?>? audioMetadata =
+        switch (response.payload['audioMetadata']) {
+      final Map<Object?, Object?> raw => raw.map(
+          (Object? key, Object? value) => MapEntry(key.toString(), value),
+        ),
+      _ => null,
+    };
+    return DiffEntryDetailViewData(
       entryId: entry['entryId'] as String? ?? '',
-      name: entry['name'] as String? ?? '',
+      displayName: entry['name'] as String? ?? '',
       isDirectory: entry['isDirectory'] as bool? ?? false,
       size: (entry['size'] as num?)?.toInt() ?? 0,
       modifiedTime: DateTime.fromMillisecondsSinceEpoch(
         (entry['modifiedTime'] as num?)?.toInt() ?? 0,
       ),
+      audioMetadata: _parseAudioMetadata(audioMetadata),
     );
+  }
+
+  AudioMetadataViewData? _parseAudioMetadata(Map<String, Object?>? payload) {
+    if (payload == null) {
+      return null;
+    }
+    final AudioMetadataViewData metadata = AudioMetadataViewData(
+      title: payload['title'] as String?,
+      artist: payload['artist'] as String?,
+      album: payload['album'] as String?,
+      lyrics: payload['lyrics'] as String?,
+    );
+    return metadata.hasAnyValue ? metadata : null;
   }
 
   PeerSession _requireSession() {

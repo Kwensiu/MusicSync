@@ -1,11 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:dart_tags/dart_tags.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:music_sync/features/connection/state/connection_controller.dart';
 import 'package:music_sync/features/connection/state/connection_state.dart';
+import 'package:music_sync/features/preview/models/diff_item_detail_view_data.dart';
 import 'package:music_sync/features/directory/state/directory_controller.dart';
 import 'package:music_sync/features/execution/state/execution_controller.dart';
 import 'package:music_sync/features/execution/state/execution_state.dart';
@@ -255,6 +258,120 @@ void main() {
       expect(gateway.entryNames, isNot(contains('song.mp3.music_sync_tmp')));
       expect(gateway.deletedEntries, hasLength(1));
     });
+
+    test('remote entry detail request can return audio metadata', () async {
+      final ListenerService listener = ListenerService();
+      final _MetadataGateway gateway = await _MetadataGateway.create();
+      const int port = 44991;
+      final ProviderContainer server = ProviderContainer(
+        overrides: <Override>[
+          connectionServiceProvider.overrideWithValue(
+            _FakeConnectionService(
+              snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
+            ),
+          ),
+          listenerServiceProvider.overrideWithValue(listener),
+          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+          fileAccessGatewayProvider.overrideWithValue(gateway),
+        ],
+      );
+      final ProviderContainer client = ProviderContainer(
+        overrides: <Override>[
+          connectionServiceProvider.overrideWithValue(ConnectionService()),
+          listenerServiceProvider.overrideWithValue(_FakeListenerService()),
+          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+          fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
+        ],
+      );
+      addTearDown(server.dispose);
+      addTearDown(client.dispose);
+      addTearDown(() async {
+        try {
+          await client.read(connectionControllerProvider.notifier).disconnect();
+        } catch (_) {
+          // Ignore teardown disconnect failures in socket-bound tests.
+        }
+        try {
+          await server
+              .read(connectionControllerProvider.notifier)
+              .stopListening();
+        } catch (_) {
+          // Ignore teardown listener failures in socket-bound tests.
+        }
+      });
+
+      await server
+          .read(connectionControllerProvider.notifier)
+          .startListening(port: port);
+      await client.read(connectionControllerProvider.notifier).connect(
+            address: '127.0.0.1',
+            port: port,
+          );
+
+      final DiffEntryDetailViewData? detail = await client
+          .read(connectionControllerProvider.notifier)
+          .requestRemoteEntryDetail('entry-song');
+
+      expect(detail, isNotNull);
+      expect(detail?.displayName, 'song.mp3');
+      expect(detail?.audioMetadata?.title, 'Remote Song');
+      expect(detail?.audioMetadata?.artist, 'Remote Artist');
+      expect(detail?.audioMetadata?.album, 'Remote Album');
+    });
+
+    test('remote directory detail does not include audio metadata', () async {
+      final ListenerService listener = ListenerService();
+      final _MetadataGateway gateway = await _MetadataGateway.create();
+      const int port = 44992;
+      final ProviderContainer server = ProviderContainer(
+        overrides: <Override>[
+          connectionServiceProvider.overrideWithValue(
+            _FakeConnectionService(
+              snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
+            ),
+          ),
+          listenerServiceProvider.overrideWithValue(listener),
+          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+          fileAccessGatewayProvider.overrideWithValue(gateway),
+        ],
+      );
+      final ProviderContainer client = ProviderContainer(
+        overrides: <Override>[
+          connectionServiceProvider.overrideWithValue(ConnectionService()),
+          listenerServiceProvider.overrideWithValue(_FakeListenerService()),
+          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+          fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
+        ],
+      );
+      addTearDown(server.dispose);
+      addTearDown(client.dispose);
+      addTearDown(() async {
+        try {
+          await client.read(connectionControllerProvider.notifier).disconnect();
+        } catch (_) {}
+        try {
+          await server
+              .read(connectionControllerProvider.notifier)
+              .stopListening();
+        } catch (_) {}
+      });
+
+      await server
+          .read(connectionControllerProvider.notifier)
+          .startListening(port: port);
+      await client.read(connectionControllerProvider.notifier).connect(
+            address: '127.0.0.1',
+            port: port,
+          );
+
+      final DiffEntryDetailViewData? detail = await client
+          .read(connectionControllerProvider.notifier)
+          .requestRemoteEntryDetail('entry-dir');
+
+      expect(detail, isNotNull);
+      expect(detail?.isDirectory, isTrue);
+      expect(detail?.audioMetadata, isNull);
+    });
   });
 }
 
@@ -489,6 +606,60 @@ class _MemoryWriteSession implements FileWriteSession {
 
   @override
   Future<void> write(List<int> chunk) async {}
+}
+
+class _MetadataGateway extends _FakeFileAccessGateway {
+  _MetadataGateway(this._bytes);
+
+  final Uint8List _bytes;
+
+  static Future<_MetadataGateway> create() async {
+    final Tag id3v2 = Tag()
+      ..type = 'ID3'
+      ..version = '2.4'
+      ..tags = <String, dynamic>{
+        'title': 'Remote Song',
+        'artist': 'Remote Artist',
+        'album': 'Remote Album',
+      };
+    final List<int> bytes = await TagProcessor().putTagsToByteArray(
+      Future<List<int>?>.value(List<int>.filled(32, 0)),
+      <Tag>[id3v2],
+    );
+    return _MetadataGateway(Uint8List.fromList(bytes));
+  }
+
+  @override
+  Stream<List<int>> openRead(String entryId) async* {
+    if (entryId == 'entry-song') {
+      yield _bytes;
+      return;
+    }
+    yield const <int>[];
+  }
+
+  @override
+  Future<FileAccessEntry> stat(String entryId) async {
+    if (entryId == 'entry-song') {
+      return FileAccessEntry(
+        entryId: 'entry-song',
+        name: 'song.mp3',
+        isDirectory: false,
+        size: 123,
+        modifiedTime: DateTime.fromMillisecondsSinceEpoch(5),
+      );
+    }
+    if (entryId == 'entry-dir') {
+      return FileAccessEntry(
+        entryId: 'entry-dir',
+        name: 'Album',
+        isDirectory: true,
+        size: 0,
+        modifiedTime: DateTime.fromMillisecondsSinceEpoch(6),
+      );
+    }
+    return super.stat(entryId);
+  }
 }
 
 class _PeerPair {

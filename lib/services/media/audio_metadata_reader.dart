@@ -4,8 +4,8 @@ import 'package:dart_tags/dart_tags.dart';
 import 'package:music_sync/features/preview/models/diff_item_detail_view_data.dart';
 import 'package:music_sync/services/file_access/file_access_gateway.dart';
 
-class LocalAudioMetadataReader {
-  LocalAudioMetadataReader(this._gateway);
+class AudioMetadataReader {
+  AudioMetadataReader(this._gateway);
 
   static const int _fastReadLimit = 512 * 1024;
   static const Duration _readTimeout = Duration(seconds: 2);

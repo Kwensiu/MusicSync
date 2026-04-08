@@ -1,3 +1,4 @@
+import 'package:music_sync/core/utils/extension_normalizer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:music_sync/features/preview/state/preview_state.dart';
 import 'package:music_sync/models/scan_snapshot.dart';
@@ -290,7 +291,7 @@ class PreviewController extends StateNotifier<PreviewState> {
       return snapshot;
     }
     final Set<String> ignored = ignoredExtensions
-        .map((String value) => value.trim().toLowerCase())
+        .map(normalizeExtensionRule)
         .where((String value) => value.isNotEmpty)
         .toSet();
     return ScanSnapshot(

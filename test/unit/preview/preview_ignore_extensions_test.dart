@@ -38,6 +38,36 @@ void main() {
     expect(controller.state.availableExtensions, <String>['*', 'mp3']);
     expect(controller.state.ignoredExtensions, <String>['jpg', 'lrc']);
   });
+
+  test('buildPreviewFromSnapshots normalizes dotted ignored extensions',
+      () async {
+    final PreviewController controller = PreviewController(
+      DiffEngine(),
+      DirectoryScanner(
+        gateway: _NoopGateway(),
+        cacheService: ScanCacheService(),
+      ),
+    );
+
+    await controller.buildPreviewFromSnapshots(
+      source: _snapshot(
+        <String>['keep.mp3', 'cover.jpg', 'lyrics.lrc'],
+        deviceId: 'local',
+      ),
+      target: _snapshot(
+        <String>['old.mp3', 'cover.jpg'],
+        deviceId: 'remote',
+      ),
+      deleteEnabled: true,
+      ignoredExtensions: const <String>['.jpg', '..LRC'],
+    );
+
+    expect(
+      controller.state.plan.copyItems.map((item) => item.relativePath),
+      <String>['keep.mp3'],
+    );
+    expect(controller.state.availableExtensions, <String>['*', 'mp3']);
+  });
 }
 
 ScanSnapshot _snapshot(List<String> paths, {required String deviceId}) {

@@ -4,13 +4,16 @@ import 'package:music_sync/features/settings/state/settings_state.dart';
 import 'package:music_sync/services/storage/settings_store.dart';
 
 void main() {
-  test('SettingsController saves and reloads ignored extensions', () async {
+  test('SettingsController saves and reloads normalized ignored extensions',
+      () async {
     final _FakeSettingsStore store = _FakeSettingsStore();
     final SettingsController controller = SettingsController(store);
     addTearDown(controller.dispose);
 
     await controller.load();
-    await controller.saveIgnoredExtensions(const <String>['lrc', 'jpg']);
+    await controller.saveIgnoredExtensions(
+      const <String>['.lrc', 'jpg', '..JPG', '  .LRC  '],
+    );
 
     expect(controller.state.ignoredExtensions, <String>['jpg', 'lrc']);
     expect(store.savedIgnoredExtensions, <String>['jpg', 'lrc']);
@@ -36,7 +39,13 @@ class _FakeSettingsStore extends SettingsStore {
 
   @override
   Future<void> saveIgnoredExtensions(List<String> values) async {
-    savedIgnoredExtensions = List<String>.from(values)..sort();
+    savedIgnoredExtensions = values
+        .map((String value) =>
+            value.trim().toLowerCase().replaceFirst(RegExp(r'^\.+'), ''))
+        .where((String value) => value.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
   }
 
   @override

@@ -1,3 +1,4 @@
+import 'package:music_sync/core/utils/extension_normalizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:music_sync/features/settings/state/settings_state.dart';
 
@@ -22,7 +23,7 @@ class SettingsStore {
     final List<String> values =
         preferences.getStringList(_ignoredExtensionsKey) ?? const <String>[];
     return values
-        .map((String value) => value.trim().toLowerCase())
+        .map(normalizeExtensionRule)
         .where((String value) => value.isNotEmpty)
         .toSet()
         .toList()
@@ -32,7 +33,7 @@ class SettingsStore {
   Future<void> saveIgnoredExtensions(List<String> values) async {
     final SharedPreferences preferences = await SharedPreferences.getInstance();
     final List<String> normalized = values
-        .map((String value) => value.trim().toLowerCase())
+        .map(normalizeExtensionRule)
         .where((String value) => value.isNotEmpty)
         .toSet()
         .toList()

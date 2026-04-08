@@ -18,8 +18,10 @@ import 'package:music_sync/services/network/listener_service.dart';
 import 'package:music_sync/services/network/peer_session.dart';
 import 'package:music_sync/services/network/protocol/protocol_message.dart';
 import 'package:music_sync/features/preview/state/preview_controller.dart';
+import 'package:music_sync/features/preview/models/diff_item_detail_view_data.dart';
 import 'package:music_sync/services/file_access/file_access_gateway.dart';
 import 'package:music_sync/services/storage/recent_items_store.dart';
+import 'package:music_sync/services/media/audio_metadata_reader.dart';
 
 final Provider<ConnectionService> connectionServiceProvider =
     Provider<ConnectionService>((Ref ref) => ConnectionService());
@@ -265,6 +267,18 @@ class ConnectionController extends StateNotifier<ConnectionState> {
     }
     try {
       return await _service.requestRemoteEntryStat(entryId: entryId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<DiffEntryDetailViewData?> requestRemoteEntryDetail(
+      String entryId) async {
+    if (entryId.isEmpty || state.peer == null) {
+      return null;
+    }
+    try {
+      return await _service.requestRemoteEntryDetail(entryId: entryId);
     } catch (_) {
       return null;
     }
@@ -680,6 +694,9 @@ class ConnectionController extends StateNotifier<ConnectionState> {
       }
       final FileAccessGateway gateway = _ref.read(fileAccessGatewayProvider);
       final FileAccessEntry entry = await gateway.stat(entryId);
+      final AudioMetadataViewData? metadata = entry.isDirectory
+          ? null
+          : await AudioMetadataReader(gateway).read(entryId);
       return ProtocolMessage(
         type: 'statEntryResponse',
         requestId: message.requestId,
@@ -691,6 +708,13 @@ class ConnectionController extends StateNotifier<ConnectionState> {
             'size': entry.size,
             'modifiedTime': entry.modifiedTime.millisecondsSinceEpoch,
           },
+          if (metadata != null)
+            'audioMetadata': <String, Object?>{
+              if (metadata.title case final String title) 'title': title,
+              if (metadata.artist case final String artist) 'artist': artist,
+              if (metadata.album case final String album) 'album': album,
+              if (metadata.lyrics case final String lyrics) 'lyrics': lyrics,
+            },
         },
       );
     } catch (error) {

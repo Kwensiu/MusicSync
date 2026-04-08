@@ -37,10 +37,10 @@ Future<void> showDiffItemDetailSheet(
   );
   final LocalDetailLoader loader = LocalDetailLoader(
     container.read(fileAccessGatewayProvider),
-    loadRemoteEntry: (String entryId) {
+    loadRemoteEntryDetail: (String entryId) {
       return container
           .read(connectionControllerProvider.notifier)
-          .requestRemoteEntryStat(entryId);
+          .requestRemoteEntryDetail(entryId);
     },
   );
   return showModalBottomSheet<void>(

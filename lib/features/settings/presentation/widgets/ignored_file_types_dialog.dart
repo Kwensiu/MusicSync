@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:music_sync/core/utils/extension_normalizer.dart';
 import 'package:music_sync/features/settings/presentation/widgets/settings_dialog_shell.dart';
 import 'package:music_sync/l10n/app_localizations_ext.dart';
 
@@ -56,10 +57,8 @@ Future<void> showIgnoredFileTypesDialog({
                     const SizedBox(width: gapS),
                     FilledButton(
                       onPressed: () {
-                        final String normalized = controller.text
-                            .trim()
-                            .toLowerCase()
-                            .replaceAll('.', '');
+                        final String normalized =
+                            normalizeExtensionRule(controller.text);
                         if (normalized.isEmpty) {
                           setState(() {
                             inputError =
