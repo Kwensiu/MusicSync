@@ -648,7 +648,7 @@ abstract class AppLocalizations {
   /// No description provided for @previewBuildRemotePlan.
   ///
   /// In en, this message translates to:
-  /// **'Build Target Preview'**
+  /// **'Build Preview'**
   String get previewBuildRemotePlan;
 
   /// No description provided for @previewPlanItemsTitle.

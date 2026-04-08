@@ -320,7 +320,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get previewBuildPlan => '生成预览';
 
   @override
-  String get previewBuildRemotePlan => '生成目标端预览';
+  String get previewBuildRemotePlan => '生成预览';
 
   @override
   String get previewPlanItemsTitle => '计划项';

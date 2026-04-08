@@ -204,7 +204,7 @@
     }
   },
   "previewBuildPlan": "生成预览",
-  "previewBuildRemotePlan": "生成目标端预览",
+  "previewBuildRemotePlan": "生成预览",
   "previewPlanItemsTitle": "计划项",
   "previewEmptyPlan": "复制、删除和冲突项会显示在这里。",
   "previewSectionCopy": "复制项",

@@ -204,7 +204,7 @@
     }
   },
   "previewBuildPlan": "Build Preview",
-  "previewBuildRemotePlan": "Build Target Preview",
+  "previewBuildRemotePlan": "Build Preview",
   "previewPlanItemsTitle": "Plan Items",
   "previewEmptyPlan": "Copy, delete, and conflict items will appear here.",
   "previewSectionCopy": "Copy Items",

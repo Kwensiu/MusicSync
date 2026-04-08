@@ -338,7 +338,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get previewBuildPlan => 'Build Preview';
 
   @override
-  String get previewBuildRemotePlan => 'Build Target Preview';
+  String get previewBuildRemotePlan => 'Build Preview';
 
   @override
   String get previewPlanItemsTitle => 'Plan Items';
