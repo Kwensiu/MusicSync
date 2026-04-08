@@ -19,6 +19,8 @@ import 'package:music_sync/features/execution/state/execution_state.dart';
 import 'package:music_sync/features/home/presentation/widgets/action_chip_button.dart';
 import 'package:music_sync/features/home/presentation/widgets/connection_section/connection_section.dart';
 import 'package:music_sync/features/home/presentation/widgets/preview_workbench_section/preview_workbench_section.dart';
+import 'package:music_sync/features/home/presentation/widgets/recent_record_card/recent_record_card.dart';
+import 'package:music_sync/features/home/presentation/widgets/source_directory_section/source_directory_section.dart';
 import 'package:music_sync/features/preview/presentation/widgets/plan_item_list.dart';
 import 'package:music_sync/features/preview/state/preview_controller.dart';
 import 'package:music_sync/features/preview/state/preview_state.dart';
@@ -195,288 +197,28 @@ class _HomePageState extends ConsumerState<HomePage> {
           const SizedBox(height: 16),
           SectionCard(
             title: context.l10n.homeStepSourceTitle,
-            child: Builder(
-              builder: (BuildContext context) {
-                final ColorScheme scheme = Theme.of(context).colorScheme;
-                final DirectoryHandle? selectedHandle = directoryState.handle;
-                final bool hasSelection = selectedHandle != null;
-                final bool hasRisk = directoryState.preflight?.hasRisk == true;
-                final String sourceLabel = selectedHandle?.displayName ??
-                    context.l10n.homeNoDirectorySelected;
-                final String? sourceDetail = selectedHandle == null
-                    ? null
-                    : selectedHandle.entryId == selectedHandle.displayName
-                        ? null
-                        : formatDisplayPath(selectedHandle.entryId);
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: scheme.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: hasRisk
-                              ? scheme.errorContainer
-                              : scheme.outlineVariant,
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Row(
-                              children: <Widget>[
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: hasSelection
-                                        ? scheme.primaryContainer
-                                        : scheme.surfaceContainerHighest,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Icon(
-                                    Icons.folder_outlined,
-                                    color: hasSelection
-                                        ? scheme.onPrimaryContainer
-                                        : scheme.onSurfaceVariant,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: <Widget>[
-                                      Text(
-                                        sourceLabel,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium,
-                                      ),
-                                      if (sourceDetail != null) ...<Widget>[
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          sourceDetail,
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                color: scheme.onSurfaceVariant,
-                                              ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                SizedBox(
-                                  width: 40,
-                                  height: 40,
-                                  child: hasSelection
-                                      ? IconButton(
-                                          tooltip:
-                                              context.l10n.homeClearSelection,
-                                          visualDensity: VisualDensity.compact,
-                                          onPressed: isBusy
-                                              ? null
-                                              : () {
-                                                  ref
-                                                      .read(
-                                                          directoryControllerProvider
-                                                              .notifier)
-                                                      .clearDirectory();
-                                                },
-                                          icon: const Icon(Icons.close_rounded,
-                                              size: 18),
-                                        )
-                                      : null,
-                                ),
-                              ],
-                            ),
-                            if (directoryState.errorMessage !=
-                                null) ...<Widget>[
-                              const SizedBox(height: 12),
-                              Text(
-                                directoryState.errorMessage!,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color: scheme.error,
-                                    ),
-                              ),
-                            ] else if (!hasSelection &&
-                                hasRemoteDirectoryReady) ...<Widget>[
-                              const SizedBox(height: 12),
-                              Text(
-                                context
-                                    .l10n.homeSourcePendingBecauseRemoteReady,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color: scheme.onSurfaceVariant,
-                                    ),
-                              ),
-                            ],
-                            if (hasRisk) ...<Widget>[
-                              const SizedBox(height: 12),
-                              Container(
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: scheme.errorContainer
-                                      .withValues(alpha: 0.55),
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    Text(
-                                      context
-                                          .l10n.directoryPreflightWarningTitle,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelLarge
-                                          ?.copyWith(
-                                            color: scheme.onErrorContainer,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    ...directoryState.preflight!.reasons
-                                        .take(2)
-                                        .map(
-                                          (String reason) => Padding(
-                                            padding: const EdgeInsets.only(
-                                                bottom: 2),
-                                            child: Text(
-                                              _localizePreflightReason(
-                                                  context, reason),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall
-                                                  ?.copyWith(
-                                                    color:
-                                                        scheme.onErrorContainer,
-                                                  ),
-                                            ),
-                                          ),
-                                        ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 12),
-                            SizedBox(
-                              width: double.infinity,
-                              child: FilledButton.tonal(
-                                onPressed: isBusy
-                                    ? null
-                                    : () {
-                                        ref
-                                            .read(directoryControllerProvider
-                                                .notifier)
-                                            .pickDirectory();
-                                      },
-                                child: Text(context.l10n.homePickDirectory),
-                              ),
-                            ),
-                            if (directoryState.hasTempFiles) ...<Widget>[
-                              const SizedBox(height: 10),
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: OutlinedButton(
-                                  onPressed: isBusy ||
-                                          directoryState.handle == null ||
-                                          _isCleaningSourceTemp
-                                      ? null
-                                      : () => _cleanupTempFiles(
-                                            rootId:
-                                                directoryState.handle!.entryId,
-                                            isSource: true,
-                                          ),
-                                  child:
-                                      Text(context.l10n.homeCleanupTempFiles),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                    if (directoryState.recentHandles.isNotEmpty) ...<Widget>[
-                      const SizedBox(height: 12),
-                      Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: Text(
-                              context.l10n.homeRecentDirectories,
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                          ),
-                          IconButton(
-                            tooltip: context.l10n.homeManageRecentItems,
-                            onPressed: isBusy
-                                ? null
-                                : () => _showRecentDirectoryManager(),
-                            icon: const Icon(Icons.tune_rounded),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: directoryState.recentHandles.map((handle) {
-                          final bool isCurrent =
-                              directoryState.handle?.entryId == handle.entryId;
-                          return ActionChip(
-                            backgroundColor: isCurrent
-                                ? scheme.secondaryContainer
-                                : scheme.surface,
-                            side: BorderSide(
-                              color: isCurrent
-                                  ? scheme.secondary
-                                  : scheme.outlineVariant,
-                            ),
-                            avatar: isCurrent
-                                ? Icon(
-                                    Icons.check_circle_outline,
-                                    size: 18,
-                                    color: scheme.onSecondaryContainer,
-                                  )
-                                : null,
-                            label: Text(
-                              directoryState.recentLabels[handle.entryId] ??
-                                  handle.displayName,
-                            ),
-                            onPressed: isBusy || isCurrent
-                                ? null
-                                : () {
-                                    ref
-                                        .read(directoryControllerProvider
-                                            .notifier)
-                                        .useRecentDirectory(handle);
-                                  },
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                  ],
-                );
+            child: SourceDirectorySection(
+              directoryState: directoryState,
+              isBusy: isBusy,
+              hasRemoteDirectoryReady: hasRemoteDirectoryReady,
+              isCleaningSourceTemp: _isCleaningSourceTemp,
+              onPickDirectory: () {
+                ref.read(directoryControllerProvider.notifier).pickDirectory();
               },
+              onClearDirectory: () {
+                ref.read(directoryControllerProvider.notifier).clearDirectory();
+              },
+              onCleanupTempFiles: () => _cleanupTempFiles(
+                rootId: directoryState.handle!.entryId,
+                isSource: true,
+              ),
+              onManageRecentDirectories: _showRecentDirectoryManager,
+              onUseRecentDirectory: (DirectoryHandle handle) {
+                ref
+                    .read(directoryControllerProvider.notifier)
+                    .useRecentDirectory(handle);
+              },
+              localizePreflightReason: _localizePreflightReason,
             ),
           ),
           const SizedBox(height: 16),
@@ -510,70 +252,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                 connectionState: connectionState,
                 previewState: previewState,
               ),
-              onBuildRemotePreview: () async {
-                final ScanSnapshot? remoteSnapshot = await ref
-                    .read(connectionControllerProvider.notifier)
-                    .refreshRemoteSnapshot();
-                if (remoteSnapshot == null) {
-                  return;
-                }
-                final ScanSnapshot localSnapshot =
-                    await ref.read(directoryScannerProvider).scan(
-                          root: directoryState.handle!,
-                          deviceId: 'local-device',
-                        );
-                await ref
-                    .read(previewControllerProvider.notifier)
-                    .buildPreviewFromSnapshots(
-                      source: localSnapshot,
-                      target: remoteSnapshot,
-                      deleteEnabled: true,
-                      extensionFilter: '*',
-                      ignoredExtensions: ignoredExtensions,
-                      sourceRootId: directoryState.handle!.entryId,
-                    );
-              },
-              onStartRemoteSync: () async {
-                if (previewState.plan.deleteItems.isNotEmpty) {
-                  final bool? confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text(context.l10n.executionConfirmDeleteTitle),
-                        content: Text(
-                          context.l10n.executionConfirmDeleteBody(
-                            previewState.plan.deleteItems.length,
-                          ),
-                        ),
-                        actions: <Widget>[
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(false),
-                            child: Text(context.l10n.commonCancel),
-                          ),
-                          FilledButton(
-                            onPressed: () => Navigator.of(context).pop(true),
-                            child: Text(context.l10n.commonConfirm),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                  if (confirmed != true) {
-                    return;
-                  }
-                }
-                await ref
-                    .read(executionControllerProvider.notifier)
-                    .executeRemote(
-                      plan: previewState.plan,
-                      remoteRootId: connectionState.remoteSnapshot!.rootId,
-                    );
-                await _refreshPreviewAfterExecution(
-                  previewState: previewState,
-                  directoryState: directoryState,
-                  executionState: ref.read(executionControllerProvider),
-                );
-              },
+              onBuildRemotePreview: () => _buildRemotePreview(
+                sourceRoot: directoryState.handle!,
+                ignoredExtensions: ignoredExtensions,
+              ),
+              onStartRemoteSync: () => _executeRemoteSyncFlow(
+                context: context,
+                previewState: previewState,
+                directoryState: directoryState,
+                connectionState: connectionState,
+              ),
               onCancelSync: () {
                 ref.read(executionControllerProvider.notifier).cancel();
               },
@@ -1270,6 +958,52 @@ class _HomePageState extends ConsumerState<HomePage> {
         );
   }
 
+  Future<void> _executeRemoteSyncFlow({
+    required BuildContext context,
+    required PreviewState previewState,
+    required DirectoryState directoryState,
+    required peer_connection.ConnectionState connectionState,
+  }) async {
+    if (previewState.plan.deleteItems.isNotEmpty) {
+      final bool? confirmed = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(context.l10n.executionConfirmDeleteTitle),
+            content: Text(
+              context.l10n.executionConfirmDeleteBody(
+                previewState.plan.deleteItems.length,
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: Text(context.l10n.commonCancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: Text(context.l10n.commonConfirm),
+              ),
+            ],
+          );
+        },
+      );
+      if (confirmed != true) {
+        return;
+      }
+    }
+
+    await ref.read(executionControllerProvider.notifier).executeRemote(
+          plan: previewState.plan,
+          remoteRootId: connectionState.remoteSnapshot!.rootId,
+        );
+    await _refreshPreviewAfterExecution(
+      previewState: previewState,
+      directoryState: directoryState,
+      executionState: ref.read(executionControllerProvider),
+    );
+  }
+
   String _localizePreflightReason(BuildContext context, String reason) {
     switch (reason) {
       case 'many_root_children':
@@ -1458,7 +1192,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     key:
                                         ValueKey<String>(record.handle.entryId),
                                     padding: const EdgeInsets.only(bottom: 8),
-                                    child: _RecentRecordCard(
+                                    child: RecentRecordCard(
                                       title: record.label,
                                       subtitle: record.note == null ||
                                               record.note!.trim().isEmpty
@@ -1604,7 +1338,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   return Padding(
                                     key: ValueKey<String>(record.address),
                                     padding: const EdgeInsets.only(bottom: 8),
-                                    child: _RecentRecordCard(
+                                    child: RecentRecordCard(
                                       title: record.label,
                                       subtitle: record.address == record.label
                                           ? null
@@ -1906,110 +1640,5 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
 
     ref.read(previewControllerProvider.notifier).clear();
-  }
-}
-
-class _RecentRecordCard extends StatelessWidget {
-  const _RecentRecordCard({
-    required this.title,
-    required this.onUse,
-    required this.onEditRecord,
-    required this.onDelete,
-    this.subtitle,
-    this.dragHandle,
-  });
-
-  final String title;
-  final String? subtitle;
-  final Widget? dragHandle;
-  final VoidCallback onUse;
-  final VoidCallback onEditRecord;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    final bool hasSubtitle = subtitle != null && subtitle!.isNotEmpty;
-    return Material(
-      color: scheme.surfaceContainerLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: scheme.outlineVariant),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onUse,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              if (dragHandle != null)
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: SizedBox(
-                    width: 24,
-                    child: Center(child: dragHandle!),
-                  ),
-                ),
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: <Widget>[
-                    Expanded(
-                      child: hasSubtitle
-                          ? Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                Text(
-                                  title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.titleSmall,
-                                ),
-                                const SizedBox(height: 1),
-                                Text(
-                                  subtitle!,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color: scheme.onSurfaceVariant,
-                                        height: 1.15,
-                                      ),
-                                ),
-                              ],
-                            )
-                          : Text(
-                              title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      tooltip: context.l10n.homeRecentAlias,
-                      visualDensity: VisualDensity.compact,
-                      onPressed: onEditRecord,
-                      icon: const Icon(Icons.edit_outlined),
-                    ),
-                    IconButton(
-                      tooltip: context.l10n.homeRecentDelete,
-                      visualDensity: VisualDensity.compact,
-                      onPressed: onDelete,
-                      icon: const Icon(Icons.delete_outline),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }

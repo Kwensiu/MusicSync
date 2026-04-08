@@ -512,3 +512,31 @@
 
 - 设置控制器保存并重载归一化后的忽略后缀
 - 预览构建时可正确识别带 `.` 的忽略规则
+
+## 17. 首页结构拆分第一阶段
+
+这一轮没有继续扩功能，而是把首页正式往“装配页”方向收。
+
+当前已完成：
+
+- 步骤 1 连接区已拆到独立组件目录
+  - `widgets/connection_section/connection_section.dart`
+- 步骤 2 源目录区已拆到独立组件目录
+  - `widgets/source_directory_section/source_directory_section.dart`
+- 步骤 3 预览与执行工作区已拆到独立组件目录
+  - `widgets/preview_workbench_section/preview_workbench_section.dart`
+- 最近记录卡片也已抽出复用组件
+  - `widgets/recent_record_card/recent_record_card.dart`
+
+同时，首页内部两类较长的主流程匿名回调也已收为明确方法：
+
+- `_buildRemotePreview(...)`
+- `_executeRemoteSyncFlow(...)`
+
+这一轮之后，`home_page.dart` 的职责已经更明确：
+
+- 监听跨区状态
+- 组装 3 个主流程区块
+- 保留少量跨区协调逻辑
+
+也就是说，首页已经不再是“一个超大 UI 文件”，而开始具备后续继续维护和扩展的结构基础。
