@@ -255,6 +255,30 @@ class ExecutionController extends StateNotifier<ExecutionState> {
   void cancel() {
     _cancelToken?.cancel();
   }
+
+  void failRemoteExecution(String message) {
+    if (state.status != ExecutionStatus.running ||
+        state.mode != ExecutionMode.remote) {
+      return;
+    }
+    _cancelToken?.cancel();
+    _cancelToken = null;
+    state = ExecutionState(
+      status: ExecutionStatus.failed,
+      progress: TransferProgress(
+        stage: SyncStage.failed,
+        processedFiles: state.progress.processedFiles,
+        totalFiles: state.progress.totalFiles,
+        processedBytes: state.progress.processedBytes,
+        totalBytes: state.progress.totalBytes,
+        currentPath: state.progress.currentPath,
+      ),
+      result: state.result,
+      mode: ExecutionMode.remote,
+      targetRoot: state.targetRoot,
+      errorMessage: ExecutionState.localizeErrorMessage(message),
+    );
+  }
 }
 
 final StateNotifierProvider<ExecutionController, ExecutionState>

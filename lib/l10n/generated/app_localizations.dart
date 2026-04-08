@@ -1560,7 +1560,7 @@ abstract class AppLocalizations {
   /// No description provided for @previewTransferDirectionLabel.
   ///
   /// In en, this message translates to:
-  /// **'Transfer Direction'**
+  /// **'Transfer Status'**
   String get previewTransferDirectionLabel;
 
   /// No description provided for @previewDirectoryStatusLabel.

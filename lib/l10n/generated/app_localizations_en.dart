@@ -873,7 +873,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsPaletteTonalSpot => 'Tonal Spot';
 
   @override
-  String get previewTransferDirectionLabel => 'Transfer Direction';
+  String get previewTransferDirectionLabel => 'Transfer Status';
 
   @override
   String get previewDirectoryStatusLabel => 'Directory Status';

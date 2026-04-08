@@ -471,7 +471,7 @@
   "settingsPaletteNeutral": "Neutral",
   "settingsPaletteExpressive": "Expressive",
   "settingsPaletteTonalSpot": "Tonal Spot",
-  "previewTransferDirectionLabel": "传输方向",
+  "previewTransferDirectionLabel": "传输状态",
   "previewDirectoryStatusLabel": "目录状态",
   "previewDirectoryStatusLocal": "本地",
   "previewDirectoryStatusRemote": "目标端",

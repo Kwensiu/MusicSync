@@ -816,7 +816,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsPaletteTonalSpot => 'Tonal Spot';
 
   @override
-  String get previewTransferDirectionLabel => '传输方向';
+  String get previewTransferDirectionLabel => '传输状态';
 
   @override
   String get previewDirectoryStatusLabel => '目录状态';

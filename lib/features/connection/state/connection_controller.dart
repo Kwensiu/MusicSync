@@ -8,6 +8,7 @@ import 'package:music_sync/core/errors/app_error_localizer.dart';
 import 'package:music_sync/features/directory/state/directory_controller.dart';
 import 'package:music_sync/features/connection/state/connection_state.dart';
 import 'package:music_sync/features/execution/state/execution_controller.dart';
+import 'package:music_sync/features/execution/state/execution_state.dart';
 import 'package:music_sync/models/device_info.dart';
 import 'package:music_sync/models/scan_snapshot.dart';
 import 'package:music_sync/services/file_access/file_access_entry.dart';
@@ -286,6 +287,20 @@ class ConnectionController extends StateNotifier<ConnectionState> {
 
   void _clearPlanAndExecution() {
     _ref.read(previewControllerProvider.notifier).clear();
+    _ref.read(executionControllerProvider.notifier).clearTransient();
+  }
+
+  void _handleRemoteDirectoryUnavailable() {
+    final ExecutionState executionState =
+        _ref.read(executionControllerProvider);
+    _ref.read(previewControllerProvider.notifier).clear();
+    if (executionState.status == ExecutionStatus.running &&
+        executionState.mode == ExecutionMode.remote) {
+      _ref.read(executionControllerProvider.notifier).failRemoteExecution(
+            'The selected directory is not accessible anymore.',
+          );
+      return;
+    }
     _ref.read(executionControllerProvider.notifier).clearTransient();
   }
 
@@ -860,7 +875,7 @@ class ConnectionController extends StateNotifier<ConnectionState> {
     }
     final bool isReady = message.payload['isReady'] as bool? ?? false;
     if (!isReady) {
-      _clearPlanAndExecution();
+      _handleRemoteDirectoryUnavailable();
       state = ConnectionState(
         status: ConnectionStatus.connected,
         peer: peer,

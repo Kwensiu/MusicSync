@@ -247,11 +247,15 @@ class _HomePageState extends ConsumerState<HomePage> {
               selectAllSections: _selectAllSections,
               selectedSections: _selectedSections,
               selectedExtensions: _selectedExtensions,
-              transferDirectionLabel: _transferDirectionValue(
+              sourceDeviceLabel: _localDeviceDisplayName(),
+              targetDeviceLabel: _targetDeviceDisplayName(
                 context,
                 connectionState: connectionState,
                 previewState: previewState,
               ),
+              isTransferConnected: connectionState.peer != null &&
+                  connectionState.status ==
+                      peer_connection.ConnectionStatus.connected,
               onBuildRemotePreview: () => _buildRemotePreview(
                 sourceRoot: directoryState.handle!,
                 ignoredExtensions: ignoredExtensions,
@@ -427,12 +431,14 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   Widget _buildSection(
     BuildContext context, {
+    required Widget? header,
     required List<DiffItem> items,
     required List<DiffItem> conflictItems,
     required bool targetIsRemote,
   }) {
     if (items.isEmpty && conflictItems.isEmpty) {
       return PlanItemEmptyState(
+        header: header,
         message: context.l10n.previewNoItemsInSection,
       );
     }
@@ -442,6 +448,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       children: <Widget>[
         if (items.isNotEmpty) ...<Widget>[
           PlanItemList(
+            header: header,
             items: items,
             sourceIsRemote: false,
             targetIsRemote: targetIsRemote,
@@ -530,7 +537,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                     bottomLeft: Radius.circular(12),
                     bottomRight: Radius.circular(12),
                   ),
-                  contentPadding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
                   showTopBorder: false,
                 ),
               ),
@@ -567,20 +573,18 @@ class _HomePageState extends ConsumerState<HomePage> {
     return AppErrorLocalizer.localize(context, value);
   }
 
-  String _transferDirectionValue(
+  String _targetDeviceDisplayName(
     BuildContext context, {
     required peer_connection.ConnectionState connectionState,
     required PreviewState previewState,
   }) {
-    final String localName = _localDeviceDisplayName();
-    final String targetName = switch (previewState.mode) {
+    return switch (previewState.mode) {
       PreviewMode.remote =>
         connectionState.peer?.deviceName ?? context.l10n.previewDirectionRemote,
       PreviewMode.local => context.l10n.previewDirectionLocalTarget,
       PreviewMode.none =>
         connectionState.peer?.deviceName ?? context.l10n.previewDirectionRemote,
     };
-    return '$localName -> $targetName';
   }
 
   String _localDeviceDisplayName() {
@@ -678,58 +682,12 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Future<void> _showPortDialog(int currentPort) async {
-    final TextEditingController controller = TextEditingController(
-      text: currentPort.toString(),
-    );
     final int? port = await showDialog<int>(
       context: context,
       builder: (BuildContext context) {
-        String? errorText;
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState) {
-            return AlertDialog(
-              title: Text(context.l10n.homePortDialogTitle),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(context.l10n.homePortDialogBody),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: controller,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      hintText: context.l10n.homePortDialogHint,
-                      errorText: errorText,
-                    ),
-                  ),
-                ],
-              ),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(context.l10n.commonCancel),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    final int? value = int.tryParse(controller.text.trim());
-                    if (value == null || value < 1 || value > 65535) {
-                      setState(() {
-                        errorText = context.l10n.homePortDialogInvalid;
-                      });
-                      return;
-                    }
-                    Navigator.of(context).pop(value);
-                  },
-                  child: Text(context.l10n.commonConfirm),
-                ),
-              ],
-            );
-          },
-        );
+        return _PortDialog(initialPort: currentPort);
       },
     );
-    controller.dispose();
     if (port == null || !mounted) {
       return;
     }
@@ -1414,63 +1372,18 @@ class _HomePageState extends ConsumerState<HomePage> {
     required Future<void> Function(String? value) onSave,
     String? initialValue,
   }) async {
-    final TextEditingController controller =
-        TextEditingController(text: initialValue ?? '');
-    final bool? shouldSave = await showDialog<bool>(
+    final String? value = await showDialog<String>(
       context: context,
       builder: (BuildContext context) {
-        return Dialog(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: controller,
-                    decoration: InputDecoration(
-                      labelText: context.l10n.homeRecentAlias,
-                      hintText: context.l10n.homeRecentAliasHint,
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    maxLength: 24,
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: <Widget>[
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: Text(context.l10n.commonCancel),
-                      ),
-                      const SizedBox(width: 8),
-                      FilledButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        child: Text(context.l10n.commonConfirm),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
+        return _RecentAliasDialog(
+          title: title,
+          initialValue: initialValue,
         );
       },
     );
-    if (shouldSave == true) {
-      await onSave(controller.text);
+    if (value != null) {
+      await onSave(value);
     }
-    controller.dispose();
   }
 
   Future<void> _showRecentAddressDialog({
@@ -1481,96 +1394,22 @@ class _HomePageState extends ConsumerState<HomePage> {
       required String? alias,
     }) onSave,
   }) async {
-    final TextEditingController addressController =
-        TextEditingController(text: initialAddress);
-    final TextEditingController aliasController =
-        TextEditingController(text: initialAlias ?? '');
-    String? addressError;
-    final bool? shouldSave = await showDialog<bool>(
+    final ({String address, String alias})? result =
+        await showDialog<({String address, String alias})>(
       context: context,
       builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState) {
-            return Dialog(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        context.l10n.homeRecentEditAddress,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: addressController,
-                        decoration: InputDecoration(
-                          labelText: context.l10n.homeRecentAddressField,
-                          hintText: context.l10n.homePeerAddressHint,
-                          errorText: addressError,
-                          filled: true,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: aliasController,
-                        decoration: InputDecoration(
-                          labelText: context.l10n.homeRecentAlias,
-                          hintText: context.l10n.homeRecentAliasHint,
-                          filled: true,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        maxLength: 24,
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: <Widget>[
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(false),
-                            child: Text(context.l10n.commonCancel),
-                          ),
-                          const SizedBox(width: 8),
-                          FilledButton(
-                            onPressed: () {
-                              if (addressController.text.trim().isEmpty) {
-                                setState(() {
-                                  addressError =
-                                      context.l10n.homeRecentAddressRequired;
-                                });
-                                return;
-                              }
-                              Navigator.of(context).pop(true);
-                            },
-                            child: Text(context.l10n.commonConfirm),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
+        return _RecentAddressDialog(
+          initialAddress: initialAddress,
+          initialAlias: initialAlias,
         );
       },
     );
-    if (shouldSave == true) {
+    if (result != null) {
       await onSave(
-        address: addressController.text.trim(),
-        alias: aliasController.text,
+        address: result.address.trim(),
+        alias: result.alias,
       );
     }
-    addressController.dispose();
-    aliasController.dispose();
   }
 
   Future<void> _refreshPreviewAfterExecution({
@@ -1640,5 +1479,249 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
 
     ref.read(previewControllerProvider.notifier).clear();
+  }
+}
+
+class _PortDialog extends StatefulWidget {
+  const _PortDialog({
+    required this.initialPort,
+  });
+
+  final int initialPort;
+
+  @override
+  State<_PortDialog> createState() => _PortDialogState();
+}
+
+class _PortDialogState extends State<_PortDialog> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialPort.toString(),
+  );
+  String? _errorText;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(context.l10n.homePortDialogTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(context.l10n.homePortDialogBody),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _controller,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              hintText: context.l10n.homePortDialogHint,
+              errorText: _errorText,
+            ),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(context.l10n.commonCancel),
+        ),
+        FilledButton(
+          onPressed: () {
+            final int? value = int.tryParse(_controller.text.trim());
+            if (value == null || value < 1 || value > 65535) {
+              setState(() {
+                _errorText = context.l10n.homePortDialogInvalid;
+              });
+              return;
+            }
+            Navigator.of(context).pop(value);
+          },
+          child: Text(context.l10n.commonConfirm),
+        ),
+      ],
+    );
+  }
+}
+
+class _RecentAliasDialog extends StatefulWidget {
+  const _RecentAliasDialog({
+    required this.title,
+    required this.initialValue,
+  });
+
+  final String title;
+  final String? initialValue;
+
+  @override
+  State<_RecentAliasDialog> createState() => _RecentAliasDialogState();
+}
+
+class _RecentAliasDialogState extends State<_RecentAliasDialog> {
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.initialValue ?? '');
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                widget.title,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _controller,
+                decoration: InputDecoration(
+                  labelText: context.l10n.homeRecentAlias,
+                  hintText: context.l10n.homeRecentAliasHint,
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                maxLength: 24,
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: <Widget>[
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(context.l10n.commonCancel),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: () =>
+                        Navigator.of(context).pop(_controller.text),
+                    child: Text(context.l10n.commonConfirm),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RecentAddressDialog extends StatefulWidget {
+  const _RecentAddressDialog({
+    required this.initialAddress,
+    required this.initialAlias,
+  });
+
+  final String initialAddress;
+  final String? initialAlias;
+
+  @override
+  State<_RecentAddressDialog> createState() => _RecentAddressDialogState();
+}
+
+class _RecentAddressDialogState extends State<_RecentAddressDialog> {
+  late final TextEditingController _addressController =
+      TextEditingController(text: widget.initialAddress);
+  late final TextEditingController _aliasController =
+      TextEditingController(text: widget.initialAlias ?? '');
+  String? _addressError;
+
+  @override
+  void dispose() {
+    _addressController.dispose();
+    _aliasController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                context.l10n.homeRecentEditAddress,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _addressController,
+                decoration: InputDecoration(
+                  labelText: context.l10n.homeRecentAddressField,
+                  hintText: context.l10n.homePeerAddressHint,
+                  errorText: _addressError,
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _aliasController,
+                decoration: InputDecoration(
+                  labelText: context.l10n.homeRecentAlias,
+                  hintText: context.l10n.homeRecentAliasHint,
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                maxLength: 24,
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: <Widget>[
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(context.l10n.commonCancel),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: () {
+                      if (_addressController.text.trim().isEmpty) {
+                        setState(() {
+                          _addressError =
+                              context.l10n.homeRecentAddressRequired;
+                        });
+                        return;
+                      }
+                      Navigator.of(context).pop((
+                        address: _addressController.text,
+                        alias: _aliasController.text,
+                      ));
+                    },
+                    child: Text(context.l10n.commonConfirm),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

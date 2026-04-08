@@ -471,7 +471,7 @@
   "settingsPaletteNeutral": "Neutral",
   "settingsPaletteExpressive": "Expressive",
   "settingsPaletteTonalSpot": "Tonal Spot",
-  "previewTransferDirectionLabel": "Transfer Direction",
+  "previewTransferDirectionLabel": "Transfer Status",
   "previewDirectoryStatusLabel": "Directory Status",
   "previewDirectoryStatusLocal": "Local",
   "previewDirectoryStatusRemote": "Target",

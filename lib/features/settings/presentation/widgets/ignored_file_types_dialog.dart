@@ -7,153 +7,181 @@ Future<void> showIgnoredFileTypesDialog({
   required BuildContext context,
   required List<String> initialValues,
   required Future<void> Function(List<String> values) onSave,
-}) async {
-  final TextEditingController controller = TextEditingController();
-  List<String> values = List<String>.from(initialValues);
-  String? inputError;
-
-  const double gapS = 8;
-  const double gapM = 10;
-  const double gapL = 12;
-  const double fieldRadius = 14;
-  const double itemRadius = 16;
-  final RegExp extensionPattern = RegExp(r'^[a-z0-9][a-z0-9_-]{0,15}$');
-
-  await showDialog<void>(
+}) {
+  return showDialog<void>(
     context: context,
     builder: (BuildContext context) {
-      final ColorScheme scheme = Theme.of(context).colorScheme;
-      return StatefulBuilder(
-        builder: (BuildContext context, StateSetter setState) {
-          return SettingsDialogShell(
-            title: Text(context.l10n.settingsIgnoredExtensionsTitle),
-            maxWidth: 500,
-            maxHeight: 430,
-            minHorizontalInset: 18,
-            content: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  context.l10n.settingsIgnoredExtensionsDescription,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: gapL),
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: TextField(
-                        controller: controller,
-                        decoration: InputDecoration(
-                          labelText: context.l10n.settingsIgnoredExtensionField,
-                          hintText: context.l10n.settingsIgnoredExtensionHint,
-                          errorText: inputError,
-                          filled: true,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(fieldRadius),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: gapS),
-                    FilledButton(
-                      onPressed: () {
-                        final String normalized =
-                            normalizeExtensionRule(controller.text);
-                        if (normalized.isEmpty) {
-                          setState(() {
-                            inputError =
-                                context.l10n.settingsIgnoredExtensionRequired;
-                          });
-                          return;
-                        }
-                        if (!extensionPattern.hasMatch(normalized)) {
-                          setState(() {
-                            inputError =
-                                context.l10n.settingsIgnoredExtensionInvalid;
-                          });
-                          return;
-                        }
-                        if (values.contains(normalized)) {
-                          setState(() {
-                            inputError =
-                                context.l10n.settingsIgnoredExtensionDuplicate;
-                          });
-                          return;
-                        }
-                        setState(() {
-                          values = <String>[...values, normalized]..sort();
-                          inputError = null;
-                          controller.clear();
-                        });
-                      },
-                      child: Text(context.l10n.commonAdd),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: gapL),
-                Expanded(
-                  child: values.isEmpty
-                      ? Center(
-                          child:
-                              Text(context.l10n.settingsIgnoredExtensionsEmpty),
-                        )
-                      : ListView.separated(
-                          itemCount: values.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: gapS),
-                          itemBuilder: (BuildContext context, int index) {
-                            final String value = values[index];
-                            return DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: scheme.surface,
-                                borderRadius: BorderRadius.circular(itemRadius),
-                                border: Border.all(
-                                  color: scheme.outlineVariant,
-                                ),
-                              ),
-                              child: ListTile(
-                                dense: true,
-                                visualDensity: VisualDensity.compact,
-                                title: Text('.$value'),
-                                trailing: IconButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      values.removeAt(index);
-                                    });
-                                  },
-                                  icon:
-                                      const Icon(Icons.delete_outline_rounded),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-              ],
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(context.l10n.commonCancel),
-              ),
-              FilledButton(
-                onPressed: () async {
-                  final List<String> nextValues = List<String>.from(values);
-                  await onSave(nextValues);
-                  if (context.mounted) {
-                    Navigator.of(context).pop();
-                  }
-                },
-                child: Text(context.l10n.commonConfirm),
-              ),
-            ],
-            bottomActionPadding: gapM,
-            topContentPadding: gapS,
-          );
-        },
+      return _IgnoredFileTypesDialog(
+        initialValues: initialValues,
+        onSave: onSave,
       );
     },
   );
+}
 
-  controller.dispose();
+class _IgnoredFileTypesDialog extends StatefulWidget {
+  const _IgnoredFileTypesDialog({
+    required this.initialValues,
+    required this.onSave,
+  });
+
+  final List<String> initialValues;
+  final Future<void> Function(List<String> values) onSave;
+
+  @override
+  State<_IgnoredFileTypesDialog> createState() =>
+      _IgnoredFileTypesDialogState();
+}
+
+class _IgnoredFileTypesDialogState extends State<_IgnoredFileTypesDialog> {
+  static const double _gapS = 8;
+  static const double _gapM = 10;
+  static const double _gapL = 12;
+  static const double _fieldRadius = 14;
+  static const double _itemRadius = 16;
+
+  final TextEditingController _controller = TextEditingController();
+  final RegExp _extensionPattern = RegExp(r'^[a-z0-9][a-z0-9_-]{0,15}$');
+
+  late List<String> _values = List<String>.from(widget.initialValues);
+  String? _inputError;
+  bool _isSaving = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return SettingsDialogShell(
+      title: Text(context.l10n.settingsIgnoredExtensionsTitle),
+      maxWidth: 500,
+      maxHeight: 430,
+      minHorizontalInset: 18,
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            context.l10n.settingsIgnoredExtensionsDescription,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: _gapL),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  enabled: !_isSaving,
+                  decoration: InputDecoration(
+                    labelText: context.l10n.settingsIgnoredExtensionField,
+                    hintText: context.l10n.settingsIgnoredExtensionHint,
+                    errorText: _inputError,
+                    filled: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(_fieldRadius),
+                    ),
+                  ),
+                  onSubmitted: (_) => _addValue(),
+                ),
+              ),
+              const SizedBox(width: _gapS),
+              FilledButton(
+                onPressed: _isSaving ? null : _addValue,
+                child: Text(context.l10n.commonAdd),
+              ),
+            ],
+          ),
+          const SizedBox(height: _gapL),
+          Expanded(
+            child: _values.isEmpty
+                ? Center(
+                    child: Text(context.l10n.settingsIgnoredExtensionsEmpty),
+                  )
+                : ListView.separated(
+                    itemCount: _values.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: _gapS),
+                    itemBuilder: (BuildContext context, int index) {
+                      final String value = _values[index];
+                      return DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: scheme.surface,
+                          borderRadius: BorderRadius.circular(_itemRadius),
+                          border: Border.all(color: scheme.outlineVariant),
+                        ),
+                        child: ListTile(
+                          dense: true,
+                          visualDensity: VisualDensity.compact,
+                          title: Text('.$value'),
+                          trailing: IconButton(
+                            onPressed: _isSaving
+                                ? null
+                                : () {
+                                    setState(() {
+                                      _values.removeAt(index);
+                                    });
+                                  },
+                            icon: const Icon(Icons.delete_outline_rounded),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
+          child: Text(context.l10n.commonCancel),
+        ),
+        FilledButton(
+          onPressed: _isSaving ? null : _save,
+          child: Text(context.l10n.commonConfirm),
+        ),
+      ],
+      bottomActionPadding: _gapM,
+      topContentPadding: _gapS,
+    );
+  }
+
+  void _addValue() {
+    final String normalized = normalizeExtensionRule(_controller.text);
+    if (normalized.isEmpty) {
+      setState(() {
+        _inputError = context.l10n.settingsIgnoredExtensionRequired;
+      });
+      return;
+    }
+    if (!_extensionPattern.hasMatch(normalized)) {
+      setState(() {
+        _inputError = context.l10n.settingsIgnoredExtensionInvalid;
+      });
+      return;
+    }
+    if (_values.contains(normalized)) {
+      setState(() {
+        _inputError = context.l10n.settingsIgnoredExtensionDuplicate;
+      });
+      return;
+    }
+    setState(() {
+      _values = <String>[..._values, normalized]..sort();
+      _inputError = null;
+      _controller.clear();
+    });
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      _isSaving = true;
+    });
+    await widget.onSave(List<String>.from(_values));
+    if (!mounted) {
+      return;
+    }
+    Navigator.of(context).pop();
+  }
 }
