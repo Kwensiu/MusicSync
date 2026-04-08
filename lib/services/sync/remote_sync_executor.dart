@@ -49,7 +49,8 @@ class RemoteSyncExecutor {
           transferId: transferId,
         );
 
-        await for (final List<int> chunk in _fileAccessGateway.openRead(sourceEntryId)) {
+        await for (final List<int> chunk
+            in _fileAccessGateway.openRead(sourceEntryId)) {
           cancelToken?.throwIfCancelled();
           await _connectionService.writeRemoteChunk(
             transferId: transferId,

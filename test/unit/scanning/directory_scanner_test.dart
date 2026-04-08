@@ -32,7 +32,8 @@ void main() {
         deviceId: 'local-device',
       );
 
-      expect(snapshot.asPathMap().keys, containsAll(<String>['song.mp3', 'AlbumA/song-a.flac']));
+      expect(snapshot.asPathMap().keys,
+          containsAll(<String>['song.mp3', 'AlbumA/song-a.flac']));
       expect(snapshot.warnings, <String>['AlbumB']);
     });
 
@@ -73,7 +74,8 @@ void main() {
       );
 
       expect(snapshot.asPathMap().keys, contains('song.mp3'));
-      expect(snapshot.asPathMap().keys, isNot(contains('song.mp3.music_sync_tmp')));
+      expect(snapshot.asPathMap().keys,
+          isNot(contains('song.mp3.music_sync_tmp')));
     });
   });
 }

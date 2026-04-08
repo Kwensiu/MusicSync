@@ -14,11 +14,11 @@ final Provider<LocalSyncExecutor> localSyncExecutorProvider =
     Provider<LocalSyncExecutor>((Ref ref) => LocalSyncExecutor());
 final Provider<RemoteSyncExecutor> remoteSyncExecutorProvider =
     Provider<RemoteSyncExecutor>(
-      (Ref ref) => RemoteSyncExecutor(
-        ref.watch(connectionServiceProvider),
-        ref.watch(fileAccessGatewayProvider),
-      ),
-    );
+  (Ref ref) => RemoteSyncExecutor(
+    ref.watch(connectionServiceProvider),
+    ref.watch(fileAccessGatewayProvider),
+  ),
+);
 
 class ExecutionController extends StateNotifier<ExecutionState> {
   ExecutionController(this._executor, this._remoteExecutor)
@@ -260,8 +260,8 @@ class ExecutionController extends StateNotifier<ExecutionState> {
 final StateNotifierProvider<ExecutionController, ExecutionState>
     executionControllerProvider =
     StateNotifierProvider<ExecutionController, ExecutionState>(
-      (Ref ref) => ExecutionController(
-        ref.watch(localSyncExecutorProvider),
-        ref.watch(remoteSyncExecutorProvider),
-      ),
-    );
+  (Ref ref) => ExecutionController(
+    ref.watch(localSyncExecutorProvider),
+    ref.watch(remoteSyncExecutorProvider),
+  ),
+);

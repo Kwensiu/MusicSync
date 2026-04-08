@@ -1,3 +1,4 @@
+import 'package:music_sync/core/errors/app_error_localizer.dart';
 import 'package:music_sync/models/device_info.dart';
 import 'package:music_sync/models/scan_snapshot.dart';
 
@@ -15,8 +16,10 @@ class ConnectionState {
     required this.status,
     this.peer,
     this.remoteSnapshot,
+    this.isRemoteDirectoryReady = false,
     this.discoveredDevices = const <DeviceInfo>[],
     this.recentAddresses = const <String>[],
+    this.recentLabels = const <String, String>{},
     this.listenPort,
     this.errorMessage,
   });
@@ -24,37 +27,15 @@ class ConnectionState {
   final ConnectionStatus status;
   final DeviceInfo? peer;
   final ScanSnapshot? remoteSnapshot;
+  final bool isRemoteDirectoryReady;
   final List<DeviceInfo> discoveredDevices;
   final List<String> recentAddresses;
+  final Map<String, String> recentLabels;
   final int? listenPort;
   final String? errorMessage;
 
   static String localizeErrorMessage(String? value) {
-    if (value == null || value.isEmpty) {
-      return '';
-    }
-    if (value.contains('No shared directory selected on peer')) {
-      return '远端设备还没有选择共享目录。';
-    }
-    if (value.contains('Connection refused')) {
-      return 'Connection was refused. Check the target address and ensure the remote listener is running.';
-    }
-    if (value.contains('timed out')) {
-      return 'Connection timed out. Check that both devices are on the same LAN and try again.';
-    }
-    if (value.contains('Peer handshake failed') ||
-        value.contains('Peer handshake payload invalid') ||
-        value.contains('Peer scan response invalid') ||
-        value.contains('Peer snapshot payload invalid')) {
-      return 'Remote device responded with an incompatible or invalid protocol message.';
-    }
-    if (value.contains('Not connected to any peer')) {
-      return '当前没有已连接的远端设备。';
-    }
-    if (value.contains('SocketException')) {
-      return value.replaceFirst('SocketException: ', '');
-    }
-    return value;
+    return AppErrorLocalizer.resolve(value);
   }
 
   factory ConnectionState.initial() {

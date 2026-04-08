@@ -1,10 +1,43 @@
 {
   "@@locale": "zh",
   "appTitle": "MusicSync",
-  "homeModeTitle": "模式",
-  "homeModeDescription": "通过局域网执行单向镜像同步。",
-  "homeSyncDirectionTitle": "当前方向",
-  "homeSyncDirectionDescription": "第一版固定为：本机目录 -> 远端目录。监听与连接只负责建立会话，不代表复制方向。",
+  "homeStepConnectionTitle": "步骤 1：连接远端设备",
+  "homeStepConnectionHint": "建立与远端设备的连接。连接建立后，目录状态与预览会自动更新。",
+  "homeConnectionStateIdle": "未监听",
+  "homeConnectionStateConnecting": "连接中",
+  "homeConnectionStateListening": "监听中",
+  "homeConnectionStateConnected": "已连接",
+  "homePortChipLabel": "端口 {port}",
+  "@homePortChipLabel": {
+    "placeholders": {
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "homeShareTooltip": "分享",
+  "homePortDialogTitle": "设置监听端口",
+  "homePortDialogBody": "修改后会按新的端口开启监听。",
+  "homePortDialogHint": "输入端口，例如 44888",
+  "homePortDialogInvalid": "请输入有效端口（1-65535）。",
+  "homeShareDialogTitle": "分享地址",
+  "homeShareCopyDone": "已复制连接地址。",
+  "homeConnectStop": "停止连接",
+  "homeStepSourceTitle": "步骤 2：选择本地源目录",
+  "homeStepSourceHint": "这个目录会被同步到远端目标目录。",
+  "homeClearSelection": "清除",
+  "homeSourcePendingBecauseRemoteReady": "远端目录已经准备好，现在只差选择本地源目录。",
+  "homeStepPreviewTitle": "步骤 3：检查并同步",
+  "homeStepPreviewHint": "目录就绪后会自动分析；如需重扫远端，可手动刷新索引。",
+  "homeAdvancedTitle": "高级与调试",
+  "homeConnectionHelpersTitle": "连接辅助",
+  "homeConnectionActionsTitle": "连接操作",
+  "homeAutoPreviewWaiting": "等待本地目录与远端目录都准备就绪后自动分析。",
+  "homeAutoPreviewWaitingLocal": "远端已就绪，等待选择本地源目录后自动分析。",
+  "homeAutoPreviewWaitingRemote": "本地源目录已就绪，等待远端选择共享目录后自动分析。",
+  "homeAutoPreviewRunning": "目录已就绪，正在自动生成远端预览。",
+  "homeAutoPreviewReady": "远端预览已是最新，可直接检查并执行同步。",
+  "homeAutoPreviewRefresh": "如需强制重扫远端，可手动刷新远端索引。",
   "homeLocalLibraryTitle": "本地音乐库",
   "homeLocalSourceHint": "此目录会作为源目录，远端将向它对齐。",
   "directoryPreflightWarningTitle": "预检提示：该目录可能较重，生成预览时可能较慢。",
@@ -52,10 +85,19 @@
   "homeCleanupTempFailed": "清理临时文件失败，请稍后重试。",
   "homeRecentAddresses": "最近地址",
   "homeDiscoveredDevices": "发现到的设备",
+  "homeManageRecentItems": "管理记录",
+  "homeRecentEmpty": "暂无记录",
+  "homeRecentAlias": "备注",
+  "homeRecentDelete": "删除",
+  "homeRecentEditAlias": "编辑名称",
+  "homeRecentEditAddress": "编辑地址",
+  "homeRecentAddressField": "地址",
+  "homeRecentAddressRequired": "请输入地址",
+  "homeRecentAliasHint": "输入备注名称",
   "homeRemoteTargetTitle": "远端目标",
   "homeRemoteTargetHint": "当前第一版只支持从本机同步到远端。",
-  "homeRemoteDirectoryReady": "远端共享目录已就绪，可刷新索引或直接生成远端预览。",
-  "homeRemoteDirectoryMissing": "远端共享目录未就绪。请先在远端设备上选择共享目录，再刷新索引或生成远端预览。",
+  "homeRemoteIndexPending": "远端目录已就绪，正在同步索引。",
+  "homeRemoteManualRefreshTitle": "手动刷新",
   "homeListenerTitle": "监听",
   "homeListenerStart": "开始监听",
   "homeListenerStop": "停止监听",
@@ -84,10 +126,17 @@
     }
   },
   "homeRefreshRemoteIndex": "刷新远端索引",
+  "homeRefreshRemoteIndexHint": "仅在你怀疑远端目录变化但自动刷新未跟上时使用。",
   "homeRemoteRoot": "远端根目录：{name}",
   "@homeRemoteRoot": {
     "placeholders": {
       "name": {}
+    }
+  },
+  "homeRemoteIndexedAt": "远端索引时间：{value}",
+  "@homeRemoteIndexedAt": {
+    "placeholders": {
+      "value": {}
     }
   },
   "homeRemoteFiles": "远端文件数：{count}",
@@ -101,8 +150,15 @@
   "homeOpenPreview": "打开预览",
   "previewTitle": "预览",
   "previewSummaryTitle": "摘要",
-  "previewScopeLocal": "本地调试预览：本机 -> 本地目标",
-  "previewScopeRemote": "局域网预览：本机 -> 远端",
+  "previewTransferDirection": "传输方向：{source} -> {target}",
+  "@previewTransferDirection": {
+    "placeholders": {
+      "source": {},
+      "target": {}
+    }
+  },
+  "previewDirectionRemote": "远端设备",
+  "previewDirectionLocalTarget": "本地目标",
   "previewStatus": "状态：{status}",
   "@previewStatus": {
     "placeholders": {
@@ -139,6 +195,14 @@
       "size": {}
     }
   },
+  "previewSummaryBytes": "数据量",
+  "previewSectionAll": "全部项目",
+  "previewTargetIndexedAt": "当前目标快照时间：{value}",
+  "@previewTargetIndexedAt": {
+    "placeholders": {
+      "value": {}
+    }
+  },
   "previewBuildPlan": "生成预览",
   "previewBuildRemotePlan": "生成远端预览",
   "previewPlanItemsTitle": "计划项",
@@ -147,10 +211,30 @@
   "previewSectionDelete": "删除项",
   "previewSectionConflict": "冲突项",
   "previewNoItemsInSection": "该分组没有条目。",
+  "previewWaitingDirectories": "等待目录就绪",
+  "previewWaitingLocalDirectory": "等待本地目录",
+  "previewWaitingRemoteDirectory": "等待远端目录",
+  "previewNoSyncItems": "当前没有可同步项目。",
   "previewFilterAll": "全部类型",
+  "previewIgnoredExtensions": "已忽略：{value}",
+  "@previewIgnoredExtensions": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "previewFilterMore": "更多",
+  "previewFilterCollapse": "收起",
   "previewFilterTitle": "文件类型",
   "previewStalePlan": "已切换目录，请重新生成预览。",
   "previewSectionTitle": "分组",
+  "previewSectionCount": "当前分组条目数：{count}",
+  "@previewSectionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "previewScanTimeout": "扫描可能被超大目录或不可访问目录阻塞。",
   "previewPartialScanWarning": "扫描时跳过了 {count} 个不可访问的子目录。",
   "@previewPartialScanWarning": {
@@ -169,7 +253,7 @@
   },
   "previewStartSync": "开始同步",
   "previewDirectoryRequired": "请先选择本地目录再生成预览。",
-  "previewRemoteDirectoryRequired": "请先连接远端设备并加载其索引，再生成远端预览。",
+  "previewRemoteDirectoryRequired": "请先连接远端设备，并让远端选择共享目录。",
   "errorRemoteDirectoryNotSelected": "远端设备尚未选择共享目录。",
   "errorRemoteDeviceDisconnected": "远端设备已断开连接。请保持目标设备前台运行后重连。",
   "errorConnectionRefused": "连接被拒绝。请检查目标地址，并确认远端已开启监听。",
@@ -180,6 +264,15 @@
   "errorDirectoryUnavailable": "无法访问当前选择的目录，请重新选择可访问的文件夹。",
   "errorDirectoryTreeAccessDenied": "扫描失败，目录树中包含不可访问的子目录。",
   "errorDirectoryAccessDenied": "目录访问被拒绝，请选择你有权限读取的文件夹。",
+  "errorDirectoryNotExists": "当前选择的目录已不存在，请重新选择。",
+  "errorListenPortInUse": "监听失败：端口已被占用。请更换端口，或关闭占用该端口的程序。",
+  "errorWindowsWriteCreateFailed": "无法写入 Windows 目标目录。请检查权限和文件占用后重试。",
+  "errorWindowsRenameFailed": "无法完成一个或多个文件的最终写入。请检查权限和文件占用后重试。",
+  "errorWindowsDeleteFailed": "无法删除 Windows 目标目录中的一个或多个条目。请检查权限和文件占用后重试。",
+  "errorWindowsReadFailed": "无法读取一个或多个 Windows 源文件。请检查权限和文件占用后重试。",
+  "errorWindowsDirectoryCreateFailed": "无法创建一个或多个目标文件夹。请检查权限和路径有效性后重试。",
+  "errorWindowsDirectoryListingFailed": "无法读取当前 Windows 目录，请重新选择其他文件夹。",
+  "errorWindowsEntryAccessFailed": "扫描失败，存在一个或多个无法访问的 Windows 条目。",
   "executionConfirmDeleteTitle": "确认删除",
   "executionConfirmDeleteBody": "本次同步将删除目标目录中多出的 {count} 个条目，是否继续？",
   "@executionConfirmDeleteBody": {
@@ -191,9 +284,16 @@
   },
   "commonCancel": "取消",
   "commonConfirm": "确认",
+  "commonAdd": "添加",
   "executionTitle": "执行",
   "executionProgressTitle": "进度",
-  "executionRemotePending": "请先生成远端预览，再执行远端同步。",
+  "executionStateLabel": "执行状态：{status}",
+  "@executionStateLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "executionRemotePending": "请先等待远端预览完成，再执行远端同步。",
   "executionRemoteReady": "远端预览已就绪，可按当前预览将本机文件同步到远端。",
   "executionKeepForeground": "Android 作为远端时，请保持目标设备前台运行，不要切到后台或锁屏。",
   "executionLocalPending": "本地调试复制仅用于本地预览模式，不属于正式局域网同步流程。",
@@ -206,7 +306,7 @@
   "executionPickTarget": "选择目标目录",
   "executionRun": "执行本地复制",
   "executionRunLocalDebug": "执行本地调试复制",
-  "executionRunRemote": "执行远端同步",
+  "executionRunRemote": "开始同步",
   "executionStop": "停止同步",
   "executionCancelled": "同步已手动停止。未完成的临时文件已尽量清理。",
   "executionCurrentFile": "当前文件：{path}",
@@ -262,9 +362,19 @@
       "mode": {}
     }
   },
+  "resultStatusLabel": "执行状态：{status}",
+  "@resultStatusLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
   "resultModeLocal": "本地调试复制",
   "resultModeRemote": "远端同步",
   "resultModeUnknown": "未知",
+  "resultStatusCompleted": "已完成",
+  "resultStatusCancelled": "已取消",
+  "resultStatusFailed": "失败",
+  "resultStatusIdle": "空闲",
   "resultErrorTitle": "错误信息",
   "resultAdviceTitle": "建议",
   "resultAdviceKeepForeground": "如果远端是 Android，请保持前台运行后重试。",
@@ -300,8 +410,48 @@
     }
   },
   "settingsTitle": "设置",
+  "settingsGeneralTitle": "常规",
+  "settingsAppearanceTitle": "外观",
   "settingsDefaultsTitle": "默认值",
   "settingsDefaultsPlaceholder": "项目级设置会放在这里。",
+  "settingsRulesTitle": "规则",
+  "settingsAutoStartListeningTitle": "自动监听",
+  "settingsAutoStartListeningDescription": "允许 MusicSync 启动时自动开启监听",
+  "settingsIgnoredExtensionsTitle": "忽略文件类型",
+  "settingsIgnoredExtensionsDescription": "被忽略的后缀类型会在同步时被跳过",
+  "settingsIgnoredExtensionsEmpty": "当前没有忽略任何后缀",
+  "settingsIgnoredExtensionsSummary": "已忽略 {count} 个后缀",
+  "@settingsIgnoredExtensionsSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsIgnoredExtensionField": "后缀",
+  "settingsIgnoredExtensionHint": "例如 flac、lrc",
+  "settingsIgnoredExtensionRequired": "请输入后缀",
+  "settingsIgnoredExtensionInvalid": "后缀格式无效，只能包含字母、数字、下划线或短横线",
+  "settingsIgnoredExtensionDuplicate": "这个后缀已经存在",
+  "settingsThemeModeTitle": "主题模式",
+  "settingsThemeModeDescription": "选择应用使用浅色、深色或跟随系统。",
+  "settingsThemeModeLight": "浅色模式",
+  "settingsThemeModeDark": "深色模式",
+  "settingsThemeModeSystem": "跟随系统",
+  "settingsPaletteTitle": "调色板",
+  "settingsPaletteDescription": "选择一组 Material Design 调色策略。",
+  "settingsPaletteNeutral": "Neutral",
+  "settingsPaletteExpressive": "Expressive",
+  "settingsPaletteTonalSpot": "Tonal Spot",
+  "previewTransferDirectionLabel": "传输方向",
+  "previewDirectoryStatusLabel": "目录状态",
+  "previewDirectoryStatusLocal": "本地",
+  "previewDirectoryStatusRemote": "远端",
+  "diffTypeCopy": "复制",
+  "diffTypeDelete": "删除",
+  "diffTypeConflict": "冲突",
+  "diffTypeSkip": "跳过",
+  "diffConflictMetadataMismatch": "元数据不同",
   "statusIdle": "空闲",
   "statusListening": "监听中",
   "statusConnecting": "连接中",

@@ -64,8 +64,8 @@ class _AndroidReadStreamController {
       }
 
       while (true) {
-        final String? encoded = await AndroidFileAccessGateway._channel
-            .invokeMethod<String>(
+        final String? encoded =
+            await AndroidFileAccessGateway._channel.invokeMethod<String>(
           'readChunk',
           <String, Object?>{
             'sessionId': _sessionId,
@@ -142,8 +142,8 @@ class AndroidFileAccessGateway implements FileAccessGateway {
   @override
   Future<List<FileAccessEntry>> listChildren(String directoryId) async {
     try {
-      final List<Object?>? rawEntries = await _channel
-          .invokeMethod<List<Object?>>(
+      final List<Object?>? rawEntries =
+          await _channel.invokeMethod<List<Object?>>(
         'listChildren',
         <String, Object?>{
           'directoryId': directoryId,

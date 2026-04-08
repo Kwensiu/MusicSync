@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:music_sync/core/errors/app_error_localizer.dart';
 import 'package:music_sync/features/execution/state/execution_controller.dart';
 import 'package:music_sync/features/execution/state/execution_state.dart';
 import 'package:music_sync/models/execution_result.dart';
@@ -13,7 +14,8 @@ import 'package:music_sync/services/sync/sync_cancel_token.dart';
 
 void main() {
   group('ExecutionController', () {
-    test('clearTransient keeps target root and clears transient result state', () {
+    test('clearTransient keeps target root and clears transient result state',
+        () {
       final controller = ExecutionController(
         _FakeLocalSyncExecutor(
           result: const ExecutionResult(
@@ -50,7 +52,8 @@ void main() {
       expect(controller.state.mode, ExecutionMode.none);
     });
 
-    test('completed execution with failures keeps localized error message', () async {
+    test('completed execution with failures keeps localized error message',
+        () async {
       final controller = ExecutionController(
         _FakeLocalSyncExecutor(
           result: const ExecutionResult(
@@ -74,7 +77,7 @@ void main() {
       expect(controller.state.status, ExecutionStatus.completed);
       expect(
         controller.state.errorMessage,
-        '远端设备已断开连接。请保持目标设备在前台后重试。',
+        AppErrorCode.remoteDeviceDisconnected,
       );
     });
 
@@ -93,10 +96,11 @@ void main() {
 
       expect(controller.state.status, ExecutionStatus.cancelled);
       expect(controller.state.progress.stage, SyncStage.cancelled);
-      expect(controller.state.errorMessage, '同步已手动停止。未完成的临时文件已尽量清理。');
+      expect(controller.state.errorMessage, AppErrorCode.syncCancelled);
     });
 
-    test('clearTransient cancels in-flight execution and preserves idle state', () async {
+    test('clearTransient cancels in-flight execution and preserves idle state',
+        () async {
       final controller = ExecutionController(
         _BlockingLocalSyncExecutor(),
         _FakeRemoteSyncExecutor(),

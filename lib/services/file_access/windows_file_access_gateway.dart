@@ -56,7 +56,8 @@ class WindowsFileAccessGateway implements FileAccessGateway {
           await Link(entryId).delete();
           return;
         default:
-          throw FileAccessException('Unsupported entry type for delete: $entryId');
+          throw FileAccessException(
+              'Unsupported entry type for delete: $entryId');
       }
     } on FileSystemException catch (error) {
       throw FileAccessException(
@@ -77,7 +78,8 @@ class WindowsFileAccessGateway implements FileAccessGateway {
 
       final List<FileSystemEntity> children =
           await directory.list(followLinks: false).toList();
-      children.sort((FileSystemEntity a, FileSystemEntity b) => a.path.compareTo(b.path));
+      children.sort(
+          (FileSystemEntity a, FileSystemEntity b) => a.path.compareTo(b.path));
 
       return children.map(_toEntry).toList();
     } on FileSystemException catch (error) {
@@ -118,8 +120,7 @@ class WindowsFileAccessGateway implements FileAccessGateway {
       if (type == FileSystemEntityType.notFound) {
         throw FileAccessException('Entry does not exist: $entryId');
       }
-      final String parentPath =
-          File(entryId).parent.path;
+      final String parentPath = File(entryId).parent.path;
       final String nextPath = _childPath(parentPath, newName);
       switch (type) {
         case FileSystemEntityType.directory:
@@ -134,7 +135,8 @@ class WindowsFileAccessGateway implements FileAccessGateway {
         case FileSystemEntityType.notFound:
           throw FileAccessException('Entry does not exist: $entryId');
         default:
-          throw FileAccessException('Unsupported entry type for rename: $entryId');
+          throw FileAccessException(
+              'Unsupported entry type for rename: $entryId');
       }
     } on FileSystemException catch (error) {
       throw FileAccessException(
@@ -187,7 +189,8 @@ class WindowsFileAccessGateway implements FileAccessGateway {
         case FileSystemEntityType.notFound:
           throw FileAccessException('Entry does not exist: $entryId');
         default:
-          throw FileAccessException('Unsupported entry type for stat: $entryId');
+          throw FileAccessException(
+              'Unsupported entry type for stat: $entryId');
       }
     } on FileSystemException catch (error) {
       throw FileAccessException(

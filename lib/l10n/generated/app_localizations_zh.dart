@@ -12,17 +12,96 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appTitle => 'MusicSync';
 
   @override
-  String get homeModeTitle => '模式';
+  String get homeStepConnectionTitle => '步骤 1：连接远端设备';
 
   @override
-  String get homeModeDescription => '通过局域网执行单向镜像同步。';
+  String get homeStepConnectionHint => '建立与远端设备的连接。连接建立后，目录状态与预览会自动更新。';
 
   @override
-  String get homeSyncDirectionTitle => '当前方向';
+  String get homeConnectionStateIdle => '未监听';
 
   @override
-  String get homeSyncDirectionDescription =>
-      '第一版固定为：本机目录 -> 远端目录。监听与连接只负责建立会话，不代表复制方向。';
+  String get homeConnectionStateConnecting => '连接中';
+
+  @override
+  String get homeConnectionStateListening => '监听中';
+
+  @override
+  String get homeConnectionStateConnected => '已连接';
+
+  @override
+  String homePortChipLabel(int port) {
+    return '端口 $port';
+  }
+
+  @override
+  String get homeShareTooltip => '分享';
+
+  @override
+  String get homePortDialogTitle => '设置监听端口';
+
+  @override
+  String get homePortDialogBody => '修改后会按新的端口开启监听。';
+
+  @override
+  String get homePortDialogHint => '输入端口，例如 44888';
+
+  @override
+  String get homePortDialogInvalid => '请输入有效端口（1-65535）。';
+
+  @override
+  String get homeShareDialogTitle => '分享地址';
+
+  @override
+  String get homeShareCopyDone => '已复制连接地址。';
+
+  @override
+  String get homeConnectStop => '停止连接';
+
+  @override
+  String get homeStepSourceTitle => '步骤 2：选择本地源目录';
+
+  @override
+  String get homeStepSourceHint => '这个目录会被同步到远端目标目录。';
+
+  @override
+  String get homeClearSelection => '清除';
+
+  @override
+  String get homeSourcePendingBecauseRemoteReady => '远端目录已经准备好，现在只差选择本地源目录。';
+
+  @override
+  String get homeStepPreviewTitle => '步骤 3：检查并同步';
+
+  @override
+  String get homeStepPreviewHint => '目录就绪后会自动分析；如需重扫远端，可手动刷新索引。';
+
+  @override
+  String get homeAdvancedTitle => '高级与调试';
+
+  @override
+  String get homeConnectionHelpersTitle => '连接辅助';
+
+  @override
+  String get homeConnectionActionsTitle => '连接操作';
+
+  @override
+  String get homeAutoPreviewWaiting => '等待本地目录与远端目录都准备就绪后自动分析。';
+
+  @override
+  String get homeAutoPreviewWaitingLocal => '远端已就绪，等待选择本地源目录后自动分析。';
+
+  @override
+  String get homeAutoPreviewWaitingRemote => '本地源目录已就绪，等待远端选择共享目录后自动分析。';
+
+  @override
+  String get homeAutoPreviewRunning => '目录已就绪，正在自动生成远端预览。';
+
+  @override
+  String get homeAutoPreviewReady => '远端预览已是最新，可直接检查并执行同步。';
+
+  @override
+  String get homeAutoPreviewRefresh => '如需强制重扫远端，可手动刷新远端索引。';
 
   @override
   String get homeLocalLibraryTitle => '本地音乐库';
@@ -86,17 +165,43 @@ class AppLocalizationsZh extends AppLocalizations {
   String get homeDiscoveredDevices => '发现到的设备';
 
   @override
+  String get homeManageRecentItems => '管理记录';
+
+  @override
+  String get homeRecentEmpty => '暂无记录';
+
+  @override
+  String get homeRecentAlias => '备注';
+
+  @override
+  String get homeRecentDelete => '删除';
+
+  @override
+  String get homeRecentEditAlias => '编辑名称';
+
+  @override
+  String get homeRecentEditAddress => '编辑地址';
+
+  @override
+  String get homeRecentAddressField => '地址';
+
+  @override
+  String get homeRecentAddressRequired => '请输入地址';
+
+  @override
+  String get homeRecentAliasHint => '输入备注名称';
+
+  @override
   String get homeRemoteTargetTitle => '远端目标';
 
   @override
   String get homeRemoteTargetHint => '当前第一版只支持从本机同步到远端。';
 
   @override
-  String get homeRemoteDirectoryReady => '远端共享目录已就绪，可刷新索引或直接生成远端预览。';
+  String get homeRemoteIndexPending => '远端目录已就绪，正在同步索引。';
 
   @override
-  String get homeRemoteDirectoryMissing =>
-      '远端共享目录未就绪。请先在远端设备上选择共享目录，再刷新索引或生成远端预览。';
+  String get homeRemoteManualRefreshTitle => '手动刷新';
 
   @override
   String get homeListenerTitle => '监听';
@@ -138,8 +243,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get homeRefreshRemoteIndex => '刷新远端索引';
 
   @override
+  String get homeRefreshRemoteIndexHint => '仅在你怀疑远端目录变化但自动刷新未跟上时使用。';
+
+  @override
   String homeRemoteRoot(Object name) {
     return '远端根目录：$name';
+  }
+
+  @override
+  String homeRemoteIndexedAt(Object value) {
+    return '远端索引时间：$value';
   }
 
   @override
@@ -157,10 +270,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get previewSummaryTitle => '摘要';
 
   @override
-  String get previewScopeLocal => '本地调试预览：本机 -> 本地目标';
+  String previewTransferDirection(Object source, Object target) {
+    return '传输方向：$source -> $target';
+  }
 
   @override
-  String get previewScopeRemote => '局域网预览：本机 -> 远端';
+  String get previewDirectionRemote => '远端设备';
+
+  @override
+  String get previewDirectionLocalTarget => '本地目标';
 
   @override
   String previewStatus(Object status) {
@@ -188,6 +306,17 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get previewSummaryBytes => '数据量';
+
+  @override
+  String get previewSectionAll => '全部项目';
+
+  @override
+  String previewTargetIndexedAt(Object value) {
+    return '当前目标快照时间：$value';
+  }
+
+  @override
   String get previewBuildPlan => '生成预览';
 
   @override
@@ -212,7 +341,30 @@ class AppLocalizationsZh extends AppLocalizations {
   String get previewNoItemsInSection => '该分组没有条目。';
 
   @override
+  String get previewWaitingDirectories => '等待目录就绪';
+
+  @override
+  String get previewWaitingLocalDirectory => '等待本地目录';
+
+  @override
+  String get previewWaitingRemoteDirectory => '等待远端目录';
+
+  @override
+  String get previewNoSyncItems => '当前没有可同步项目。';
+
+  @override
   String get previewFilterAll => '全部类型';
+
+  @override
+  String previewIgnoredExtensions(Object value) {
+    return '已忽略：$value';
+  }
+
+  @override
+  String get previewFilterMore => '更多';
+
+  @override
+  String get previewFilterCollapse => '收起';
 
   @override
   String get previewFilterTitle => '文件类型';
@@ -222,6 +374,11 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get previewSectionTitle => '分组';
+
+  @override
+  String previewSectionCount(int count) {
+    return '当前分组条目数：$count';
+  }
 
   @override
   String get previewScanTimeout => '扫描可能被超大目录或不可访问目录阻塞。';
@@ -246,7 +403,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get previewDirectoryRequired => '请先选择本地目录再生成预览。';
 
   @override
-  String get previewRemoteDirectoryRequired => '请先连接远端设备并加载其索引，再生成远端预览。';
+  String get previewRemoteDirectoryRequired => '请先连接远端设备，并让远端选择共享目录。';
 
   @override
   String get errorRemoteDirectoryNotSelected => '远端设备尚未选择共享目录。';
@@ -279,6 +436,37 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorDirectoryAccessDenied => '目录访问被拒绝，请选择你有权限读取的文件夹。';
 
   @override
+  String get errorDirectoryNotExists => '当前选择的目录已不存在，请重新选择。';
+
+  @override
+  String get errorListenPortInUse => '监听失败：端口已被占用。请更换端口，或关闭占用该端口的程序。';
+
+  @override
+  String get errorWindowsWriteCreateFailed =>
+      '无法写入 Windows 目标目录。请检查权限和文件占用后重试。';
+
+  @override
+  String get errorWindowsRenameFailed => '无法完成一个或多个文件的最终写入。请检查权限和文件占用后重试。';
+
+  @override
+  String get errorWindowsDeleteFailed =>
+      '无法删除 Windows 目标目录中的一个或多个条目。请检查权限和文件占用后重试。';
+
+  @override
+  String get errorWindowsReadFailed => '无法读取一个或多个 Windows 源文件。请检查权限和文件占用后重试。';
+
+  @override
+  String get errorWindowsDirectoryCreateFailed =>
+      '无法创建一个或多个目标文件夹。请检查权限和路径有效性后重试。';
+
+  @override
+  String get errorWindowsDirectoryListingFailed =>
+      '无法读取当前 Windows 目录，请重新选择其他文件夹。';
+
+  @override
+  String get errorWindowsEntryAccessFailed => '扫描失败，存在一个或多个无法访问的 Windows 条目。';
+
+  @override
   String get executionConfirmDeleteTitle => '确认删除';
 
   @override
@@ -293,13 +481,21 @@ class AppLocalizationsZh extends AppLocalizations {
   String get commonConfirm => '确认';
 
   @override
+  String get commonAdd => '添加';
+
+  @override
   String get executionTitle => '执行';
 
   @override
   String get executionProgressTitle => '进度';
 
   @override
-  String get executionRemotePending => '请先生成远端预览，再执行远端同步。';
+  String executionStateLabel(Object status) {
+    return '执行状态：$status';
+  }
+
+  @override
+  String get executionRemotePending => '请先等待远端预览完成，再执行远端同步。';
 
   @override
   String get executionRemoteReady => '远端预览已就绪，可按当前预览将本机文件同步到远端。';
@@ -338,7 +534,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get executionRunLocalDebug => '执行本地调试复制';
 
   @override
-  String get executionRunRemote => '执行远端同步';
+  String get executionRunRemote => '开始同步';
 
   @override
   String get executionStop => '停止同步';
@@ -395,6 +591,11 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String resultStatusLabel(Object status) {
+    return '执行状态：$status';
+  }
+
+  @override
   String get resultModeLocal => '本地调试复制';
 
   @override
@@ -402,6 +603,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get resultModeUnknown => '未知';
+
+  @override
+  String get resultStatusCompleted => '已完成';
+
+  @override
+  String get resultStatusCancelled => '已取消';
+
+  @override
+  String get resultStatusFailed => '失败';
+
+  @override
+  String get resultStatusIdle => '空闲';
 
   @override
   String get resultErrorTitle => '错误信息';
@@ -439,10 +652,111 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsTitle => '设置';
 
   @override
+  String get settingsGeneralTitle => '常规';
+
+  @override
+  String get settingsAppearanceTitle => '外观';
+
+  @override
   String get settingsDefaultsTitle => '默认值';
 
   @override
   String get settingsDefaultsPlaceholder => '项目级设置会放在这里。';
+
+  @override
+  String get settingsRulesTitle => '规则';
+
+  @override
+  String get settingsAutoStartListeningTitle => '自动监听';
+
+  @override
+  String get settingsAutoStartListeningDescription => '允许 MusicSync 启动时自动开启监听';
+
+  @override
+  String get settingsIgnoredExtensionsTitle => '忽略文件类型';
+
+  @override
+  String get settingsIgnoredExtensionsDescription => '被忽略的后缀类型会在同步时被跳过';
+
+  @override
+  String get settingsIgnoredExtensionsEmpty => '当前没有忽略任何后缀';
+
+  @override
+  String settingsIgnoredExtensionsSummary(int count) {
+    return '已忽略 $count 个后缀';
+  }
+
+  @override
+  String get settingsIgnoredExtensionField => '后缀';
+
+  @override
+  String get settingsIgnoredExtensionHint => '例如 flac、lrc';
+
+  @override
+  String get settingsIgnoredExtensionRequired => '请输入后缀';
+
+  @override
+  String get settingsIgnoredExtensionInvalid => '后缀格式无效，只能包含字母、数字、下划线或短横线';
+
+  @override
+  String get settingsIgnoredExtensionDuplicate => '这个后缀已经存在';
+
+  @override
+  String get settingsThemeModeTitle => '主题模式';
+
+  @override
+  String get settingsThemeModeDescription => '选择应用使用浅色、深色或跟随系统。';
+
+  @override
+  String get settingsThemeModeLight => '浅色模式';
+
+  @override
+  String get settingsThemeModeDark => '深色模式';
+
+  @override
+  String get settingsThemeModeSystem => '跟随系统';
+
+  @override
+  String get settingsPaletteTitle => '调色板';
+
+  @override
+  String get settingsPaletteDescription => '选择一组 Material Design 调色策略。';
+
+  @override
+  String get settingsPaletteNeutral => 'Neutral';
+
+  @override
+  String get settingsPaletteExpressive => 'Expressive';
+
+  @override
+  String get settingsPaletteTonalSpot => 'Tonal Spot';
+
+  @override
+  String get previewTransferDirectionLabel => '传输方向';
+
+  @override
+  String get previewDirectoryStatusLabel => '目录状态';
+
+  @override
+  String get previewDirectoryStatusLocal => '本地';
+
+  @override
+  String get previewDirectoryStatusRemote => '远端';
+
+  @override
+  String get diffTypeCopy => '复制';
+
+  @override
+  String get diffTypeDelete => '删除';
+
+  @override
+  String get diffTypeConflict => '冲突';
+
+  @override
+  String get diffTypeSkip => '跳过';
+
+  @override
+  String get diffConflictMetadataMismatch => '元数据不同';
 
   @override
   String get statusIdle => '空闲';

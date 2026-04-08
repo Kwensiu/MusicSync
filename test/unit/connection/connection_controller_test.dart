@@ -24,7 +24,9 @@ import 'package:music_sync/services/storage/recent_items_store.dart';
 
 void main() {
   group('ConnectionController', () {
-    test('disconnect clears remote state but preserves listener and local target', () async {
+    test(
+        'disconnect clears remote state but preserves listener and local target',
+        () async {
       final _FakeConnectionService connectionService = _FakeConnectionService(
         snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
       );
@@ -46,7 +48,9 @@ void main() {
             port: 44888,
           );
 
-      container.read(executionControllerProvider.notifier).setTargetRoot('local-target');
+      container
+          .read(executionControllerProvider.notifier)
+          .setTargetRoot('local-target');
       container.read(directoryControllerProvider.notifier).setDirectory(
             const DirectoryHandle(entryId: 'root', displayName: 'Music'),
           );
@@ -71,13 +75,45 @@ void main() {
       expect(connectionService.disconnectCalls, 1);
     });
 
+    test(
+        'connect succeeds even when remote shared directory is not selected yet',
+        () async {
+      final _FakeConnectionService connectionService = _FakeConnectionService(
+        snapshots: <ScanSnapshot>[],
+        scanErrorMessage: 'No shared directory selected on peer.',
+      );
+      final ProviderContainer container = ProviderContainer(
+        overrides: <Override>[
+          connectionServiceProvider.overrideWithValue(connectionService),
+          listenerServiceProvider.overrideWithValue(_FakeListenerService()),
+          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+          fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(connectionControllerProvider.notifier).connect(
+            address: '192.168.1.2',
+            port: 44888,
+          );
+
+      final ConnectionState connectionState =
+          container.read(connectionControllerProvider);
+      expect(connectionState.status, ConnectionStatus.connected);
+      expect(connectionState.peer, isNotNull);
+      expect(connectionState.remoteSnapshot, isNull);
+      expect(connectionState.isRemoteDirectoryReady, isFalse);
+      expect(connectionState.errorMessage, isNull);
+    });
+
     test('incoming remote copy renames temp file on finish', () async {
       final _FakeListenerService listener = _FakeListenerService();
       final _TransferTrackingGateway gateway = _TransferTrackingGateway();
       final ProviderContainer container = ProviderContainer(
         overrides: <Override>[
           connectionServiceProvider.overrideWithValue(
-            _FakeConnectionService(snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')]),
+            _FakeConnectionService(
+                snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')]),
           ),
           listenerServiceProvider.overrideWithValue(listener),
           recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
@@ -86,7 +122,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await container.read(connectionControllerProvider.notifier).startListening(port: 44888);
+      await container
+          .read(connectionControllerProvider.notifier)
+          .startListening(port: 44888);
       final _PeerPair pair = await _PeerPair.open(listener.onClient!);
       addTearDown(pair.close);
 
@@ -121,13 +159,16 @@ void main() {
       expect(gateway.deletedEntries, isEmpty);
     });
 
-    test('incoming remote copy deletes temp file when peer disconnects mid-transfer', () async {
+    test(
+        'incoming remote copy deletes temp file when peer disconnects mid-transfer',
+        () async {
       final _FakeListenerService listener = _FakeListenerService();
       final _TransferTrackingGateway gateway = _TransferTrackingGateway();
       final ProviderContainer container = ProviderContainer(
         overrides: <Override>[
           connectionServiceProvider.overrideWithValue(
-            _FakeConnectionService(snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')]),
+            _FakeConnectionService(
+                snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')]),
           ),
           listenerServiceProvider.overrideWithValue(listener),
           recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
@@ -136,7 +177,9 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await container.read(connectionControllerProvider.notifier).startListening(port: 44888);
+      await container
+          .read(connectionControllerProvider.notifier)
+          .startListening(port: 44888);
       final _PeerPair pair = await _PeerPair.open(listener.onClient!);
       addTearDown(pair.close);
 
@@ -168,9 +211,13 @@ void main() {
 }
 
 class _FakeConnectionService extends ConnectionService {
-  _FakeConnectionService({required this.snapshots});
+  _FakeConnectionService({
+    required this.snapshots,
+    this.scanErrorMessage,
+  });
 
   final List<ScanSnapshot> snapshots;
+  final String? scanErrorMessage;
   int disconnectCalls = 0;
   int _index = 0;
 
@@ -191,7 +238,11 @@ class _FakeConnectionService extends ConnectionService {
 
   @override
   Future<ScanSnapshot> requestRemoteScan() async {
-    final int current = _index < snapshots.length ? _index : snapshots.length - 1;
+    if (scanErrorMessage != null) {
+      throw SocketException(scanErrorMessage!);
+    }
+    final int current =
+        _index < snapshots.length ? _index : snapshots.length - 1;
     _index++;
     return snapshots[current];
   }
@@ -278,7 +329,8 @@ class _FakeFileAccessGateway implements FileAccessGateway {
 }
 
 class _TransferTrackingGateway implements FileAccessGateway {
-  final Map<String, List<FileAccessEntry>> _childrenById = <String, List<FileAccessEntry>>{
+  final Map<String, List<FileAccessEntry>> _childrenById =
+      <String, List<FileAccessEntry>>{
     'root': const <FileAccessEntry>[],
   };
   final Set<String> deletedEntries = <String>{};
@@ -320,7 +372,8 @@ class _TransferTrackingGateway implements FileAccessGateway {
 
   @override
   Future<List<FileAccessEntry>> listChildren(String directoryId) async =>
-      List<FileAccessEntry>.from(_childrenById[directoryId] ?? const <FileAccessEntry>[]);
+      List<FileAccessEntry>.from(
+          _childrenById[directoryId] ?? const <FileAccessEntry>[]);
 
   @override
   Stream<List<int>> openRead(String entryId) async* {}
@@ -348,8 +401,10 @@ class _TransferTrackingGateway implements FileAccessGateway {
   Future<String> renameEntry(String entryId, String newName) async {
     renameCalls++;
     final int slashIndex = entryId.lastIndexOf('/');
-    final String parentId = slashIndex >= 0 ? entryId.substring(0, slashIndex) : '';
-    final String nextEntryId = parentId.isEmpty ? newName : '$parentId/$newName';
+    final String parentId =
+        slashIndex >= 0 ? entryId.substring(0, slashIndex) : '';
+    final String nextEntryId =
+        parentId.isEmpty ? newName : '$parentId/$newName';
     for (final String key in _childrenById.keys.toList()) {
       _childrenById[key] = _childrenById[key]!.map((FileAccessEntry entry) {
         if (entry.entryId != entryId) {
@@ -406,7 +461,8 @@ class _PeerPair {
   static Future<_PeerPair> open(
     FutureOr<void> Function(PeerSession session) onServerSession,
   ) async {
-    final ServerSocket server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    final ServerSocket server =
+        await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
     final Future<Socket> accepted = server.first;
     final Socket clientSocket =
         await Socket.connect(InternetAddress.loopbackIPv4, server.port);

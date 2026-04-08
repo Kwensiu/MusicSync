@@ -50,7 +50,8 @@ class DirectoryPreflightService {
 
     int nestedDirectoryChecks = 0;
     for (final FileAccessEntry child in limitedRootChildren) {
-      if (!child.isDirectory || nestedDirectoryChecks >= _maxNestedDirectoriesSample) {
+      if (!child.isDirectory ||
+          nestedDirectoryChecks >= _maxNestedDirectoriesSample) {
         continue;
       }
       nestedDirectoryChecks++;

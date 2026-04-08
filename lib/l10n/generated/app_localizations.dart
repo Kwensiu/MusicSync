@@ -104,29 +104,185 @@ abstract class AppLocalizations {
   /// **'MusicSync'**
   String get appTitle;
 
-  /// No description provided for @homeModeTitle.
+  /// No description provided for @homeStepConnectionTitle.
   ///
   /// In en, this message translates to:
-  /// **'Mode'**
-  String get homeModeTitle;
+  /// **'Step 1: Connect Remote Device'**
+  String get homeStepConnectionTitle;
 
-  /// No description provided for @homeModeDescription.
+  /// No description provided for @homeStepConnectionHint.
   ///
   /// In en, this message translates to:
-  /// **'Single-direction mirror sync over LAN.'**
-  String get homeModeDescription;
+  /// **'Establish a connection to the remote device. After the connection is ready, directory state and preview update automatically.'**
+  String get homeStepConnectionHint;
 
-  /// No description provided for @homeSyncDirectionTitle.
+  /// No description provided for @homeConnectionStateIdle.
   ///
   /// In en, this message translates to:
-  /// **'Current Direction'**
-  String get homeSyncDirectionTitle;
+  /// **'Not listening'**
+  String get homeConnectionStateIdle;
 
-  /// No description provided for @homeSyncDirectionDescription.
+  /// No description provided for @homeConnectionStateConnecting.
   ///
   /// In en, this message translates to:
-  /// **'Version 1 is fixed to: local directory -> remote directory. Listening and connecting only establish the session, not the copy direction.'**
-  String get homeSyncDirectionDescription;
+  /// **'Connecting'**
+  String get homeConnectionStateConnecting;
+
+  /// No description provided for @homeConnectionStateListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening'**
+  String get homeConnectionStateListening;
+
+  /// No description provided for @homeConnectionStateConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get homeConnectionStateConnected;
+
+  /// No description provided for @homePortChipLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Port {port}'**
+  String homePortChipLabel(int port);
+
+  /// No description provided for @homeShareTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get homeShareTooltip;
+
+  /// No description provided for @homePortDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Set listening port'**
+  String get homePortDialogTitle;
+
+  /// No description provided for @homePortDialogBody.
+  ///
+  /// In en, this message translates to:
+  /// **'After saving, listening will use the new port.'**
+  String get homePortDialogBody;
+
+  /// No description provided for @homePortDialogHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a port, for example 44888'**
+  String get homePortDialogHint;
+
+  /// No description provided for @homePortDialogInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid port between 1 and 65535.'**
+  String get homePortDialogInvalid;
+
+  /// No description provided for @homeShareDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share Address'**
+  String get homeShareDialogTitle;
+
+  /// No description provided for @homeShareCopyDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection address copied.'**
+  String get homeShareCopyDone;
+
+  /// No description provided for @homeConnectStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Connection'**
+  String get homeConnectStop;
+
+  /// No description provided for @homeStepSourceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 2: Pick Local Source Directory'**
+  String get homeStepSourceTitle;
+
+  /// No description provided for @homeStepSourceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This directory will be synced to the remote target directory.'**
+  String get homeStepSourceHint;
+
+  /// No description provided for @homeClearSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get homeClearSelection;
+
+  /// No description provided for @homeSourcePendingBecauseRemoteReady.
+  ///
+  /// In en, this message translates to:
+  /// **'The remote directory is already ready. The only thing missing now is the local source directory.'**
+  String get homeSourcePendingBecauseRemoteReady;
+
+  /// No description provided for @homeStepPreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Step 3: Review and Sync'**
+  String get homeStepPreviewTitle;
+
+  /// No description provided for @homeStepPreviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysis starts automatically after both directories are ready. Refresh the remote index only if needed.'**
+  String get homeStepPreviewHint;
+
+  /// No description provided for @homeAdvancedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced and Debug'**
+  String get homeAdvancedTitle;
+
+  /// No description provided for @homeConnectionHelpersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection helpers'**
+  String get homeConnectionHelpersTitle;
+
+  /// No description provided for @homeConnectionActionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection actions'**
+  String get homeConnectionActionsTitle;
+
+  /// No description provided for @homeAutoPreviewWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic analysis will start after both the local and remote directories are ready.'**
+  String get homeAutoPreviewWaiting;
+
+  /// No description provided for @homeAutoPreviewWaitingLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'The remote side is ready. Automatic analysis will start after you pick the local source directory.'**
+  String get homeAutoPreviewWaitingLocal;
+
+  /// No description provided for @homeAutoPreviewWaitingRemote.
+  ///
+  /// In en, this message translates to:
+  /// **'The local source directory is ready. Automatic analysis will start after the remote side picks a shared directory.'**
+  String get homeAutoPreviewWaitingRemote;
+
+  /// No description provided for @homeAutoPreviewRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Directories are ready. Building the remote preview automatically.'**
+  String get homeAutoPreviewRunning;
+
+  /// No description provided for @homeAutoPreviewReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote preview is up to date and ready for review.'**
+  String get homeAutoPreviewReady;
+
+  /// No description provided for @homeAutoPreviewRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh the remote index manually if you need to force a rescan.'**
+  String get homeAutoPreviewRefresh;
 
   /// No description provided for @homeLocalLibraryTitle.
   ///
@@ -231,6 +387,60 @@ abstract class AppLocalizations {
   /// **'Discovered Devices'**
   String get homeDiscoveredDevices;
 
+  /// No description provided for @homeManageRecentItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Records'**
+  String get homeManageRecentItems;
+
+  /// No description provided for @homeRecentEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No records yet'**
+  String get homeRecentEmpty;
+
+  /// No description provided for @homeRecentAlias.
+  ///
+  /// In en, this message translates to:
+  /// **'Alias'**
+  String get homeRecentAlias;
+
+  /// No description provided for @homeRecentDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get homeRecentDelete;
+
+  /// No description provided for @homeRecentEditAlias.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Label'**
+  String get homeRecentEditAlias;
+
+  /// No description provided for @homeRecentEditAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Address'**
+  String get homeRecentEditAddress;
+
+  /// No description provided for @homeRecentAddressField.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get homeRecentAddressField;
+
+  /// No description provided for @homeRecentAddressRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an address'**
+  String get homeRecentAddressRequired;
+
+  /// No description provided for @homeRecentAliasHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a short name'**
+  String get homeRecentAliasHint;
+
   /// No description provided for @homeRemoteTargetTitle.
   ///
   /// In en, this message translates to:
@@ -243,17 +453,17 @@ abstract class AppLocalizations {
   /// **'Version 1 currently supports only local-to-remote sync.'**
   String get homeRemoteTargetHint;
 
-  /// No description provided for @homeRemoteDirectoryReady.
+  /// No description provided for @homeRemoteIndexPending.
   ///
   /// In en, this message translates to:
-  /// **'The remote shared directory is ready. You can refresh the index or build a remote preview.'**
-  String get homeRemoteDirectoryReady;
+  /// **'The remote directory is ready. Syncing the latest index now.'**
+  String get homeRemoteIndexPending;
 
-  /// No description provided for @homeRemoteDirectoryMissing.
+  /// No description provided for @homeRemoteManualRefreshTitle.
   ///
   /// In en, this message translates to:
-  /// **'The remote shared directory is not ready yet. Select a shared directory on the remote device, then refresh the index or build a remote preview.'**
-  String get homeRemoteDirectoryMissing;
+  /// **'Manual refresh'**
+  String get homeRemoteManualRefreshTitle;
 
   /// No description provided for @homeListenerTitle.
   ///
@@ -321,11 +531,23 @@ abstract class AppLocalizations {
   /// **'Refresh Remote Index'**
   String get homeRefreshRemoteIndex;
 
+  /// No description provided for @homeRefreshRemoteIndexHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this only when you think the remote directory changed but automatic refresh has not caught up yet.'**
+  String get homeRefreshRemoteIndexHint;
+
   /// No description provided for @homeRemoteRoot.
   ///
   /// In en, this message translates to:
   /// **'Remote root: {name}'**
   String homeRemoteRoot(Object name);
+
+  /// No description provided for @homeRemoteIndexedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote index time: {value}'**
+  String homeRemoteIndexedAt(Object value);
 
   /// No description provided for @homeRemoteFiles.
   ///
@@ -351,17 +573,23 @@ abstract class AppLocalizations {
   /// **'Summary'**
   String get previewSummaryTitle;
 
-  /// No description provided for @previewScopeLocal.
+  /// No description provided for @previewTransferDirection.
   ///
   /// In en, this message translates to:
-  /// **'Local debug preview: local -> local target'**
-  String get previewScopeLocal;
+  /// **'Direction: {source} -> {target}'**
+  String previewTransferDirection(Object source, Object target);
 
-  /// No description provided for @previewScopeRemote.
+  /// No description provided for @previewDirectionRemote.
   ///
   /// In en, this message translates to:
-  /// **'LAN preview: local -> remote'**
-  String get previewScopeRemote;
+  /// **'Remote Device'**
+  String get previewDirectionRemote;
+
+  /// No description provided for @previewDirectionLocalTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Local Target'**
+  String get previewDirectionLocalTarget;
 
   /// No description provided for @previewStatus.
   ///
@@ -392,6 +620,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Data to copy: {size}'**
   String previewCopyBytes(Object size);
+
+  /// No description provided for @previewSummaryBytes.
+  ///
+  /// In en, this message translates to:
+  /// **'Bytes'**
+  String get previewSummaryBytes;
+
+  /// No description provided for @previewSectionAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All Items'**
+  String get previewSectionAll;
+
+  /// No description provided for @previewTargetIndexedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Current target snapshot time: {value}'**
+  String previewTargetIndexedAt(Object value);
 
   /// No description provided for @previewBuildPlan.
   ///
@@ -441,11 +687,53 @@ abstract class AppLocalizations {
   /// **'No items in this section.'**
   String get previewNoItemsInSection;
 
+  /// No description provided for @previewWaitingDirectories.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for directories'**
+  String get previewWaitingDirectories;
+
+  /// No description provided for @previewWaitingLocalDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for local directory'**
+  String get previewWaitingLocalDirectory;
+
+  /// No description provided for @previewWaitingRemoteDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for remote directory'**
+  String get previewWaitingRemoteDirectory;
+
+  /// No description provided for @previewNoSyncItems.
+  ///
+  /// In en, this message translates to:
+  /// **'No items to sync right now.'**
+  String get previewNoSyncItems;
+
   /// No description provided for @previewFilterAll.
   ///
   /// In en, this message translates to:
   /// **'All types'**
   String get previewFilterAll;
+
+  /// No description provided for @previewIgnoredExtensions.
+  ///
+  /// In en, this message translates to:
+  /// **'Ignored: {value}'**
+  String previewIgnoredExtensions(Object value);
+
+  /// No description provided for @previewFilterMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get previewFilterMore;
+
+  /// No description provided for @previewFilterCollapse.
+  ///
+  /// In en, this message translates to:
+  /// **'Less'**
+  String get previewFilterCollapse;
 
   /// No description provided for @previewFilterTitle.
   ///
@@ -464,6 +752,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Category'**
   String get previewSectionTitle;
+
+  /// No description provided for @previewSectionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Items in current section: {count}'**
+  String previewSectionCount(int count);
 
   /// No description provided for @previewScanTimeout.
   ///
@@ -504,7 +798,7 @@ abstract class AppLocalizations {
   /// No description provided for @previewRemoteDirectoryRequired.
   ///
   /// In en, this message translates to:
-  /// **'Connect to a peer and load its index before building remote preview.'**
+  /// **'Connect to the remote device and make sure the remote side has picked a shared directory.'**
   String get previewRemoteDirectoryRequired;
 
   /// No description provided for @errorRemoteDirectoryNotSelected.
@@ -567,6 +861,60 @@ abstract class AppLocalizations {
   /// **'Directory access was denied. Please choose a folder you can read.'**
   String get errorDirectoryAccessDenied;
 
+  /// No description provided for @errorDirectoryNotExists.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected directory no longer exists. Please choose it again.'**
+  String get errorDirectoryNotExists;
+
+  /// No description provided for @errorListenPortInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to start listening because the port is already in use. Pick another port or stop the process using it.'**
+  String get errorListenPortInUse;
+
+  /// No description provided for @errorWindowsWriteCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to write to the Windows target directory. Check permissions and file locks, then try again.'**
+  String get errorWindowsWriteCreateFailed;
+
+  /// No description provided for @errorWindowsRenameFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to finalize one or more file writes. Check permissions and file locks, then try again.'**
+  String get errorWindowsRenameFailed;
+
+  /// No description provided for @errorWindowsDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to delete one or more items from the Windows target directory. Check permissions and file locks, then try again.'**
+  String get errorWindowsDeleteFailed;
+
+  /// No description provided for @errorWindowsReadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to read one or more Windows source files. Check permissions and file locks, then try again.'**
+  String get errorWindowsReadFailed;
+
+  /// No description provided for @errorWindowsDirectoryCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to create one or more target folders. Check permissions and path validity, then try again.'**
+  String get errorWindowsDirectoryCreateFailed;
+
+  /// No description provided for @errorWindowsDirectoryListingFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to read the current Windows directory. Please choose another folder.'**
+  String get errorWindowsDirectoryListingFailed;
+
+  /// No description provided for @errorWindowsEntryAccessFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning failed because one or more Windows entries could not be accessed.'**
+  String get errorWindowsEntryAccessFailed;
+
   /// No description provided for @executionConfirmDeleteTitle.
   ///
   /// In en, this message translates to:
@@ -591,6 +939,12 @@ abstract class AppLocalizations {
   /// **'Confirm'**
   String get commonConfirm;
 
+  /// No description provided for @commonAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get commonAdd;
+
   /// No description provided for @executionTitle.
   ///
   /// In en, this message translates to:
@@ -603,10 +957,16 @@ abstract class AppLocalizations {
   /// **'Progress'**
   String get executionProgressTitle;
 
+  /// No description provided for @executionStateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Execution status: {status}'**
+  String executionStateLabel(Object status);
+
   /// No description provided for @executionRemotePending.
   ///
   /// In en, this message translates to:
-  /// **'Build a remote preview before running remote sync.'**
+  /// **'Wait for the remote preview to finish before running remote sync.'**
   String get executionRemotePending;
 
   /// No description provided for @executionRemoteReady.
@@ -684,7 +1044,7 @@ abstract class AppLocalizations {
   /// No description provided for @executionRunRemote.
   ///
   /// In en, this message translates to:
-  /// **'Run Remote Sync'**
+  /// **'Start Sync'**
   String get executionRunRemote;
 
   /// No description provided for @executionStop.
@@ -771,6 +1131,12 @@ abstract class AppLocalizations {
   /// **'Execution mode: {mode}'**
   String resultModeLabel(Object mode);
 
+  /// No description provided for @resultStatusLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Execution status: {status}'**
+  String resultStatusLabel(Object status);
+
   /// No description provided for @resultModeLocal.
   ///
   /// In en, this message translates to:
@@ -788,6 +1154,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unknown'**
   String get resultModeUnknown;
+
+  /// No description provided for @resultStatusCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get resultStatusCompleted;
+
+  /// No description provided for @resultStatusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get resultStatusCancelled;
+
+  /// No description provided for @resultStatusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get resultStatusFailed;
+
+  /// No description provided for @resultStatusIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle'**
+  String get resultStatusIdle;
 
   /// No description provided for @resultErrorTitle.
   ///
@@ -843,6 +1233,18 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settingsTitle;
 
+  /// No description provided for @settingsGeneralTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get settingsGeneralTitle;
+
+  /// No description provided for @settingsAppearanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settingsAppearanceTitle;
+
   /// No description provided for @settingsDefaultsTitle.
   ///
   /// In en, this message translates to:
@@ -854,6 +1256,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Project-wide settings will live here.'**
   String get settingsDefaultsPlaceholder;
+
+  /// No description provided for @settingsRulesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rules'**
+  String get settingsRulesTitle;
+
+  /// No description provided for @settingsAutoStartListeningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Listening'**
+  String get settingsAutoStartListeningTitle;
+
+  /// No description provided for @settingsAutoStartListeningDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow MusicSync to start listening automatically on app launch.'**
+  String get settingsAutoStartListeningDescription;
+
+  /// No description provided for @settingsIgnoredExtensionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ignored File Types'**
+  String get settingsIgnoredExtensionsTitle;
+
+  /// No description provided for @settingsIgnoredExtensionsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Ignored suffix types will be skipped during sync.'**
+  String get settingsIgnoredExtensionsDescription;
+
+  /// No description provided for @settingsIgnoredExtensionsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No ignored file types yet'**
+  String get settingsIgnoredExtensionsEmpty;
+
+  /// No description provided for @settingsIgnoredExtensionsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} ignored file types'**
+  String settingsIgnoredExtensionsSummary(int count);
+
+  /// No description provided for @settingsIgnoredExtensionField.
+  ///
+  /// In en, this message translates to:
+  /// **'Extension'**
+  String get settingsIgnoredExtensionField;
+
+  /// No description provided for @settingsIgnoredExtensionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example flac or lrc'**
+  String get settingsIgnoredExtensionHint;
+
+  /// No description provided for @settingsIgnoredExtensionRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an extension'**
+  String get settingsIgnoredExtensionRequired;
+
+  /// No description provided for @settingsIgnoredExtensionInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid extension format. Use letters, numbers, underscores, or hyphens only'**
+  String get settingsIgnoredExtensionInvalid;
+
+  /// No description provided for @settingsIgnoredExtensionDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'This extension already exists'**
+  String get settingsIgnoredExtensionDuplicate;
+
+  /// No description provided for @settingsThemeModeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme Mode'**
+  String get settingsThemeModeTitle;
+
+  /// No description provided for @settingsThemeModeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose light mode, dark mode, or follow the system.'**
+  String get settingsThemeModeDescription;
+
+  /// No description provided for @settingsThemeModeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get settingsThemeModeLight;
+
+  /// No description provided for @settingsThemeModeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get settingsThemeModeDark;
+
+  /// No description provided for @settingsThemeModeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get settingsThemeModeSystem;
+
+  /// No description provided for @settingsPaletteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Palette'**
+  String get settingsPaletteTitle;
+
+  /// No description provided for @settingsPaletteDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a Material Design palette strategy.'**
+  String get settingsPaletteDescription;
+
+  /// No description provided for @settingsPaletteNeutral.
+  ///
+  /// In en, this message translates to:
+  /// **'Neutral'**
+  String get settingsPaletteNeutral;
+
+  /// No description provided for @settingsPaletteExpressive.
+  ///
+  /// In en, this message translates to:
+  /// **'Expressive'**
+  String get settingsPaletteExpressive;
+
+  /// No description provided for @settingsPaletteTonalSpot.
+  ///
+  /// In en, this message translates to:
+  /// **'Tonal Spot'**
+  String get settingsPaletteTonalSpot;
+
+  /// No description provided for @previewTransferDirectionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer Direction'**
+  String get previewTransferDirectionLabel;
+
+  /// No description provided for @previewDirectoryStatusLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Directory Status'**
+  String get previewDirectoryStatusLabel;
+
+  /// No description provided for @previewDirectoryStatusLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Local'**
+  String get previewDirectoryStatusLocal;
+
+  /// No description provided for @previewDirectoryStatusRemote.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote'**
+  String get previewDirectoryStatusRemote;
+
+  /// No description provided for @diffTypeCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'COPY'**
+  String get diffTypeCopy;
+
+  /// No description provided for @diffTypeDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'DELETE'**
+  String get diffTypeDelete;
+
+  /// No description provided for @diffTypeConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'CONFLICT'**
+  String get diffTypeConflict;
+
+  /// No description provided for @diffTypeSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'SKIP'**
+  String get diffTypeSkip;
+
+  /// No description provided for @diffConflictMetadataMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Metadata differs'**
+  String get diffConflictMetadataMismatch;
 
   /// No description provided for @statusIdle.
   ///

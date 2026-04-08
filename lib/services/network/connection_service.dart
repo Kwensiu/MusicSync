@@ -11,6 +11,7 @@ class ConnectionService {
   PeerSession? _session;
   final Random _random = Random();
   void Function(Object? error)? onDisconnected;
+  Future<void> Function(ProtocolMessage message)? onMessage;
 
   PeerSession? get session => _session;
 
@@ -40,6 +41,7 @@ class ConnectionService {
       throw const SocketException('Peer handshake payload invalid.');
     }
     _session = session;
+    session.onMessage = _handleIncomingMessage;
     session.closed.then((_) {
       if (identical(_session, session)) {
         _session = null;
@@ -48,13 +50,30 @@ class ConnectionService {
     });
 
     return DeviceInfo(
-      deviceId:
-          rawDevice['deviceId'] as String? ?? '$address:$port',
-      deviceName:
-          rawDevice['deviceName'] as String? ?? '$address:$port',
+      deviceId: rawDevice['deviceId'] as String? ?? '$address:$port',
+      deviceName: _sanitizePeerName(
+        rawDevice['deviceName'] as String?,
+        fallbackPlatform: rawDevice['platform'] as String?,
+        fallbackAddress: address,
+      ),
       platform: rawDevice['platform'] as String? ?? 'network',
       address: address,
       port: port,
+    );
+  }
+
+  Future<void> notifyRemoteDirectoryChanged({
+    required bool isReady,
+    String? displayName,
+  }) async {
+    final PeerSession session = _requireSession();
+    await session.sendMessage(
+      type: 'remoteDirectoryChanged',
+      requestId: _nextRequestId(),
+      payload: <String, Object?>{
+        'isReady': isReady,
+        if (displayName != null) 'displayName': displayName,
+      },
     );
   }
 
@@ -69,7 +88,8 @@ class ConnectionService {
       payload: const <String, Object?>{},
     );
     if (response.type == 'error') {
-      throw SocketException(response.payload['message'] as String? ?? 'Peer error');
+      throw SocketException(
+          response.payload['message'] as String? ?? 'Peer error');
     }
     if (response.type != 'scanResponse') {
       throw const SocketException('Peer scan response invalid.');
@@ -191,5 +211,39 @@ class ConnectionService {
 
   String _nextRequestId() {
     return '${DateTime.now().microsecondsSinceEpoch}-${_random.nextInt(1 << 32)}';
+  }
+
+  String _sanitizePeerName(
+    String? rawName, {
+    String? fallbackPlatform,
+    String? fallbackAddress,
+  }) {
+    final String? normalized = rawName?.trim();
+    if (normalized != null &&
+        normalized.isNotEmpty &&
+        normalized.toLowerCase() != 'localhost') {
+      return normalized;
+    }
+    final String? platform = fallbackPlatform?.trim();
+    if (platform != null && platform.isNotEmpty) {
+      if (platform.toLowerCase() == 'android') {
+        return 'Android';
+      }
+      if (platform.toLowerCase() == 'windows') {
+        return 'Windows';
+      }
+      return platform;
+    }
+    final String? address = fallbackAddress?.trim();
+    if (address != null && address.isNotEmpty) {
+      return address;
+    }
+    return 'Peer';
+  }
+
+  Future<ProtocolMessage?> _handleIncomingMessage(
+      ProtocolMessage message) async {
+    await onMessage?.call(message);
+    return null;
   }
 }

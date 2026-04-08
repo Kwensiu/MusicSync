@@ -4,6 +4,7 @@ import 'package:music_sync/features/directory/state/directory_state.dart';
 import 'package:music_sync/services/file_access/file_access_entry.dart';
 import 'package:music_sync/services/file_access/file_access_gateway.dart';
 import 'package:music_sync/services/scanning/directory_preflight_service.dart';
+import 'package:music_sync/services/scanning/temp_file_cleanup_service.dart';
 import 'package:music_sync/services/storage/recent_items_store.dart';
 
 void main() {
@@ -11,12 +12,15 @@ void main() {
     final _FakeRecentItemsStore store = _FakeRecentItemsStore();
     final DirectoryController controller = DirectoryController(
       _FakeFileAccessGateway(),
-      () async => const DirectoryHandle(entryId: 'root', displayName: 'AppData'),
+      () async =>
+          const DirectoryHandle(entryId: 'root', displayName: 'AppData'),
       () {},
+      (_) async {},
       store,
       DirectoryPreflightService(
         _FakePreflightGateway(),
       ),
+      TempFileCleanupService(_FakeFileAccessGateway()),
     );
 
     await controller.pickDirectory();

@@ -27,7 +27,8 @@ class DiffEngine {
 
       if (sourceEntry != null && targetEntry == null) {
         copyItems.add(
-          DiffItem(type: DiffType.copy, relativePath: path, source: sourceEntry),
+          DiffItem(
+              type: DiffType.copy, relativePath: path, source: sourceEntry),
         );
         continue;
       }
@@ -35,7 +36,8 @@ class DiffEngine {
       if (sourceEntry == null && targetEntry != null) {
         if (deleteEnabled) {
           deleteItems.add(
-            DiffItem(type: DiffType.delete, relativePath: path, target: targetEntry),
+            DiffItem(
+                type: DiffType.delete, relativePath: path, target: targetEntry),
           );
         }
         continue;

@@ -15,14 +15,15 @@ final Provider<ScanCacheService> scanCacheServiceProvider =
 
 final Provider<DirectoryScanner> directoryScannerProvider =
     Provider<DirectoryScanner>((Ref ref) {
-      return DirectoryScanner(
-        gateway: ref.watch(fileAccessGatewayProvider),
-        cacheService: ref.watch(scanCacheServiceProvider),
-      );
-    });
+  return DirectoryScanner(
+    gateway: ref.watch(fileAccessGatewayProvider),
+    cacheService: ref.watch(scanCacheServiceProvider),
+  );
+});
 
 class PreviewController extends StateNotifier<PreviewState> {
-  PreviewController(this._diffEngine, this._scanner) : super(PreviewState.initial());
+  PreviewController(this._diffEngine, this._scanner)
+      : super(PreviewState.initial());
 
   final DiffEngine _diffEngine;
   final DirectoryScanner _scanner;
@@ -31,6 +32,7 @@ class PreviewController extends StateNotifier<PreviewState> {
     required ScanSnapshot source,
     required ScanSnapshot target,
     required bool deleteEnabled,
+    List<String> ignoredExtensions = const <String>[],
   }) {
     state = PreviewState(status: PreviewStatus.loading, plan: state.plan);
 
@@ -49,6 +51,7 @@ class PreviewController extends StateNotifier<PreviewState> {
         sourceSnapshot: source,
         targetSnapshot: target,
         deleteEnabled: deleteEnabled,
+        ignoredExtensions: ignoredExtensions,
       );
     } catch (error) {
       state = PreviewState(
@@ -60,6 +63,7 @@ class PreviewController extends StateNotifier<PreviewState> {
         sourceSnapshot: source,
         targetSnapshot: target,
         deleteEnabled: deleteEnabled,
+        ignoredExtensions: ignoredExtensions,
         sourceRootId: state.sourceRootId,
         errorMessage: PreviewState.localizeErrorMessage(error.toString()),
       );
@@ -75,6 +79,7 @@ class PreviewController extends StateNotifier<PreviewState> {
     required DirectoryHandle targetRoot,
     required bool deleteEnabled,
     String extensionFilter = '*',
+    List<String> ignoredExtensions = const <String>[],
   }) async {
     state = PreviewState(status: PreviewStatus.loading, plan: state.plan);
 
@@ -87,12 +92,16 @@ class PreviewController extends StateNotifier<PreviewState> {
         root: targetRoot,
         deviceId: 'local-target',
       );
+      final ScanSnapshot baseSource =
+          _filterIgnored(rawSource, ignoredExtensions);
+      final ScanSnapshot baseTarget =
+          _filterIgnored(rawTarget, ignoredExtensions);
       final List<String> availableExtensions = _collectExtensions(
-        rawSource,
-        rawTarget,
+        baseSource,
+        baseTarget,
       );
-      final ScanSnapshot source = _filterSnapshot(rawSource, extensionFilter);
-      final ScanSnapshot target = _filterSnapshot(rawTarget, extensionFilter);
+      final ScanSnapshot source = _filterSnapshot(baseSource, extensionFilter);
+      final ScanSnapshot target = _filterSnapshot(baseTarget, extensionFilter);
 
       final plan = _diffEngine.buildPlan(
         source: source,
@@ -105,9 +114,10 @@ class PreviewController extends StateNotifier<PreviewState> {
         mode: PreviewMode.local,
         availableExtensions: availableExtensions,
         activeExtension: extensionFilter,
-        sourceSnapshot: rawSource,
-        targetSnapshot: rawTarget,
+        sourceSnapshot: baseSource,
+        targetSnapshot: baseTarget,
         deleteEnabled: deleteEnabled,
+        ignoredExtensions: ignoredExtensions,
         sourceRootId: sourceRoot.entryId,
       );
     } catch (error) {
@@ -120,6 +130,7 @@ class PreviewController extends StateNotifier<PreviewState> {
         sourceSnapshot: state.sourceSnapshot,
         targetSnapshot: state.targetSnapshot,
         deleteEnabled: deleteEnabled,
+        ignoredExtensions: ignoredExtensions,
         sourceRootId: sourceRoot.entryId,
         errorMessage: PreviewState.localizeErrorMessage(error.toString()),
       );
@@ -131,14 +142,20 @@ class PreviewController extends StateNotifier<PreviewState> {
     required ScanSnapshot target,
     required bool deleteEnabled,
     String extensionFilter = '*',
+    List<String> ignoredExtensions = const <String>[],
     String? sourceRootId,
   }) async {
     state = PreviewState(status: PreviewStatus.loading, plan: state.plan);
 
     try {
-      final List<String> availableExtensions = _collectExtensions(source, target);
-      final ScanSnapshot filteredSource = _filterSnapshot(source, extensionFilter);
-      final ScanSnapshot filteredTarget = _filterSnapshot(target, extensionFilter);
+      final ScanSnapshot baseSource = _filterIgnored(source, ignoredExtensions);
+      final ScanSnapshot baseTarget = _filterIgnored(target, ignoredExtensions);
+      final List<String> availableExtensions =
+          _collectExtensions(baseSource, baseTarget);
+      final ScanSnapshot filteredSource =
+          _filterSnapshot(baseSource, extensionFilter);
+      final ScanSnapshot filteredTarget =
+          _filterSnapshot(baseTarget, extensionFilter);
       final plan = _diffEngine.buildPlan(
         source: filteredSource,
         target: filteredTarget,
@@ -150,9 +167,10 @@ class PreviewController extends StateNotifier<PreviewState> {
         mode: PreviewMode.remote,
         availableExtensions: availableExtensions,
         activeExtension: extensionFilter,
-        sourceSnapshot: source,
-        targetSnapshot: target,
+        sourceSnapshot: baseSource,
+        targetSnapshot: baseTarget,
         deleteEnabled: deleteEnabled,
+        ignoredExtensions: ignoredExtensions,
         sourceRootId: sourceRootId ?? source.rootId,
       );
     } catch (error) {
@@ -162,9 +180,10 @@ class PreviewController extends StateNotifier<PreviewState> {
         mode: PreviewMode.remote,
         availableExtensions: state.availableExtensions,
         activeExtension: extensionFilter,
-        sourceSnapshot: source,
-        targetSnapshot: target,
+        sourceSnapshot: state.sourceSnapshot ?? source,
+        targetSnapshot: state.targetSnapshot ?? target,
         deleteEnabled: deleteEnabled,
+        ignoredExtensions: ignoredExtensions,
         sourceRootId: sourceRootId ?? source.rootId,
         errorMessage: PreviewState.localizeErrorMessage(error.toString()),
       );
@@ -184,6 +203,7 @@ class PreviewController extends StateNotifier<PreviewState> {
         sourceSnapshot: state.sourceSnapshot,
         targetSnapshot: state.targetSnapshot,
         deleteEnabled: state.deleteEnabled,
+        ignoredExtensions: state.ignoredExtensions,
         sourceRootId: state.sourceRootId,
         errorMessage: state.errorMessage,
       );
@@ -207,6 +227,7 @@ class PreviewController extends StateNotifier<PreviewState> {
         sourceSnapshot: rawSource,
         targetSnapshot: rawTarget,
         deleteEnabled: state.deleteEnabled,
+        ignoredExtensions: state.ignoredExtensions,
         sourceRootId: state.sourceRootId,
       );
     } catch (error) {
@@ -219,6 +240,7 @@ class PreviewController extends StateNotifier<PreviewState> {
         sourceSnapshot: rawSource,
         targetSnapshot: rawTarget,
         deleteEnabled: state.deleteEnabled,
+        ignoredExtensions: state.ignoredExtensions,
         sourceRootId: state.sourceRootId,
         errorMessage: PreviewState.localizeErrorMessage(error.toString()),
       );
@@ -262,6 +284,31 @@ class PreviewController extends StateNotifier<PreviewState> {
     );
   }
 
+  ScanSnapshot _filterIgnored(
+      ScanSnapshot snapshot, List<String> ignoredExtensions) {
+    if (ignoredExtensions.isEmpty) {
+      return snapshot;
+    }
+    final Set<String> ignored = ignoredExtensions
+        .map((String value) => value.trim().toLowerCase())
+        .where((String value) => value.isNotEmpty)
+        .toSet();
+    return ScanSnapshot(
+      rootId: snapshot.rootId,
+      rootDisplayName: snapshot.rootDisplayName,
+      deviceId: snapshot.deviceId,
+      scannedAt: snapshot.scannedAt,
+      entries: snapshot.entries.where((entry) {
+        if (entry.isDirectory) {
+          return true;
+        }
+        return !ignored.contains(_extensionOf(entry.relativePath));
+      }).toList(),
+      cacheVersion: snapshot.cacheVersion,
+      warnings: snapshot.warnings,
+    );
+  }
+
   String _extensionOf(String path) {
     final int dotIndex = path.lastIndexOf('.');
     if (dotIndex < 0 || dotIndex == path.length - 1) {
@@ -274,8 +321,8 @@ class PreviewController extends StateNotifier<PreviewState> {
 final StateNotifierProvider<PreviewController, PreviewState>
     previewControllerProvider =
     StateNotifierProvider<PreviewController, PreviewState>(
-      (Ref ref) => PreviewController(
-        ref.watch(diffEngineProvider),
-        ref.watch(directoryScannerProvider),
-      ),
-    );
+  (Ref ref) => PreviewController(
+    ref.watch(diffEngineProvider),
+    ref.watch(directoryScannerProvider),
+  ),
+);

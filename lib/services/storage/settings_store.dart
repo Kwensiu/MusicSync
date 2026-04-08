@@ -1,0 +1,82 @@
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:music_sync/features/settings/state/settings_state.dart';
+
+class SettingsStore {
+  static const String _autoStartListeningKey = 'auto_start_listening';
+  static const String _ignoredExtensionsKey = 'ignored_extensions';
+  static const String _themeModeKey = 'theme_mode';
+  static const String _paletteKey = 'palette';
+
+  Future<bool> loadAutoStartListening() async {
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    return preferences.getBool(_autoStartListeningKey) ?? false;
+  }
+
+  Future<void> saveAutoStartListening(bool value) async {
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    await preferences.setBool(_autoStartListeningKey, value);
+  }
+
+  Future<List<String>> loadIgnoredExtensions() async {
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    final List<String> values =
+        preferences.getStringList(_ignoredExtensionsKey) ?? const <String>[];
+    return values
+        .map((String value) => value.trim().toLowerCase())
+        .where((String value) => value.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+  }
+
+  Future<void> saveIgnoredExtensions(List<String> values) async {
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    final List<String> normalized = values
+        .map((String value) => value.trim().toLowerCase())
+        .where((String value) => value.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+    await preferences.setStringList(_ignoredExtensionsKey, normalized);
+  }
+
+  Future<AppThemeModeSetting> loadThemeMode() async {
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    final String raw = preferences.getString(_themeModeKey) ?? 'system';
+    return switch (raw) {
+      'light' => AppThemeModeSetting.light,
+      'dark' => AppThemeModeSetting.dark,
+      _ => AppThemeModeSetting.system,
+    };
+  }
+
+  Future<void> saveThemeMode(AppThemeModeSetting mode) async {
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    final String raw = switch (mode) {
+      AppThemeModeSetting.system => 'system',
+      AppThemeModeSetting.light => 'light',
+      AppThemeModeSetting.dark => 'dark',
+    };
+    await preferences.setString(_themeModeKey, raw);
+  }
+
+  Future<AppPaletteSetting> loadPalette() async {
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    final String raw = preferences.getString(_paletteKey) ?? 'neutral';
+    return switch (raw) {
+      'expressive' => AppPaletteSetting.expressive,
+      'tonal_spot' => AppPaletteSetting.tonalSpot,
+      _ => AppPaletteSetting.neutral,
+    };
+  }
+
+  Future<void> savePalette(AppPaletteSetting palette) async {
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    final String raw = switch (palette) {
+      AppPaletteSetting.neutral => 'neutral',
+      AppPaletteSetting.expressive => 'expressive',
+      AppPaletteSetting.tonalSpot => 'tonal_spot',
+    };
+    await preferences.setString(_paletteKey, raw);
+  }
+}

@@ -11,6 +11,6 @@ void main() {
     );
 
     expect(find.text('MusicSync'), findsOneWidget);
-    expect(find.text('Single-direction mirror sync over LAN.'), findsOneWidget);
+    expect(find.text('Step 1: Connect Remote Device'), findsOneWidget);
   });
 }

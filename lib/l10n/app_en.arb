@@ -1,10 +1,43 @@
 {
   "@@locale": "en",
   "appTitle": "MusicSync",
-  "homeModeTitle": "Mode",
-  "homeModeDescription": "Single-direction mirror sync over LAN.",
-  "homeSyncDirectionTitle": "Current Direction",
-  "homeSyncDirectionDescription": "Version 1 is fixed to: local directory -> remote directory. Listening and connecting only establish the session, not the copy direction.",
+  "homeStepConnectionTitle": "Step 1: Connect Remote Device",
+  "homeStepConnectionHint": "Establish a connection to the remote device. After the connection is ready, directory state and preview update automatically.",
+  "homeConnectionStateIdle": "Not listening",
+  "homeConnectionStateConnecting": "Connecting",
+  "homeConnectionStateListening": "Listening",
+  "homeConnectionStateConnected": "Connected",
+  "homePortChipLabel": "Port {port}",
+  "@homePortChipLabel": {
+    "placeholders": {
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "homeShareTooltip": "Share",
+  "homePortDialogTitle": "Set listening port",
+  "homePortDialogBody": "After saving, listening will use the new port.",
+  "homePortDialogHint": "Enter a port, for example 44888",
+  "homePortDialogInvalid": "Enter a valid port between 1 and 65535.",
+  "homeShareDialogTitle": "Share Address",
+  "homeShareCopyDone": "Connection address copied.",
+  "homeConnectStop": "Stop Connection",
+  "homeStepSourceTitle": "Step 2: Pick Local Source Directory",
+  "homeStepSourceHint": "This directory will be synced to the remote target directory.",
+  "homeClearSelection": "Clear",
+  "homeSourcePendingBecauseRemoteReady": "The remote directory is already ready. The only thing missing now is the local source directory.",
+  "homeStepPreviewTitle": "Step 3: Review and Sync",
+  "homeStepPreviewHint": "Analysis starts automatically after both directories are ready. Refresh the remote index only if needed.",
+  "homeAdvancedTitle": "Advanced and Debug",
+  "homeConnectionHelpersTitle": "Connection helpers",
+  "homeConnectionActionsTitle": "Connection actions",
+  "homeAutoPreviewWaiting": "Automatic analysis will start after both the local and remote directories are ready.",
+  "homeAutoPreviewWaitingLocal": "The remote side is ready. Automatic analysis will start after you pick the local source directory.",
+  "homeAutoPreviewWaitingRemote": "The local source directory is ready. Automatic analysis will start after the remote side picks a shared directory.",
+  "homeAutoPreviewRunning": "Directories are ready. Building the remote preview automatically.",
+  "homeAutoPreviewReady": "Remote preview is up to date and ready for review.",
+  "homeAutoPreviewRefresh": "Refresh the remote index manually if you need to force a rescan.",
   "homeLocalLibraryTitle": "Local Library",
   "homeLocalSourceHint": "This directory is treated as the source. The remote side will be aligned to it.",
   "directoryPreflightWarningTitle": "Preflight warning: this directory may be heavy and preview generation could be slow.",
@@ -52,10 +85,19 @@
   "homeCleanupTempFailed": "Failed to clean temporary files. Please try again later.",
   "homeRecentAddresses": "Recent Addresses",
   "homeDiscoveredDevices": "Discovered Devices",
+  "homeManageRecentItems": "Manage Records",
+  "homeRecentEmpty": "No records yet",
+  "homeRecentAlias": "Alias",
+  "homeRecentDelete": "Delete",
+  "homeRecentEditAlias": "Edit Label",
+  "homeRecentEditAddress": "Edit Address",
+  "homeRecentAddressField": "Address",
+  "homeRecentAddressRequired": "Enter an address",
+  "homeRecentAliasHint": "Enter a short name",
   "homeRemoteTargetTitle": "Remote Target",
   "homeRemoteTargetHint": "Version 1 currently supports only local-to-remote sync.",
-  "homeRemoteDirectoryReady": "The remote shared directory is ready. You can refresh the index or build a remote preview.",
-  "homeRemoteDirectoryMissing": "The remote shared directory is not ready yet. Select a shared directory on the remote device, then refresh the index or build a remote preview.",
+  "homeRemoteIndexPending": "The remote directory is ready. Syncing the latest index now.",
+  "homeRemoteManualRefreshTitle": "Manual refresh",
   "homeListenerTitle": "Listener",
   "homeListenerStart": "Start Listening",
   "homeListenerStop": "Stop Listening",
@@ -84,10 +126,17 @@
     }
   },
   "homeRefreshRemoteIndex": "Refresh Remote Index",
+  "homeRefreshRemoteIndexHint": "Use this only when you think the remote directory changed but automatic refresh has not caught up yet.",
   "homeRemoteRoot": "Remote root: {name}",
   "@homeRemoteRoot": {
     "placeholders": {
       "name": {}
+    }
+  },
+  "homeRemoteIndexedAt": "Remote index time: {value}",
+  "@homeRemoteIndexedAt": {
+    "placeholders": {
+      "value": {}
     }
   },
   "homeRemoteFiles": "Remote files: {count}",
@@ -101,8 +150,15 @@
   "homeOpenPreview": "Open Preview",
   "previewTitle": "Preview",
   "previewSummaryTitle": "Summary",
-  "previewScopeLocal": "Local debug preview: local -> local target",
-  "previewScopeRemote": "LAN preview: local -> remote",
+  "previewTransferDirection": "Direction: {source} -> {target}",
+  "@previewTransferDirection": {
+    "placeholders": {
+      "source": {},
+      "target": {}
+    }
+  },
+  "previewDirectionRemote": "Remote Device",
+  "previewDirectionLocalTarget": "Local Target",
   "previewStatus": "Status: {status}",
   "@previewStatus": {
     "placeholders": {
@@ -139,6 +195,14 @@
       "size": {}
     }
   },
+  "previewSummaryBytes": "Bytes",
+  "previewSectionAll": "All Items",
+  "previewTargetIndexedAt": "Current target snapshot time: {value}",
+  "@previewTargetIndexedAt": {
+    "placeholders": {
+      "value": {}
+    }
+  },
   "previewBuildPlan": "Build Preview",
   "previewBuildRemotePlan": "Build Remote Preview",
   "previewPlanItemsTitle": "Plan Items",
@@ -147,10 +211,30 @@
   "previewSectionDelete": "Delete Items",
   "previewSectionConflict": "Conflicts",
   "previewNoItemsInSection": "No items in this section.",
+  "previewWaitingDirectories": "Waiting for directories",
+  "previewWaitingLocalDirectory": "Waiting for local directory",
+  "previewWaitingRemoteDirectory": "Waiting for remote directory",
+  "previewNoSyncItems": "No items to sync right now.",
   "previewFilterAll": "All types",
+  "previewIgnoredExtensions": "Ignored: {value}",
+  "@previewIgnoredExtensions": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "previewFilterMore": "More",
+  "previewFilterCollapse": "Less",
   "previewFilterTitle": "File Type",
   "previewStalePlan": "The selected directory changed. Rebuild preview.",
   "previewSectionTitle": "Category",
+  "previewSectionCount": "Items in current section: {count}",
+  "@previewSectionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "previewScanTimeout": "Scanning may be blocked by a large or inaccessible directory.",
   "previewPartialScanWarning": "Scanning skipped {count} inaccessible subdirectories.",
   "@previewPartialScanWarning": {
@@ -169,7 +253,7 @@
   },
   "previewStartSync": "Start Sync",
   "previewDirectoryRequired": "Select a local directory before building preview.",
-  "previewRemoteDirectoryRequired": "Connect to a peer and load its index before building remote preview.",
+  "previewRemoteDirectoryRequired": "Connect to the remote device and make sure the remote side has picked a shared directory.",
   "errorRemoteDirectoryNotSelected": "The remote device has not selected a shared directory yet.",
   "errorRemoteDeviceDisconnected": "The remote device disconnected. Keep the target device in foreground and reconnect.",
   "errorConnectionRefused": "Connection was refused. Check the target address and ensure the remote listener is running.",
@@ -180,6 +264,15 @@
   "errorDirectoryUnavailable": "Unable to access the selected directory. Please choose another accessible folder.",
   "errorDirectoryTreeAccessDenied": "Scanning failed because part of the directory tree is not accessible.",
   "errorDirectoryAccessDenied": "Directory access was denied. Please choose a folder you can read.",
+  "errorDirectoryNotExists": "The selected directory no longer exists. Please choose it again.",
+  "errorListenPortInUse": "Failed to start listening because the port is already in use. Pick another port or stop the process using it.",
+  "errorWindowsWriteCreateFailed": "Unable to write to the Windows target directory. Check permissions and file locks, then try again.",
+  "errorWindowsRenameFailed": "Unable to finalize one or more file writes. Check permissions and file locks, then try again.",
+  "errorWindowsDeleteFailed": "Unable to delete one or more items from the Windows target directory. Check permissions and file locks, then try again.",
+  "errorWindowsReadFailed": "Unable to read one or more Windows source files. Check permissions and file locks, then try again.",
+  "errorWindowsDirectoryCreateFailed": "Unable to create one or more target folders. Check permissions and path validity, then try again.",
+  "errorWindowsDirectoryListingFailed": "Unable to read the current Windows directory. Please choose another folder.",
+  "errorWindowsEntryAccessFailed": "Scanning failed because one or more Windows entries could not be accessed.",
   "executionConfirmDeleteTitle": "Confirm deletion",
   "executionConfirmDeleteBody": "This sync will delete {count} extra items from the target directory. Continue?",
   "@executionConfirmDeleteBody": {
@@ -191,9 +284,16 @@
   },
   "commonCancel": "Cancel",
   "commonConfirm": "Confirm",
+  "commonAdd": "Add",
   "executionTitle": "Execution",
   "executionProgressTitle": "Progress",
-  "executionRemotePending": "Build a remote preview before running remote sync.",
+  "executionStateLabel": "Execution status: {status}",
+  "@executionStateLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "executionRemotePending": "Wait for the remote preview to finish before running remote sync.",
   "executionRemoteReady": "Remote preview is ready. The current plan can sync local files to the remote side.",
   "executionKeepForeground": "When Android is the remote side, keep the target device in foreground. Do not background the app or lock the screen.",
   "executionLocalPending": "Local debug copy is only for local preview mode and is not part of the main LAN sync flow.",
@@ -206,7 +306,7 @@
   "executionPickTarget": "Pick Target Directory",
   "executionRun": "Run Local Copy",
   "executionRunLocalDebug": "Run Local Debug Copy",
-  "executionRunRemote": "Run Remote Sync",
+  "executionRunRemote": "Start Sync",
   "executionStop": "Stop Sync",
   "executionCancelled": "Sync was stopped manually. Incomplete temporary files were cleaned when possible.",
   "executionCurrentFile": "Current file: {path}",
@@ -262,9 +362,19 @@
       "mode": {}
     }
   },
+  "resultStatusLabel": "Execution status: {status}",
+  "@resultStatusLabel": {
+    "placeholders": {
+      "status": {}
+    }
+  },
   "resultModeLocal": "Local Debug Copy",
   "resultModeRemote": "Remote Sync",
   "resultModeUnknown": "Unknown",
+  "resultStatusCompleted": "Completed",
+  "resultStatusCancelled": "Cancelled",
+  "resultStatusFailed": "Failed",
+  "resultStatusIdle": "Idle",
   "resultErrorTitle": "Error",
   "resultAdviceTitle": "Advice",
   "resultAdviceKeepForeground": "If the remote side is Android, keep it in foreground and retry.",
@@ -300,8 +410,48 @@
     }
   },
   "settingsTitle": "Settings",
+  "settingsGeneralTitle": "General",
+  "settingsAppearanceTitle": "Appearance",
   "settingsDefaultsTitle": "Defaults",
   "settingsDefaultsPlaceholder": "Project-wide settings will live here.",
+  "settingsRulesTitle": "Rules",
+  "settingsAutoStartListeningTitle": "Auto Listening",
+  "settingsAutoStartListeningDescription": "Allow MusicSync to start listening automatically on app launch.",
+  "settingsIgnoredExtensionsTitle": "Ignored File Types",
+  "settingsIgnoredExtensionsDescription": "Ignored suffix types will be skipped during sync.",
+  "settingsIgnoredExtensionsEmpty": "No ignored file types yet",
+  "settingsIgnoredExtensionsSummary": "{count} ignored file types",
+  "@settingsIgnoredExtensionsSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsIgnoredExtensionField": "Extension",
+  "settingsIgnoredExtensionHint": "For example flac or lrc",
+  "settingsIgnoredExtensionRequired": "Enter an extension",
+  "settingsIgnoredExtensionInvalid": "Invalid extension format. Use letters, numbers, underscores, or hyphens only",
+  "settingsIgnoredExtensionDuplicate": "This extension already exists",
+  "settingsThemeModeTitle": "Theme Mode",
+  "settingsThemeModeDescription": "Choose light mode, dark mode, or follow the system.",
+  "settingsThemeModeLight": "Light",
+  "settingsThemeModeDark": "Dark",
+  "settingsThemeModeSystem": "System",
+  "settingsPaletteTitle": "Palette",
+  "settingsPaletteDescription": "Choose a Material Design palette strategy.",
+  "settingsPaletteNeutral": "Neutral",
+  "settingsPaletteExpressive": "Expressive",
+  "settingsPaletteTonalSpot": "Tonal Spot",
+  "previewTransferDirectionLabel": "Transfer Direction",
+  "previewDirectoryStatusLabel": "Directory Status",
+  "previewDirectoryStatusLocal": "Local",
+  "previewDirectoryStatusRemote": "Remote",
+  "diffTypeCopy": "COPY",
+  "diffTypeDelete": "DELETE",
+  "diffTypeConflict": "CONFLICT",
+  "diffTypeSkip": "SKIP",
+  "diffConflictMetadataMismatch": "Metadata differs",
   "statusIdle": "idle",
   "statusListening": "listening",
   "statusConnecting": "connecting",

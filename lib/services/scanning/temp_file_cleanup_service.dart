@@ -19,6 +19,22 @@ class TempFileCleanupService {
 
   final FileAccessGateway _gateway;
 
+  Future<bool> hasTempFiles({
+    required String rootId,
+  }) async {
+    bool found = false;
+    await _walk(
+      directoryId: rootId,
+      relativeBase: '',
+      onTempFile: (FileAccessEntry _, String __) async {
+        found = true;
+      },
+      onDirectoryError: (_) {},
+      shouldStop: () => found,
+    );
+    return found;
+  }
+
   Future<TempFileCleanupResult> cleanup({
     required String rootId,
   }) async {
@@ -38,6 +54,7 @@ class TempFileCleanupService {
       onDirectoryError: (String relativePath) {
         failedPaths.add(relativePath);
       },
+      shouldStop: () => false,
     );
     return TempFileCleanupResult(
       deletedCount: deletedCount,
@@ -51,7 +68,11 @@ class TempFileCleanupService {
     required Future<void> Function(FileAccessEntry entry, String relativePath)
         onTempFile,
     required void Function(String relativePath) onDirectoryError,
+    required bool Function() shouldStop,
   }) async {
+    if (shouldStop()) {
+      return;
+    }
     late final List<FileAccessEntry> children;
     try {
       children = await _gateway.listChildren(directoryId);
@@ -61,15 +82,18 @@ class TempFileCleanupService {
     }
 
     for (final FileAccessEntry child in children) {
-      final String relativePath = relativeBase.isEmpty
-          ? child.name
-          : '$relativeBase/${child.name}';
+      if (shouldStop()) {
+        return;
+      }
+      final String relativePath =
+          relativeBase.isEmpty ? child.name : '$relativeBase/${child.name}';
       if (child.isDirectory) {
         await _walk(
           directoryId: child.entryId,
           relativeBase: relativePath,
           onTempFile: onTempFile,
           onDirectoryError: onDirectoryError,
+          shouldStop: shouldStop,
         );
         continue;
       }
@@ -82,7 +106,7 @@ class TempFileCleanupService {
 
 final Provider<TempFileCleanupService> tempFileCleanupServiceProvider =
     Provider<TempFileCleanupService>(
-      (Ref ref) => TempFileCleanupService(
-        ref.watch(fileAccessGatewayProvider),
-      ),
-    );
+  (Ref ref) => TempFileCleanupService(
+    ref.watch(fileAccessGatewayProvider),
+  ),
+);
