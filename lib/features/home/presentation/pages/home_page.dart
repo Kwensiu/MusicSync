@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:music_sync/app/routes/route_names.dart';
+import 'package:music_sync/app/widgets/app_confirm_dialog.dart';
 import 'package:music_sync/app/widgets/app_scaffold.dart';
 import 'package:music_sync/app/widgets/section_card.dart';
 import 'package:music_sync/core/errors/app_error_localizer.dart';
@@ -460,32 +461,14 @@ class _HomePageState extends ConsumerState<HomePage>
                                           await showDialog<bool>(
                                         context: context,
                                         builder: (BuildContext context) {
-                                          return AlertDialog(
-                                            title: Text(context.l10n
-                                                .executionConfirmDeleteTitle),
-                                            content: Text(
-                                              context.l10n
-                                                  .executionConfirmDeleteBody(
-                                                previewState
-                                                    .plan.deleteItems.length,
-                                              ),
+                                          return AppConfirmDialog(
+                                            title: context.l10n
+                                                .executionConfirmDeleteTitle,
+                                            message: context.l10n
+                                                .executionConfirmDeleteBody(
+                                              previewState
+                                                  .plan.deleteItems.length,
                                             ),
-                                            actions: <Widget>[
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.of(context)
-                                                        .pop(false),
-                                                child: Text(
-                                                    context.l10n.commonCancel),
-                                              ),
-                                              FilledButton(
-                                                onPressed: () =>
-                                                    Navigator.of(context)
-                                                        .pop(true),
-                                                child: Text(
-                                                    context.l10n.commonConfirm),
-                                              ),
-                                            ],
                                           );
                                         },
                                       );
