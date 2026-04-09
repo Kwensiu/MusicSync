@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:music_sync/core/errors/app_error_localizer.dart';
 import 'package:music_sync/features/execution/state/execution_controller.dart';
@@ -99,6 +101,59 @@ void main() {
       expect(controller.state.errorMessage, AppErrorCode.syncCancelled);
     });
 
+    test('cancelled local execution can run again', () async {
+      final controller = ExecutionController(
+        _BlockingLocalSyncExecutor(),
+        _FakeRemoteSyncExecutor(),
+      );
+
+      final Future<void> firstRun = controller.execute(
+        plan: SyncPlan.empty(),
+        targetRoot: 'local-target',
+      );
+      controller.cancel();
+      await firstRun;
+
+      expect(controller.state.status, ExecutionStatus.cancelled);
+
+      await controller.execute(
+        plan: SyncPlan.empty(),
+        targetRoot: 'local-target',
+      );
+
+      expect(controller.state.status, ExecutionStatus.completed);
+      expect(controller.state.mode, ExecutionMode.local);
+      expect(controller.state.targetRoot, 'local-target');
+    });
+
+    test('cancel marks remote execution as cancelled and allows retry',
+        () async {
+      final controller = ExecutionController(
+        _FakeLocalSyncExecutor(result: const ExecutionResult.empty()),
+        _BlockingRemoteSyncExecutor(),
+      );
+
+      final Future<void> firstRun = controller.executeRemote(
+        plan: SyncPlan.empty(),
+        remoteRootId: 'remote-root',
+      );
+      controller.cancel();
+      await firstRun;
+
+      expect(controller.state.status, ExecutionStatus.cancelled);
+      expect(controller.state.mode, ExecutionMode.remote);
+      expect(controller.state.errorMessage, AppErrorCode.syncCancelled);
+
+      await controller.executeRemote(
+        plan: SyncPlan.empty(),
+        remoteRootId: 'remote-root',
+      );
+
+      expect(controller.state.status, ExecutionStatus.completed);
+      expect(controller.state.mode, ExecutionMode.remote);
+      expect(controller.state.targetRoot, 'remote-root');
+    });
+
     test('clearTransient cancels in-flight execution and preserves idle state',
         () async {
       final controller = ExecutionController(
@@ -116,6 +171,76 @@ void main() {
       expect(controller.state.status, ExecutionStatus.idle);
       expect(controller.state.mode, ExecutionMode.none);
       expect(controller.state.targetRoot, 'local-target');
+    });
+
+    test('failActiveExecution marks running remote execution as failed', () {
+      final controller = ExecutionController(
+        _FakeLocalSyncExecutor(result: const ExecutionResult.empty()),
+        _FakeRemoteSyncExecutor(),
+      );
+
+      controller.state = const ExecutionState(
+        status: ExecutionStatus.running,
+        progress: TransferProgress(
+          stage: SyncStage.copying,
+          processedFiles: 1,
+          totalFiles: 4,
+          processedBytes: 128,
+          totalBytes: 512,
+          currentPath: 'Album/song.mp3',
+        ),
+        result: ExecutionResult.empty(),
+        mode: ExecutionMode.remote,
+        targetRoot: 'remote-root',
+      );
+
+      controller.failActiveExecution(
+        'The selected directory is not accessible anymore.',
+      );
+
+      expect(controller.state.status, ExecutionStatus.failed);
+      expect(controller.state.mode, ExecutionMode.remote);
+      expect(controller.state.progress.stage, SyncStage.failed);
+      expect(controller.state.errorMessage, AppErrorCode.directoryUnavailable);
+    });
+
+    test(
+        'stale remote progress does not overwrite failed state after active execution is failed',
+        () async {
+      final _ProgressControlledRemoteSyncExecutor remoteExecutor =
+          _ProgressControlledRemoteSyncExecutor();
+      final controller = ExecutionController(
+        _FakeLocalSyncExecutor(result: const ExecutionResult.empty()),
+        remoteExecutor,
+      );
+
+      final Future<void> run = controller.executeRemote(
+        plan: SyncPlan.empty(),
+        remoteRootId: 'remote-root',
+      );
+
+      await remoteExecutor.started.future;
+      controller.failActiveExecution(
+        'The selected directory is not accessible anymore.',
+      );
+
+      remoteExecutor.emitProgress(
+        const TransferProgress(
+          stage: SyncStage.copying,
+          processedFiles: 1,
+          totalFiles: 4,
+          processedBytes: 64,
+          totalBytes: 256,
+          currentPath: 'Album/song.mp3',
+        ),
+      );
+      remoteExecutor.complete();
+      await run;
+
+      expect(controller.state.status, ExecutionStatus.failed);
+      expect(controller.state.mode, ExecutionMode.remote);
+      expect(controller.state.progress.stage, SyncStage.failed);
+      expect(controller.state.errorMessage, AppErrorCode.directoryUnavailable);
     });
   });
 }
@@ -153,6 +278,69 @@ class _BlockingLocalSyncExecutor extends LocalSyncExecutor {
 class _FakeRemoteSyncExecutor extends RemoteSyncExecutor {
   _FakeRemoteSyncExecutor()
       : super(_NoopConnectionService(), _NoopFileAccessGateway());
+}
+
+class _BlockingRemoteSyncExecutor extends RemoteSyncExecutor {
+  _BlockingRemoteSyncExecutor()
+      : super(_NoopConnectionService(), _NoopFileAccessGateway());
+
+  @override
+  Future<ExecutionResult> execute({
+    required SyncPlan plan,
+    required String remoteRootId,
+    required RemoteProgressCallback onProgress,
+    SyncCancelToken? cancelToken,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    cancelToken?.throwIfCancelled();
+    return ExecutionResult(
+      copiedCount: 0,
+      deletedCount: 0,
+      failedCount: 0,
+      totalBytes: 0,
+      targetRoot: remoteRootId,
+    );
+  }
+}
+
+class _ProgressControlledRemoteSyncExecutor extends RemoteSyncExecutor {
+  _ProgressControlledRemoteSyncExecutor()
+      : super(_NoopConnectionService(), _NoopFileAccessGateway());
+
+  final Completer<void> started = Completer<void>();
+  final Completer<void> _finish = Completer<void>();
+  RemoteProgressCallback? _progressCallback;
+
+  void emitProgress(TransferProgress progress) {
+    _progressCallback?.call(progress);
+  }
+
+  void complete() {
+    if (!_finish.isCompleted) {
+      _finish.complete();
+    }
+  }
+
+  @override
+  Future<ExecutionResult> execute({
+    required SyncPlan plan,
+    required String remoteRootId,
+    required RemoteProgressCallback onProgress,
+    SyncCancelToken? cancelToken,
+  }) async {
+    _progressCallback = onProgress;
+    if (!started.isCompleted) {
+      started.complete();
+    }
+    await _finish.future;
+    return ExecutionResult(
+      copiedCount: 0,
+      deletedCount: 0,
+      failedCount: 0,
+      totalBytes: 0,
+      targetRoot: remoteRootId,
+    );
+  }
 }
 
 class _NoopConnectionService extends ConnectionService {}

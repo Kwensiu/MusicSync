@@ -98,6 +98,9 @@ class ExecutionController extends StateNotifier<ExecutionState> {
         targetRoot: targetRoot,
         cancelToken: cancelToken,
         onProgress: (TransferProgress progress) {
+          if (!identical(_cancelToken, cancelToken)) {
+            return;
+          }
           state = ExecutionState(
             status: ExecutionStatus.running,
             progress: progress,
@@ -188,6 +191,9 @@ class ExecutionController extends StateNotifier<ExecutionState> {
         remoteRootId: remoteRootId,
         cancelToken: cancelToken,
         onProgress: (TransferProgress progress) {
+          if (!identical(_cancelToken, cancelToken)) {
+            return;
+          }
           state = ExecutionState(
             status: ExecutionStatus.running,
             progress: progress,
@@ -275,6 +281,30 @@ class ExecutionController extends StateNotifier<ExecutionState> {
       ),
       result: state.result,
       mode: ExecutionMode.remote,
+      targetRoot: state.targetRoot,
+      errorMessage: ExecutionState.localizeErrorMessage(message),
+    );
+  }
+
+  void failActiveExecution(String message) {
+    if (state.status != ExecutionStatus.running ||
+        state.mode == ExecutionMode.none) {
+      return;
+    }
+    _cancelToken?.cancel();
+    _cancelToken = null;
+    state = ExecutionState(
+      status: ExecutionStatus.failed,
+      progress: TransferProgress(
+        stage: SyncStage.failed,
+        processedFiles: state.progress.processedFiles,
+        totalFiles: state.progress.totalFiles,
+        processedBytes: state.progress.processedBytes,
+        totalBytes: state.progress.totalBytes,
+        currentPath: state.progress.currentPath,
+      ),
+      result: state.result,
+      mode: state.mode,
       targetRoot: state.targetRoot,
       errorMessage: ExecutionState.localizeErrorMessage(message),
     );

@@ -39,7 +39,8 @@ class HomePage extends ConsumerStatefulWidget {
   ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends ConsumerState<HomePage> {
+class _HomePageState extends ConsumerState<HomePage>
+    with WidgetsBindingObserver {
   final TextEditingController _addressController = TextEditingController();
   Set<String> _selectedExtensions = <String>{'*'};
   bool _selectAllSections = true;
@@ -53,9 +54,39 @@ class _HomePageState extends ConsumerState<HomePage> {
   bool _isAutoPreviewQueued = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _addressController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || !mounted) {
+      return;
+    }
+    final peer_connection.ConnectionState connectionState =
+        ref.read(connectionControllerProvider);
+    final ExecutionState executionState = ref.read(executionControllerProvider);
+    if (connectionState.peer == null ||
+        connectionState.status != peer_connection.ConnectionStatus.connected ||
+        executionState.status == ExecutionStatus.running) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) {
+        return;
+      }
+      await ref
+          .read(connectionControllerProvider.notifier)
+          .refreshRemoteSnapshot(clearTransientState: false);
+    });
   }
 
   @override

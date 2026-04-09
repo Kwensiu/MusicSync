@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:music_sync/features/connection/state/connection_controller.dart';
 import 'package:music_sync/features/directory/state/directory_state.dart';
 import 'package:music_sync/features/execution/state/execution_controller.dart';
+import 'package:music_sync/features/execution/state/execution_state.dart';
 import 'package:music_sync/features/preview/state/preview_controller.dart';
 import 'package:music_sync/services/file_access/file_access_entry.dart';
 import 'package:music_sync/services/file_access/file_access_gateway.dart';
@@ -25,7 +26,7 @@ class DirectoryController extends StateNotifier<DirectoryState> {
 
   final FileAccessGateway _gateway;
   final Future<DirectoryHandle?> Function() _pickDirectory;
-  final void Function() _onDirectoryChanged;
+  final void Function({required bool hadDirectorySelected}) _onDirectoryChanged;
   final Future<void> Function(DirectoryHandle? handle) _onHandleUpdated;
   final RecentItemsStore _store;
   final DirectoryPreflightService _preflightService;
@@ -42,7 +43,7 @@ class DirectoryController extends StateNotifier<DirectoryState> {
           await _preflightService.inspect(handle);
       final bool hasTempFiles =
           await _tempFileCleanupService.hasTempFiles(rootId: handle.entryId);
-      _onDirectoryChanged();
+      _onDirectoryChanged(hadDirectorySelected: state.handle != null);
       await _onHandleUpdated(handle);
       await _store.saveRecentDirectory(handle);
       state = DirectoryState(
@@ -70,7 +71,7 @@ class DirectoryController extends StateNotifier<DirectoryState> {
   }
 
   Future<void> clearDirectory() async {
-    _onDirectoryChanged();
+    _onDirectoryChanged(hadDirectorySelected: state.handle != null);
     await _onHandleUpdated(null);
     state = DirectoryState(
       recentHandles: state.recentHandles,
@@ -79,7 +80,7 @@ class DirectoryController extends StateNotifier<DirectoryState> {
   }
 
   void setDirectory(DirectoryHandle handle) {
-    _onDirectoryChanged();
+    _onDirectoryChanged(hadDirectorySelected: state.handle != null);
     _onHandleUpdated(handle);
     state = DirectoryState(
       handle: handle,
@@ -119,7 +120,7 @@ class DirectoryController extends StateNotifier<DirectoryState> {
           await _preflightService.inspect(handle);
       final bool hasTempFiles =
           await _tempFileCleanupService.hasTempFiles(rootId: handle.entryId);
-      _onDirectoryChanged();
+      _onDirectoryChanged(hadDirectorySelected: state.handle != null);
       await _onHandleUpdated(handle);
       await _store.saveRecentDirectory(handle);
       state = DirectoryState(
@@ -186,9 +187,20 @@ final StateNotifierProvider<DirectoryController, DirectoryState>
   (Ref ref) => DirectoryController(
     ref.watch(fileAccessGatewayProvider),
     ref.watch(fileAccessGatewayProvider).pickDirectory,
-    () {
+    ({required bool hadDirectorySelected}) {
       ref.read(previewControllerProvider.notifier).clear();
-      ref.read(executionControllerProvider.notifier).clearTransient();
+      final ExecutionController executionController =
+          ref.read(executionControllerProvider.notifier);
+      final bool isExecutionRunning =
+          ref.read(executionControllerProvider).status ==
+              ExecutionStatus.running;
+      if (hadDirectorySelected && isExecutionRunning) {
+        executionController.failActiveExecution(
+          'The selected directory is not accessible anymore.',
+        );
+        return;
+      }
+      executionController.clearTransient();
     },
     (DirectoryHandle? handle) async {
       await ref

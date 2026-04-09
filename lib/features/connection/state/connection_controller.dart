@@ -189,7 +189,17 @@ class ConnectionController extends StateNotifier<ConnectionState> {
 
   void _handleDisconnected(Object? error) {
     unawaited(_cleanupIncomingTransfers());
-    _clearPlanAndExecution();
+    final ExecutionState executionState =
+        _ref.read(executionControllerProvider);
+    _ref.read(previewControllerProvider.notifier).clear();
+    if (executionState.status == ExecutionStatus.running &&
+        executionState.mode == ExecutionMode.remote) {
+      _ref.read(executionControllerProvider.notifier).failActiveExecution(
+            'Remote device disconnected. Keep the target device in foreground and reconnect.',
+          );
+    } else {
+      _ref.read(executionControllerProvider.notifier).clearTransient();
+    }
     state = ConnectionState(
       status: ConnectionStatus.disconnected,
       listenPort: state.listenPort,
@@ -229,16 +239,28 @@ class ConnectionController extends StateNotifier<ConnectionState> {
       );
       return remoteSnapshot;
     } catch (error) {
+      final String message = error.toString();
+      if (_isPeerDisconnectedError(message)) {
+        _handleDisconnected(error);
+        return null;
+      }
+      final bool remoteDirectoryUnavailable =
+          _isRemoteDirectoryUnavailableError(message);
+      if (remoteDirectoryUnavailable) {
+        _handleRemoteDirectoryUnavailable();
+      }
       state = ConnectionState(
-        status: ConnectionStatus.failed,
+        status: ConnectionStatus.connected,
         peer: peer,
-        remoteSnapshot: state.remoteSnapshot,
-        isRemoteDirectoryReady: state.isRemoteDirectoryReady,
+        remoteSnapshot:
+            remoteDirectoryUnavailable ? null : state.remoteSnapshot,
+        isRemoteDirectoryReady:
+            remoteDirectoryUnavailable ? false : state.isRemoteDirectoryReady,
         listenPort: state.listenPort,
         discoveredDevices: state.discoveredDevices,
         recentAddresses: state.recentAddresses,
         recentLabels: state.recentLabels,
-        errorMessage: ConnectionState.localizeErrorMessage(error.toString()),
+        errorMessage: ConnectionState.localizeErrorMessage(message),
       );
       return null;
     }
@@ -302,6 +324,18 @@ class ConnectionController extends StateNotifier<ConnectionState> {
       return;
     }
     _ref.read(executionControllerProvider.notifier).clearTransient();
+  }
+
+  bool _isRemoteDirectoryUnavailableError(String value) {
+    return value.contains('No shared directory selected on peer') ||
+        value.contains('not accessible anymore');
+  }
+
+  bool _isPeerDisconnectedError(String value) {
+    return value.contains('Not connected to any peer') ||
+        value.contains('Peer disconnected') ||
+        value.contains('Remote device disconnected') ||
+        value.contains('Peer response timed out');
   }
 
   Future<void> saveRecentAddress(String value) async {

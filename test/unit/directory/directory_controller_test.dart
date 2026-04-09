@@ -14,7 +14,7 @@ void main() {
       _FakeFileAccessGateway(),
       () async =>
           const DirectoryHandle(entryId: 'root', displayName: 'AppData'),
-      () {},
+      ({required bool hadDirectorySelected}) {},
       (_) async {},
       store,
       DirectoryPreflightService(
