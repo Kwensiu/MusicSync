@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:music_sync/core/errors/app_error_localizer.dart';
 import 'package:music_sync/features/connection/state/connection_state.dart'
     as peer_connection;
 import 'package:music_sync/l10n/app_localizations_ext.dart';
@@ -28,13 +27,6 @@ class ConnectionSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    final String? errorMessage = connectionState.errorMessage;
-    final String? resolvedError =
-        errorMessage == null ? null : AppErrorLocalizer.resolve(errorMessage);
-    final bool showInlineError = errorMessage != null &&
-        resolvedError != AppErrorCode.remoteDirectoryNotSelected &&
-        resolvedError != AppErrorCode.remoteDeviceDisconnected;
-
     return DecoratedBox(
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
@@ -46,12 +38,6 @@ class ConnectionSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            if (showInlineError) ...<Widget>[
-              Text(
-                localizeUiError(context, errorMessage),
-              ),
-              const SizedBox(height: 12),
-            ],
             Row(
               children: <Widget>[
                 Expanded(

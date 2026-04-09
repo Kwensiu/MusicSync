@@ -27,7 +27,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get homeConnectionStateConnected => '已连接';
 
   @override
-  String get homeConnectionStateConnectedListening => '已连接并监听';
+  String get homeConnectionStateConnectedListening => '已连接';
 
   @override
   String homePortChipLabel(int port) {
@@ -200,7 +200,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get homeRemoteManualRefreshTitle => '手动刷新';
 
   @override
-  String get homeListenerTitle => '监听';
+  String get homePortConfigTitle => '端口配置';
+
+  @override
+  String get homeListenerTitle => '监听端口';
 
   @override
   String get homeListenerStart => '开始监听';
@@ -733,10 +736,11 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsRulesTitle => '规则';
 
   @override
-  String get settingsAutoStartListeningTitle => '自动监听';
+  String get settingsAutoStartListeningTitle => '启动时自动监听';
 
   @override
-  String get settingsAutoStartListeningDescription => '允许 MusicSync 启动时自动开启监听';
+  String get settingsAutoStartListeningDescription =>
+      '开启后，MusicSync 启动时会自动进入监听状态';
 
   @override
   String get settingsIgnoredExtensionsTitle => '忽略文件类型';

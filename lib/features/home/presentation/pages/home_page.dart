@@ -225,7 +225,7 @@ class _HomePageState extends ConsumerState<HomePage>
       showBackButton: false,
       actions: <Widget>[
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           child: ActionChipButton(
             label: ConnectionSectionActions.connectionStateChipLabel(
               context,
@@ -234,9 +234,11 @@ class _HomePageState extends ConsumerState<HomePage>
             tone: ConnectionSectionActions.connectionStateChipTone(
               connectionState,
             ),
+            compact: true,
             onPressed: isConnectUiBusy
                 ? null
-                : () => ConnectionSectionActions.handleConnectionStateChipTap(
+                : () => ConnectionSectionActions.showConnectionStateChipDialog(
+                      context: context,
                       ref: ref,
                       connectionState: connectionState,
                     ),

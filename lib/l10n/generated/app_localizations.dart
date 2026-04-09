@@ -137,7 +137,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeConnectionStateConnectedListening.
   ///
   /// In en, this message translates to:
-  /// **'Connected and Listening'**
+  /// **'Connected'**
   String get homeConnectionStateConnectedListening;
 
   /// No description provided for @homePortChipLabel.
@@ -453,10 +453,16 @@ abstract class AppLocalizations {
   /// **'Manual refresh'**
   String get homeRemoteManualRefreshTitle;
 
+  /// No description provided for @homePortConfigTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Port Settings'**
+  String get homePortConfigTitle;
+
   /// No description provided for @homeListenerTitle.
   ///
   /// In en, this message translates to:
-  /// **'Listener'**
+  /// **'Listening Port'**
   String get homeListenerTitle;
 
   /// No description provided for @homeListenerStart.
@@ -1398,13 +1404,13 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAutoStartListeningTitle.
   ///
   /// In en, this message translates to:
-  /// **'Auto Listening'**
+  /// **'Auto Listen on Launch'**
   String get settingsAutoStartListeningTitle;
 
   /// No description provided for @settingsAutoStartListeningDescription.
   ///
   /// In en, this message translates to:
-  /// **'Allow MusicSync to start listening automatically on app launch.'**
+  /// **'When enabled, MusicSync automatically starts listening after launch.'**
   String get settingsAutoStartListeningDescription;
 
   /// No description provided for @settingsIgnoredExtensionsTitle.

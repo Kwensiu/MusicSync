@@ -27,7 +27,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeConnectionStateConnected => 'Connected';
 
   @override
-  String get homeConnectionStateConnectedListening => 'Connected and Listening';
+  String get homeConnectionStateConnectedListening => 'Connected';
 
   @override
   String homePortChipLabel(int port) {
@@ -210,7 +210,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeRemoteManualRefreshTitle => 'Manual refresh';
 
   @override
-  String get homeListenerTitle => 'Listener';
+  String get homePortConfigTitle => 'Port Settings';
+
+  @override
+  String get homeListenerTitle => 'Listening Port';
 
   @override
   String get homeListenerStart => 'Start Listening';
@@ -774,11 +777,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsRulesTitle => 'Rules';
 
   @override
-  String get settingsAutoStartListeningTitle => 'Auto Listening';
+  String get settingsAutoStartListeningTitle => 'Auto Listen on Launch';
 
   @override
   String get settingsAutoStartListeningDescription =>
-      'Allow MusicSync to start listening automatically on app launch.';
+      'When enabled, MusicSync automatically starts listening after launch.';
 
   @override
   String get settingsIgnoredExtensionsTitle => 'Ignored File Types';

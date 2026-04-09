@@ -11,12 +11,14 @@ class ActionChipButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.tone = ActionChipTone.neutral,
+    this.compact = false,
     super.key,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final ActionChipTone tone;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -60,13 +62,19 @@ class ActionChipButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(999),
           onTap: onPressed,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? 12 : 14,
+              vertical: compact ? 7 : 10,
+            ),
             child: Text(
               label,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: resolvedForeground,
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: (compact
+                      ? Theme.of(context).textTheme.labelMedium
+                      : Theme.of(context).textTheme.labelLarge)
+                  ?.copyWith(
+                color: resolvedForeground,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ),

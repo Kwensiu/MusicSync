@@ -7,6 +7,7 @@ import 'package:music_sync/features/connection/state/connection_controller.dart'
 import 'package:music_sync/features/connection/state/connection_state.dart'
     as peer_connection;
 import 'package:music_sync/features/home/presentation/widgets/action_chip_button.dart';
+import 'package:music_sync/features/home/presentation/widgets/connection_section/connection_status_dialog.dart';
 import 'package:music_sync/features/home/presentation/widgets/home_dialogs/home_dialogs.dart';
 import 'package:music_sync/l10n/app_localizations_ext.dart';
 
@@ -19,9 +20,6 @@ class ConnectionSectionActions {
   ) {
     if (connectionState.peer != null &&
         connectionState.status == peer_connection.ConnectionStatus.connected) {
-      if (connectionState.listenPort != null) {
-        return context.l10n.homeConnectionStateConnectedListening;
-      }
       return context.l10n.homeConnectionStateConnected;
     }
     if (connectionState.status == peer_connection.ConnectionStatus.connecting) {
@@ -47,26 +45,41 @@ class ConnectionSectionActions {
     return ActionChipTone.neutral;
   }
 
-  static Future<void> handleConnectionStateChipTap({
+  static Future<void> showConnectionStateChipDialog({
+    required BuildContext context,
     required WidgetRef ref,
     required peer_connection.ConnectionState connectionState,
   }) async {
-    if (connectionState.peer != null &&
-        connectionState.status == peer_connection.ConnectionStatus.connected) {
-      await ref.read(connectionControllerProvider.notifier).disconnect();
-      return;
-    }
-    if (connectionState.status == peer_connection.ConnectionStatus.connecting) {
-      await ref.read(connectionControllerProvider.notifier).disconnect();
-      return;
-    }
-    if (connectionState.status == peer_connection.ConnectionStatus.listening) {
-      await ref.read(connectionControllerProvider.notifier).stopListening();
-      return;
-    }
-    await ref.read(connectionControllerProvider.notifier).startListening(
-          port: connectionState.listenPort ?? 44888,
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        final bool isListening = connectionState.status ==
+            peer_connection.ConnectionStatus.listening;
+        return ConnectionStatusDialog(
+          listenPort: connectionState.listenPort ?? 44888,
+          isListening: isListening,
+          onSavePort: (int port) async {
+            await _applyListenPort(
+              ref: ref,
+              port: port,
+            );
+          },
+          onToggleListening: () async {
+            if (isListening) {
+              await ref
+                  .read(connectionControllerProvider.notifier)
+                  .stopListening();
+              return;
+            }
+            await ref
+                .read(connectionControllerProvider.notifier)
+                .startListening(
+                  port: connectionState.listenPort ?? 44888,
+                );
+          },
         );
+      },
+    );
   }
 
   static void connectFromInput({
@@ -140,6 +153,16 @@ class ConnectionSectionActions {
     if (port == null || !context.mounted) {
       return;
     }
+    await _applyListenPort(
+      ref: ref,
+      port: port,
+    );
+  }
+
+  static Future<void> _applyListenPort({
+    required WidgetRef ref,
+    required int port,
+  }) async {
     final peer_connection.ConnectionState connectionState =
         ref.read(connectionControllerProvider);
     if (connectionState.status == peer_connection.ConnectionStatus.listening) {

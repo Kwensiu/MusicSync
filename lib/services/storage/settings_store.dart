@@ -1,6 +1,6 @@
 import 'package:music_sync/core/utils/extension_normalizer.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:music_sync/features/settings/state/settings_state.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsStore {
   static const String _autoStartListeningKey = 'auto_start_listening';
@@ -10,7 +10,7 @@ class SettingsStore {
 
   Future<bool> loadAutoStartListening() async {
     final SharedPreferences preferences = await SharedPreferences.getInstance();
-    return preferences.getBool(_autoStartListeningKey) ?? false;
+    return preferences.getBool(_autoStartListeningKey) ?? true;
   }
 
   Future<void> saveAutoStartListening(bool value) async {
