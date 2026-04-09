@@ -90,17 +90,26 @@ class AudioMetadataViewData {
     this.title,
     this.artist,
     this.album,
+    this.composer,
+    this.trackNumber,
+    this.discNumber,
     this.lyrics,
   });
 
   final String? title;
   final String? artist;
   final String? album;
+  final String? composer;
+  final String? trackNumber;
+  final String? discNumber;
   final String? lyrics;
 
   bool get hasAnyValue =>
       (title != null && title!.isNotEmpty) ||
       (artist != null && artist!.isNotEmpty) ||
       (album != null && album!.isNotEmpty) ||
+      (composer != null && composer!.isNotEmpty) ||
+      (trackNumber != null && trackNumber!.isNotEmpty) ||
+      (discNumber != null && discNumber!.isNotEmpty) ||
       (lyrics != null && lyrics!.isNotEmpty);
 }

@@ -270,6 +270,9 @@ class ConnectionService {
       title: payload['title'] as String?,
       artist: payload['artist'] as String?,
       album: payload['album'] as String?,
+      composer: payload['composer'] as String?,
+      trackNumber: payload['trackNumber'] as String?,
+      discNumber: payload['discNumber'] as String?,
       lyrics: payload['lyrics'] as String?,
     );
     return metadata.hasAnyValue ? metadata : null;

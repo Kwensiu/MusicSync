@@ -446,6 +446,24 @@ class _EntryCard extends StatelessWidget {
             label: context.l10n.previewDetailAudioAlbum,
             value: metadata.album ?? context.l10n.previewDetailUnknownValue,
           ),
+          if (metadata.composer case final String composer
+              when composer.isNotEmpty)
+            _DetailValueRow(
+              label: context.l10n.previewDetailAudioComposer,
+              value: composer,
+            ),
+          if (metadata.trackNumber case final String trackNumber
+              when trackNumber.isNotEmpty)
+            _DetailValueRow(
+              label: context.l10n.previewDetailAudioTrackNumber,
+              value: trackNumber,
+            ),
+          if (metadata.discNumber case final String discNumber
+              when discNumber.isNotEmpty)
+            _DetailValueRow(
+              label: context.l10n.previewDetailAudioDiscNumber,
+              value: discNumber,
+            ),
           if (metadata.lyrics case final String lyrics when lyrics.isNotEmpty)
             _LyricsValueRow(
               label: context.l10n.previewDetailAudioLyrics,

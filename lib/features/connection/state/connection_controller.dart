@@ -881,6 +881,12 @@ class ConnectionController extends StateNotifier<ConnectionState> {
               if (metadata.title case final String title) 'title': title,
               if (metadata.artist case final String artist) 'artist': artist,
               if (metadata.album case final String album) 'album': album,
+              if (metadata.composer case final String composer)
+                'composer': composer,
+              if (metadata.trackNumber case final String trackNumber)
+                'trackNumber': trackNumber,
+              if (metadata.discNumber case final String discNumber)
+                'discNumber': discNumber,
               if (metadata.lyrics case final String lyrics) 'lyrics': lyrics,
             },
         },

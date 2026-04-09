@@ -398,6 +398,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get previewDetailAudioAlbum => '专辑';
 
   @override
+  String get previewDetailAudioComposer => '作者';
+
+  @override
+  String get previewDetailAudioTrackNumber => '曲目';
+
+  @override
+  String get previewDetailAudioDiscNumber => '碟片';
+
+  @override
   String get previewDetailAudioLyrics => '歌词';
 
   @override

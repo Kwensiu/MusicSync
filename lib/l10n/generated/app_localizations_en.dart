@@ -409,6 +409,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get previewDetailAudioAlbum => 'Album';
 
   @override
+  String get previewDetailAudioComposer => 'Composer';
+
+  @override
+  String get previewDetailAudioTrackNumber => 'Track';
+
+  @override
+  String get previewDetailAudioDiscNumber => 'Disc';
+
+  @override
   String get previewDetailAudioLyrics => 'Lyrics';
 
   @override

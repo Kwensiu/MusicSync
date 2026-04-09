@@ -801,6 +801,24 @@ abstract class AppLocalizations {
   /// **'Album'**
   String get previewDetailAudioAlbum;
 
+  /// No description provided for @previewDetailAudioComposer.
+  ///
+  /// In en, this message translates to:
+  /// **'Composer'**
+  String get previewDetailAudioComposer;
+
+  /// No description provided for @previewDetailAudioTrackNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Track'**
+  String get previewDetailAudioTrackNumber;
+
+  /// No description provided for @previewDetailAudioDiscNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Disc'**
+  String get previewDetailAudioDiscNumber;
+
   /// No description provided for @previewDetailAudioLyrics.
   ///
   /// In en, this message translates to:
