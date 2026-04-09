@@ -234,11 +234,12 @@ class AudioMetadataReader {
   }
 
   AudioMetadataViewData? _readFlacMetadata(Uint8List bytes) {
-    if (bytes.length < 8 || !_looksLikeFlac(bytes)) {
+    final int flacOffset = _findFlacOffset(bytes);
+    if (flacOffset < 0 || flacOffset + 8 > bytes.length) {
       return null;
     }
 
-    int offset = 4;
+    int offset = flacOffset + 4;
     while (offset + 4 <= bytes.length) {
       final int header = bytes[offset];
       final bool isLastBlock = (header & 0x80) != 0;
@@ -268,13 +269,7 @@ class AudioMetadataReader {
   }
 
   bool _looksLikeFlac(Uint8List bytes) {
-    if (bytes.length < 4) {
-      return false;
-    }
-    return bytes[0] == 0x66 &&
-        bytes[1] == 0x4C &&
-        bytes[2] == 0x61 &&
-        bytes[3] == 0x43;
+    return _findFlacOffset(bytes) >= 0;
   }
 
   bool _looksLikeOgg(Uint8List bytes) {
@@ -611,6 +606,28 @@ class AudioMetadataReader {
     return -1;
   }
 
+  int _findFlacOffset(Uint8List bytes) {
+    if (bytes.length < 4) {
+      return -1;
+    }
+    if (_matchesAscii(bytes, 0, 'fLaC')) {
+      return 0;
+    }
+    if (_looksLikeId3v2Header(bytes)) {
+      final int id3Size = _readSynchsafeInt(bytes, 6);
+      final int candidate = 10 + id3Size;
+      if (candidate + 4 <= bytes.length &&
+          _matchesAscii(bytes, candidate, 'fLaC')) {
+        return candidate;
+      }
+    }
+    return -1;
+  }
+
+  bool _looksLikeId3v2Header(Uint8List bytes) {
+    return bytes.length >= 10 && _matchesAscii(bytes, 0, 'ID3');
+  }
+
   Uint8List? _findMp4AtomPath(Uint8List bytes, List<String> path) {
     Uint8List current = bytes;
     for (int i = 0; i < path.length; i++) {
@@ -786,6 +803,13 @@ class AudioMetadataReader {
 
   int _readUint16Be(Uint8List bytes, int offset) {
     return (bytes[offset] << 8) | bytes[offset + 1];
+  }
+
+  int _readSynchsafeInt(Uint8List bytes, int offset) {
+    return ((bytes[offset] & 0x7F) << 21) |
+        ((bytes[offset + 1] & 0x7F) << 14) |
+        ((bytes[offset + 2] & 0x7F) << 7) |
+        (bytes[offset + 3] & 0x7F);
   }
 
   _Mp4AtomHeader? _readMp4AtomHeader(Uint8List bytes, int offset) {

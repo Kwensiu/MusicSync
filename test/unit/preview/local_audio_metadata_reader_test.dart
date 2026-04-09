@@ -133,6 +133,37 @@ void main() {
     expect(metadata?.album, 'プロセカ');
   });
 
+  test('reads FLAC metadata even when an ID3v2 header is prepended', () async {
+    final Uint8List flacBytes = _buildFlacBytes(
+      <String, String>{
+        'TITLE': '限りなく灰色へ',
+        'ARTIST': '25時、ナイトコードで。/KAITO',
+        'ALBUM': 'プロセカ',
+      },
+    );
+    final Uint8List bytes = Uint8List.fromList(<int>[
+      ...ascii.encode('ID3'),
+      4,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      ...flacBytes,
+    ]);
+
+    final AudioMetadataReader reader = AudioMetadataReader(
+      _FakeGateway(bytes),
+    );
+
+    final metadata = await reader.read('entry');
+
+    expect(metadata?.title, '限りなく灰色へ');
+    expect(metadata?.artist, '25時、ナイトコードで。/KAITO');
+    expect(metadata?.album, 'プロセカ');
+  });
+
   test('can fall back to full read for larger FLAC metadata block', () async {
     final Map<String, String> comments = <String, String>{
       'TITLE': 'Long FLAC Song',
