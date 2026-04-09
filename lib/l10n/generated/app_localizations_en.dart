@@ -12,11 +12,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'MusicSync';
 
   @override
-  String get homeStepConnectionTitle => 'Step 1: Connect Remote Device';
-
-  @override
-  String get homeStepConnectionHint =>
-      'Establish a connection to the remote device. After the connection is ready, directory state and preview update automatically.';
+  String get homeStepConnectionTitle => 'Step 1: Establish Device Session';
 
   @override
   String get homeConnectionStateIdle => 'Not listening';
@@ -29,6 +25,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeConnectionStateConnected => 'Connected';
+
+  @override
+  String get homeConnectionStateConnectedListening => 'Connected and Listening';
 
   @override
   String homePortChipLabel(int port) {
@@ -89,30 +88,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeConnectionActionsTitle => 'Connection actions';
-
-  @override
-  String get homeAutoPreviewWaiting =>
-      'Automatic analysis will start after both the source and target directories are ready.';
-
-  @override
-  String get homeAutoPreviewWaitingLocal =>
-      'The target side is ready. Automatic analysis will start after you pick the local source directory.';
-
-  @override
-  String get homeAutoPreviewWaitingRemote =>
-      'The local source directory is ready. Automatic analysis will start after the remote device picks a target directory.';
-
-  @override
-  String get homeAutoPreviewRunning =>
-      'Directories are ready. Building the target preview automatically.';
-
-  @override
-  String get homeAutoPreviewReady =>
-      'Target preview is up to date and ready for review.';
-
-  @override
-  String get homeAutoPreviewRefresh =>
-      'Refresh the target index manually if you need to force a rescan.';
 
   @override
   String get homeLocalLibraryTitle => 'Local Library';
@@ -177,7 +152,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeRecentAddresses => 'Recent Addresses';
 
   @override
-  String get homeDiscoveredDevices => 'Discovered Devices';
+  String get homeDiscoveredDevices => 'Nearby Devices';
+
+  @override
+  String get homeRefreshConnectionState => 'Update Connection Status';
+
+  @override
+  String get homeOpenConnectionPanel => 'More Connection Options';
 
   @override
   String get homeManageRecentItems => 'Manage Records';
@@ -214,8 +195,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Version 1 currently supports syncing only to the target side on a remote device.';
 
   @override
-  String get homeRemoteIndexPending =>
-      'The target directory is ready. Syncing the latest index now.';
+  String get homeIncomingSyncTitle => 'Receiving Sync';
+
+  @override
+  String homeIncomingSyncBody(Object device) {
+    return 'This device is currently receiving sync writes from $device.';
+  }
+
+  @override
+  String get homeIncomingSyncHint =>
+      'Do not clear the directory, disconnect, switch flows, or leave the app.';
 
   @override
   String get homeRemoteManualRefreshTitle => 'Manual refresh';
@@ -252,16 +241,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String homePeerName(Object name) {
-    return 'Peer: $name';
-  }
-
-  @override
   String get homeRefreshRemoteIndex => 'Refresh Target Index';
-
-  @override
-  String get homeRefreshRemoteIndexHint =>
-      'Use this only when you think the target directory changed but automatic refresh has not caught up yet.';
 
   @override
   String homeRemoteRoot(Object name) {
@@ -499,14 +479,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get previewStartSync => 'Start Sync';
-
-  @override
-  String get previewDirectoryRequired =>
-      'Select a local directory before building preview.';
-
-  @override
-  String get previewRemoteDirectoryRequired =>
-      'Connect to the remote device and make sure the remote device has picked a target directory.';
 
   @override
   String get errorRemoteDirectoryNotSelected =>

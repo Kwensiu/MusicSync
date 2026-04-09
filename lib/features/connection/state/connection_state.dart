@@ -17,6 +17,7 @@ class ConnectionState {
     this.peer,
     this.remoteSnapshot,
     this.isRemoteDirectoryReady = false,
+    this.isIncomingSyncActive = false,
     this.discoveredDevices = const <DeviceInfo>[],
     this.recentAddresses = const <String>[],
     this.recentLabels = const <String, String>{},
@@ -28,6 +29,7 @@ class ConnectionState {
   final DeviceInfo? peer;
   final ScanSnapshot? remoteSnapshot;
   final bool isRemoteDirectoryReady;
+  final bool isIncomingSyncActive;
   final List<DeviceInfo> discoveredDevices;
   final List<String> recentAddresses;
   final Map<String, String> recentLabels;

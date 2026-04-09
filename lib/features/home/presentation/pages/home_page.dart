@@ -16,6 +16,7 @@ import 'package:music_sync/features/execution/state/execution_controller.dart';
 import 'package:music_sync/features/execution/state/execution_state.dart';
 import 'package:music_sync/features/home/presentation/widgets/connection_section/connection_section.dart';
 import 'package:music_sync/features/home/presentation/widgets/connection_section/connection_section_actions.dart';
+import 'package:music_sync/features/home/presentation/widgets/action_chip_button.dart';
 import 'package:music_sync/features/home/presentation/widgets/home_dialogs/home_dialogs.dart';
 import 'package:music_sync/features/home/presentation/widgets/preview_workbench_section/preview_workbench_actions.dart';
 import 'package:music_sync/features/home/presentation/widgets/preview_workbench_section/preview_workbench_section.dart';
@@ -25,6 +26,7 @@ import 'package:music_sync/features/preview/state/preview_controller.dart';
 import 'package:music_sync/features/preview/state/preview_state.dart';
 import 'package:music_sync/features/settings/state/settings_controller.dart';
 import 'package:music_sync/l10n/app_localizations_ext.dart';
+import 'package:music_sync/models/device_info.dart';
 import 'package:music_sync/models/diff_item.dart';
 import 'package:music_sync/models/scan_snapshot.dart';
 import 'package:music_sync/services/file_access/file_access_entry.dart';
@@ -215,11 +217,31 @@ class _HomePageState extends ConsumerState<HomePage>
         connectionState.peer != null &&
         connectionState.status == peer_connection.ConnectionStatus.connected &&
         isRemoteSyncRunning;
+    final bool showIncomingSyncOverlay =
+        connectionState.isIncomingSyncActive && hasConnectedPeer;
 
     return AppScaffold(
       title: context.l10n.appTitle,
       showBackButton: false,
       actions: <Widget>[
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: ActionChipButton(
+            label: ConnectionSectionActions.connectionStateChipLabel(
+              context,
+              connectionState,
+            ),
+            tone: ConnectionSectionActions.connectionStateChipTone(
+              connectionState,
+            ),
+            onPressed: isConnectUiBusy
+                ? null
+                : () => ConnectionSectionActions.handleConnectionStateChipTap(
+                      ref: ref,
+                      connectionState: connectionState,
+                    ),
+          ),
+        ),
         IconButton(
           onPressed: () => context.pushNamed(RouteNames.settings),
           icon: const Icon(Icons.settings_outlined),
@@ -234,43 +256,24 @@ class _HomePageState extends ConsumerState<HomePage>
                 title: context.l10n.homeStepConnectionTitle,
                 child: ConnectionSection(
                   connectionState: connectionState,
-                  addressController: _addressController,
                   isConnectUiBusy: isConnectUiBusy,
-                  isConnecting: isConnecting,
                   hasConnectedPeer: hasConnectedPeer,
-                  onConnectionStateChipTap: () =>
-                      ConnectionSectionActions.handleConnectionStateChipTap(
-                    ref: ref,
-                    connectionState: connectionState,
-                  ),
-                  onPortTap: () => ConnectionSectionActions.showPortDialog(
-                    context: context,
-                    ref: ref,
-                    currentPort: connectionState.listenPort ?? 44888,
-                  ),
-                  onShareTap: () => ConnectionSectionActions.showShareDialog(
-                    context: context,
-                    connectionState: connectionState,
-                  ),
-                  onConnectTap: () =>
-                      ConnectionSectionActions.handleConnectButton(
-                    ref: ref,
-                    addressController: _addressController,
-                    connectionState: connectionState,
-                  ),
-                  onManageRecentAddresses: _showRecentAddressManager,
-                  onRecentAddressTap: (String address) {
-                    _addressController.text = address;
+                  onRefreshPresence: () {
+                    ref
+                        .read(connectionControllerProvider.notifier)
+                        .refreshPresence();
+                  },
+                  onOpenConnectionPanel: () =>
+                      _showConnectionOptionsPanel(connectionState),
+                  onDiscoveredDeviceTap: (DeviceInfo device) {
+                    _addressController.text =
+                        '${device.address}:${device.port}';
                     ConnectionSectionActions.connectFromInput(
                       ref: ref,
                       addressController: _addressController,
                     );
                   },
                   localizeUiError: _localizeUiError,
-                  connectionStateChipLabel:
-                      ConnectionSectionActions.connectionStateChipLabel,
-                  connectionStateChipTone:
-                      ConnectionSectionActions.connectionStateChipTone,
                 ),
               ),
               const SizedBox(height: 16),
@@ -441,10 +444,6 @@ class _HomePageState extends ConsumerState<HomePage>
                                     ),
                             child: Text(context.l10n.homeCleanupTempFiles),
                           ),
-                          if (executionState.targetRoot == null) ...<Widget>[
-                            const SizedBox(height: 8),
-                            Text(context.l10n.executionTargetRequired),
-                          ],
                           const SizedBox(height: 8),
                           FilledButton.tonal(
                             onPressed: isBusy ||
@@ -544,6 +543,70 @@ class _HomePageState extends ConsumerState<HomePage>
                                 .onTertiaryContainer,
                             fontWeight: FontWeight.w600,
                           ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          if (showIncomingSyncOverlay)
+            Positioned.fill(
+              child: ColoredBox(
+                color: Colors.black54,
+                child: Center(
+                  child: AbsorbPointer(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 380),
+                      child: Card(
+                        margin: const EdgeInsets.all(24),
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Row(
+                                children: <Widget>[
+                                  Icon(
+                                    Icons.sync_lock_rounded,
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      context.l10n.homeIncomingSyncTitle,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                context.l10n.homeIncomingSyncBody(
+                                  connectionState.peer?.deviceName ??
+                                      context.l10n.previewDirectionRemote,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                context.l10n.homeIncomingSyncHint,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                              ),
+                              const SizedBox(height: 14),
+                              const LinearProgressIndicator(),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -895,5 +958,63 @@ class _HomePageState extends ConsumerState<HomePage>
         alias: result.alias,
       );
     }
+  }
+
+  Future<void> _showConnectionOptionsPanel(
+    peer_connection.ConnectionState connectionState,
+  ) async {
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return ConnectionOptionsDialog(
+          addressController: _addressController,
+          recentAddresses: connectionState.recentAddresses,
+          recentLabels: connectionState.recentLabels,
+          discoveredDevices: connectionState.discoveredDevices,
+          onConnectTap: () {
+            Navigator.of(context).pop();
+            ConnectionSectionActions.connectFromInput(
+              ref: ref,
+              addressController: _addressController,
+            );
+          },
+          onRecentAddressTap: (String address) {
+            _addressController.text = address;
+            Navigator.of(context).pop();
+            ConnectionSectionActions.connectFromInput(
+              ref: ref,
+              addressController: _addressController,
+            );
+          },
+          onDiscoveredDeviceTap: (DeviceInfo device) {
+            _addressController.text = '${device.address}:${device.port}';
+            Navigator.of(context).pop();
+            ConnectionSectionActions.connectFromInput(
+              ref: ref,
+              addressController: _addressController,
+            );
+          },
+          onManageRecentAddresses: () {
+            Navigator.of(context).pop();
+            _showRecentAddressManager();
+          },
+          onPortTap: () {
+            Navigator.of(context).pop();
+            ConnectionSectionActions.showPortDialog(
+              context: this.context,
+              ref: ref,
+              currentPort: connectionState.listenPort ?? 44888,
+            );
+          },
+          onShareTap: () {
+            Navigator.of(context).pop();
+            ConnectionSectionActions.showShareDialog(
+              context: this.context,
+              connectionState: connectionState,
+            );
+          },
+        );
+      },
+    );
   }
 }

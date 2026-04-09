@@ -79,6 +79,17 @@ class ConnectionService {
     );
   }
 
+  Future<void> notifySyncSessionState({
+    required bool active,
+  }) async {
+    final PeerSession session = _requireSession();
+    await session.sendMessage(
+      type: active ? 'syncSessionStart' : 'syncSessionEnd',
+      requestId: _nextRequestId(),
+      payload: const <String, Object?>{},
+    );
+  }
+
   Future<ScanSnapshot> requestRemoteScan() async {
     final PeerSession? session = _session;
     if (session == null) {

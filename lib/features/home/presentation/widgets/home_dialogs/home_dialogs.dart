@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_sync/l10n/app_localizations_ext.dart';
+import 'package:music_sync/models/device_info.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class PortDialog extends StatefulWidget {
@@ -337,6 +338,131 @@ class ShareAddressDialog extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ConnectionOptionsDialog extends StatelessWidget {
+  const ConnectionOptionsDialog({
+    required this.addressController,
+    required this.recentAddresses,
+    required this.recentLabels,
+    required this.discoveredDevices,
+    required this.onConnectTap,
+    required this.onRecentAddressTap,
+    required this.onDiscoveredDeviceTap,
+    required this.onManageRecentAddresses,
+    required this.onPortTap,
+    required this.onShareTap,
+    super.key,
+  });
+
+  final TextEditingController addressController;
+  final List<String> recentAddresses;
+  final Map<String, String> recentLabels;
+  final List<DeviceInfo> discoveredDevices;
+  final VoidCallback onConnectTap;
+  final ValueChanged<String> onRecentAddressTap;
+  final ValueChanged<DeviceInfo> onDiscoveredDeviceTap;
+  final VoidCallback onManageRecentAddresses;
+  final VoidCallback onPortTap;
+  final VoidCallback onShareTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 480),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  context.l10n.homeOpenConnectionPanel,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: addressController,
+                  decoration: InputDecoration(
+                    filled: true,
+                    labelText: context.l10n.homePeerAddressLabel,
+                    hintText: context.l10n.homePeerAddressHint,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: onConnectTap,
+                  child: Text(context.l10n.homeConnect),
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: <Widget>[
+                    OutlinedButton.icon(
+                      onPressed: onPortTap,
+                      icon: const Icon(Icons.settings_ethernet_rounded),
+                      label: Text(context.l10n.homeListenerTitle),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: onShareTap,
+                      icon: const Icon(Icons.ios_share_outlined),
+                      label: Text(context.l10n.homeShareTooltip),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: onManageRecentAddresses,
+                      icon: const Icon(Icons.history_rounded),
+                      label: Text(context.l10n.homeManageRecentItems),
+                    ),
+                  ],
+                ),
+                if (discoveredDevices.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: 20),
+                  Text(
+                    context.l10n.homeDiscoveredDevices,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  ...discoveredDevices.map(
+                    (DeviceInfo device) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(device.deviceName),
+                      subtitle: Text('${device.address}:${device.port}'),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => onDiscoveredDeviceTap(device),
+                    ),
+                  ),
+                ],
+                if (recentAddresses.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: 20),
+                  Text(
+                    context.l10n.homeRecentAddresses,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: recentAddresses.map((String address) {
+                      return ActionChip(
+                        label: Text(recentLabels[address] ?? address),
+                        onPressed: () => onRecentAddressTap(address),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       ),

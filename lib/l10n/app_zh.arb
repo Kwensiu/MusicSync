@@ -1,12 +1,12 @@
 {
   "@@locale": "zh",
   "appTitle": "MusicSync",
-  "homeStepConnectionTitle": "步骤 1：连接远端设备",
-  "homeStepConnectionHint": "建立与远端设备的连接。连接建立后，目录状态与预览会自动更新。",
+  "homeStepConnectionTitle": "步骤 1：建立设备会话",
   "homeConnectionStateIdle": "未监听",
   "homeConnectionStateConnecting": "连接中",
   "homeConnectionStateListening": "监听中",
   "homeConnectionStateConnected": "已连接",
+  "homeConnectionStateConnectedListening": "已连接并监听",
   "homePortChipLabel": "端口 {port}",
   "@homePortChipLabel": {
     "placeholders": {
@@ -32,12 +32,6 @@
   "homeAdvancedTitle": "高级与调试",
   "homeConnectionHelpersTitle": "连接辅助",
   "homeConnectionActionsTitle": "连接操作",
-  "homeAutoPreviewWaiting": "等待源端目录与目标端目录都准备就绪后自动分析。",
-  "homeAutoPreviewWaitingLocal": "目标端已就绪，等待选择本地源目录后自动分析。",
-  "homeAutoPreviewWaitingRemote": "本地源目录已就绪，等待远端设备选择目标端目录后自动分析。",
-  "homeAutoPreviewRunning": "目录已就绪，正在自动生成目标端预览。",
-  "homeAutoPreviewReady": "目标端预览已是最新，可直接检查并执行同步。",
-  "homeAutoPreviewRefresh": "如需强制重扫目标端，可手动刷新目标端索引。",
   "homeLocalLibraryTitle": "本地音乐库",
   "homeLocalSourceHint": "此目录会作为源端目录，目标端将向它对齐。",
   "directoryPreflightWarningTitle": "预检提示：该目录可能较重，生成预览时可能较慢。",
@@ -84,7 +78,9 @@
   },
   "homeCleanupTempFailed": "清理临时文件失败，请稍后重试。",
   "homeRecentAddresses": "最近地址",
-  "homeDiscoveredDevices": "发现到的设备",
+  "homeDiscoveredDevices": "附近的设备",
+  "homeRefreshConnectionState": "更新连接状态",
+  "homeOpenConnectionPanel": "更多连接方式",
   "homeManageRecentItems": "管理记录",
   "homeRecentEmpty": "暂无记录",
   "homeRecentAlias": "备注",
@@ -96,7 +92,14 @@
   "homeRecentAliasHint": "输入备注名称",
   "homeRemoteTargetTitle": "目标端",
   "homeRemoteTargetHint": "当前第一版只支持从本机同步到远端设备的目标端。",
-  "homeRemoteIndexPending": "目标端目录已就绪，正在同步索引。",
+  "homeIncomingSyncTitle": "正在接收同步",
+  "homeIncomingSyncBody": "当前设备正在接收来自 {device} 的同步写入。",
+  "@homeIncomingSyncBody": {
+    "placeholders": {
+      "device": {}
+    }
+  },
+  "homeIncomingSyncHint": "请不要清除目录、断开连接、切换流程或退出应用。",
   "homeRemoteManualRefreshTitle": "手动刷新",
   "homeListenerTitle": "监听",
   "homeListenerStart": "开始监听",
@@ -119,14 +122,7 @@
       "status": {}
     }
   },
-  "homePeerName": "设备：{name}",
-  "@homePeerName": {
-    "placeholders": {
-      "name": {}
-    }
-  },
   "homeRefreshRemoteIndex": "刷新目标端索引",
-  "homeRefreshRemoteIndexHint": "仅在你怀疑目标端目录变化但自动刷新未跟上时使用。",
   "homeRemoteRoot": "目标端根目录：{name}",
   "@homeRemoteRoot": {
     "placeholders": {
@@ -278,8 +274,6 @@
     }
   },
   "previewStartSync": "开始同步",
-  "previewDirectoryRequired": "请先选择本地目录再生成预览。",
-  "previewRemoteDirectoryRequired": "请先连接远端设备，并让远端设备选择目标端目录。",
   "errorRemoteDirectoryNotSelected": "远端设备尚未选择目标端目录。",
   "errorRemoteDeviceDisconnected": "远端设备已断开连接。请保持目标设备前台运行后重连。",
   "errorConnectionRefused": "连接被拒绝。请检查目标地址，并确认远端已开启监听。",

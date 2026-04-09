@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:music_sync/app/routes/route_names.dart';
+import 'package:music_sync/core/errors/app_error_localizer.dart';
 import 'package:music_sync/core/utils/byte_format.dart';
 import 'package:music_sync/features/connection/state/connection_state.dart'
     as peer_connection;
@@ -97,6 +98,13 @@ class PreviewWorkbenchSection extends StatelessWidget {
     final bool hasRemoteDirectory = connectionState.isRemoteDirectoryReady ||
         connectionState.remoteSnapshot != null;
     final _PrimaryStatus? primaryStatus = _buildPrimaryStatus(context);
+    final String? executionErrorMessage = executionState.errorMessage;
+    final String? resolvedExecutionError = executionErrorMessage == null
+        ? null
+        : AppErrorLocalizer.resolve(executionErrorMessage);
+    final bool showExecutionInlineError = executionErrorMessage != null &&
+        resolvedExecutionError != AppErrorCode.remoteDirectoryNotSelected &&
+        resolvedExecutionError != AppErrorCode.remoteDeviceDisconnected;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,13 +238,13 @@ class PreviewWorkbenchSection extends StatelessWidget {
                           ),
                         ),
                       ],
-                      if (executionState.errorMessage != null) ...<Widget>[
+                      if (showExecutionInlineError) ...<Widget>[
                         const SizedBox(height: 10),
                         _InlineMessage(
                           tone: _InlineMessageTone.error,
                           text: localizeUiError(
                             context,
-                            executionState.errorMessage!,
+                            executionErrorMessage,
                           ),
                         ),
                       ],
@@ -341,6 +349,11 @@ class PreviewWorkbenchSection extends StatelessWidget {
   ) {
     final String? errorMessage = previewState.errorMessage;
     if (errorMessage != null) {
+      final String resolvedError = AppErrorLocalizer.resolve(errorMessage);
+      if (resolvedError == AppErrorCode.remoteDirectoryNotSelected ||
+          resolvedError == AppErrorCode.remoteDeviceDisconnected) {
+        return null;
+      }
       return _PrimaryStatus(
         tone: _InlineMessageTone.error,
         text: localizeUiError(context, errorMessage),

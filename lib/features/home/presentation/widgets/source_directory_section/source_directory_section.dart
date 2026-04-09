@@ -38,7 +38,7 @@ class SourceDirectorySection extends StatelessWidget {
     final bool hasSelection = selectedHandle != null;
     final bool hasRisk = directoryState.preflight?.hasRisk == true;
     final String sourceLabel =
-        selectedHandle?.displayName ?? context.l10n.homeNoDirectorySelected;
+        selectedHandle?.displayName ?? context.l10n.homePickDirectory;
     final String? sourceDetail = selectedHandle == null
         ? null
         : selectedHandle.entryId == selectedHandle.displayName
@@ -132,15 +132,6 @@ class SourceDirectorySection extends StatelessWidget {
                     directoryState.errorMessage!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: scheme.error,
-                        ),
-                  ),
-                ] else if (!hasSelection &&
-                    hasRemoteDirectoryReady) ...<Widget>[
-                  const SizedBox(height: 12),
-                  Text(
-                    context.l10n.homeSourcePendingBecauseRemoteReady,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
                         ),
                   ),
                 ],

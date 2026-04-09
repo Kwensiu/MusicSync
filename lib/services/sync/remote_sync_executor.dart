@@ -23,6 +23,7 @@ class RemoteSyncExecutor {
     required RemoteProgressCallback onProgress,
     SyncCancelToken? cancelToken,
   }) async {
+    await _connectionService.notifySyncSessionState(active: true);
     int processedFiles = 0;
     int processedBytes = 0;
     int copiedCount = 0;
@@ -32,31 +33,47 @@ class RemoteSyncExecutor {
     final int totalFiles = plan.copyItems.length + plan.deleteItems.length;
     final int totalBytes = plan.summary.copyBytes;
 
-    for (final DiffItem item in plan.copyItems) {
-      cancelToken?.throwIfCancelled();
-      final String? sourceEntryId = item.source?.entryId;
-      if (sourceEntryId == null) {
-        failedCount++;
-        continue;
-      }
-
-      final String transferId = _nextTransferId();
-      try {
+    try {
+      for (final DiffItem item in plan.copyItems) {
         cancelToken?.throwIfCancelled();
-        await _connectionService.beginRemoteCopy(
-          remoteRootId: remoteRootId,
-          relativePath: item.relativePath,
-          transferId: transferId,
-        );
+        final String? sourceEntryId = item.source?.entryId;
+        if (sourceEntryId == null) {
+          failedCount++;
+          continue;
+        }
 
-        await for (final List<int> chunk
-            in _fileAccessGateway.openRead(sourceEntryId)) {
+        final String transferId = _nextTransferId();
+        try {
           cancelToken?.throwIfCancelled();
-          await _connectionService.writeRemoteChunk(
+          await _connectionService.beginRemoteCopy(
+            remoteRootId: remoteRootId,
+            relativePath: item.relativePath,
             transferId: transferId,
-            chunk: chunk,
           );
-          processedBytes += chunk.length;
+
+          await for (final List<int> chunk
+              in _fileAccessGateway.openRead(sourceEntryId)) {
+            cancelToken?.throwIfCancelled();
+            await _connectionService.writeRemoteChunk(
+              transferId: transferId,
+              chunk: chunk,
+            );
+            processedBytes += chunk.length;
+            onProgress(
+              TransferProgress(
+                stage: SyncStage.copying,
+                processedFiles: processedFiles,
+                totalFiles: totalFiles,
+                processedBytes: processedBytes,
+                totalBytes: totalBytes,
+                currentPath: item.relativePath,
+              ),
+            );
+          }
+
+          await _connectionService.finishRemoteCopy(transferId: transferId);
+          copiedCount++;
+          processedFiles++;
           onProgress(
             TransferProgress(
               stage: SyncStage.copying,
@@ -67,89 +84,81 @@ class RemoteSyncExecutor {
               currentPath: item.relativePath,
             ),
           );
-        }
-
-        await _connectionService.finishRemoteCopy(transferId: transferId);
-        copiedCount++;
-        processedFiles++;
-        onProgress(
-          TransferProgress(
-            stage: SyncStage.copying,
-            processedFiles: processedFiles,
-            totalFiles: totalFiles,
-            processedBytes: processedBytes,
-            totalBytes: totalBytes,
-            currentPath: item.relativePath,
-          ),
-        );
-      } catch (error) {
-        if (cancelToken?.isCancelled == true) {
+        } catch (error) {
+          if (cancelToken?.isCancelled == true) {
+            try {
+              await _connectionService.abortRemoteCopy(
+                transferId: transferId,
+              );
+            } catch (_) {
+              // Ignore cleanup failures while cancelling.
+            }
+            rethrow;
+          }
+          failedCount++;
+          processedFiles++;
+          lastError = error.toString();
           try {
             await _connectionService.abortRemoteCopy(
               transferId: transferId,
             );
           } catch (_) {
-            // Ignore cleanup failures while cancelling.
+            // Ignore cleanup failures; preserve original transfer error.
           }
-          rethrow;
         }
-        failedCount++;
-        processedFiles++;
-        lastError = error.toString();
+      }
+
+      for (final DiffItem item in plan.deleteItems) {
+        cancelToken?.throwIfCancelled();
         try {
-          await _connectionService.abortRemoteCopy(
-            transferId: transferId,
+          await _connectionService.deleteRemoteEntry(
+            remoteRootId: remoteRootId,
+            relativePath: item.relativePath,
           );
-        } catch (_) {
-          // Ignore cleanup failures; preserve original transfer error.
+          deletedCount++;
+          processedFiles++;
+          onProgress(
+            TransferProgress(
+              stage: SyncStage.deleting,
+              processedFiles: processedFiles,
+              totalFiles: totalFiles,
+              processedBytes: processedBytes,
+              totalBytes: totalBytes,
+              currentPath: item.relativePath,
+            ),
+          );
+        } catch (error) {
+          failedCount++;
+          processedFiles++;
+          lastError = error.toString();
         }
       }
-    }
 
-    for (final DiffItem item in plan.deleteItems) {
-      cancelToken?.throwIfCancelled();
+      onProgress(
+        TransferProgress(
+          stage: SyncStage.completed,
+          processedFiles: processedFiles,
+          totalFiles: totalFiles,
+          processedBytes: processedBytes,
+          totalBytes: totalBytes,
+        ),
+      );
+
+      return ExecutionResult(
+        copiedCount: copiedCount,
+        deletedCount: deletedCount,
+        failedCount: failedCount,
+        totalBytes: processedBytes,
+        targetRoot: remoteRootId,
+        lastError: lastError,
+      );
+    } finally {
       try {
-        await _connectionService.deleteRemoteEntry(
-          remoteRootId: remoteRootId,
-          relativePath: item.relativePath,
-        );
-        deletedCount++;
-        processedFiles++;
-        onProgress(
-          TransferProgress(
-            stage: SyncStage.deleting,
-            processedFiles: processedFiles,
-            totalFiles: totalFiles,
-            processedBytes: processedBytes,
-            totalBytes: totalBytes,
-            currentPath: item.relativePath,
-          ),
-        );
-      } catch (error) {
-        failedCount++;
-        processedFiles++;
-        lastError = error.toString();
+        await _connectionService.notifySyncSessionState(active: false);
+      } catch (_) {
+        // Best effort only.
       }
     }
-
-    onProgress(
-      TransferProgress(
-        stage: SyncStage.completed,
-        processedFiles: processedFiles,
-        totalFiles: totalFiles,
-        processedBytes: processedBytes,
-        totalBytes: totalBytes,
-      ),
-    );
-
-    return ExecutionResult(
-      copiedCount: copiedCount,
-      deletedCount: deletedCount,
-      failedCount: failedCount,
-      totalBytes: processedBytes,
-      targetRoot: remoteRootId,
-      lastError: lastError,
-    );
   }
 
   String _nextTransferId() {

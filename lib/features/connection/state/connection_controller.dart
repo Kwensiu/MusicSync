@@ -1,28 +1,28 @@
-import 'dart:convert';
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:music_sync/core/constants/app_constants.dart';
 import 'package:music_sync/core/errors/app_error_localizer.dart';
-import 'package:music_sync/features/directory/state/directory_controller.dart';
 import 'package:music_sync/features/connection/state/connection_state.dart';
+import 'package:music_sync/features/directory/state/directory_controller.dart';
 import 'package:music_sync/features/execution/state/execution_controller.dart';
 import 'package:music_sync/features/execution/state/execution_state.dart';
+import 'package:music_sync/features/preview/models/diff_item_detail_view_data.dart';
+import 'package:music_sync/features/preview/state/preview_controller.dart';
 import 'package:music_sync/models/device_info.dart';
 import 'package:music_sync/models/scan_snapshot.dart';
 import 'package:music_sync/services/file_access/file_access_entry.dart';
+import 'package:music_sync/services/file_access/file_access_gateway.dart';
 import 'package:music_sync/services/file_access/file_access_provider.dart';
+import 'package:music_sync/services/media/audio_metadata_reader.dart';
 import 'package:music_sync/services/network/connection_service.dart';
 import 'package:music_sync/services/network/discovery_service.dart';
 import 'package:music_sync/services/network/listener_service.dart';
 import 'package:music_sync/services/network/peer_session.dart';
 import 'package:music_sync/services/network/protocol/protocol_message.dart';
-import 'package:music_sync/features/preview/state/preview_controller.dart';
-import 'package:music_sync/features/preview/models/diff_item_detail_view_data.dart';
-import 'package:music_sync/services/file_access/file_access_gateway.dart';
 import 'package:music_sync/services/storage/recent_items_store.dart';
-import 'package:music_sync/services/media/audio_metadata_reader.dart';
 
 final Provider<ConnectionService> connectionServiceProvider =
     Provider<ConnectionService>((Ref ref) => ConnectionService());
@@ -49,7 +49,7 @@ class ConnectionController extends StateNotifier<ConnectionState> {
     );
     unawaited(
       _discovery.startReceiving(
-        onDevice: _handleDiscoveredDevice,
+        onDevice: _handleDiscoveryEvent,
       ),
     );
   }
@@ -88,6 +88,7 @@ class ConnectionController extends StateNotifier<ConnectionState> {
         peer: state.peer,
         remoteSnapshot: state.remoteSnapshot,
         isRemoteDirectoryReady: state.isRemoteDirectoryReady,
+        isIncomingSyncActive: state.isIncomingSyncActive,
         discoveredDevices: state.discoveredDevices,
         recentAddresses: state.recentAddresses,
         recentLabels: state.recentLabels,
@@ -99,6 +100,7 @@ class ConnectionController extends StateNotifier<ConnectionState> {
         peer: state.peer,
         remoteSnapshot: state.remoteSnapshot,
         isRemoteDirectoryReady: state.isRemoteDirectoryReady,
+        isIncomingSyncActive: state.isIncomingSyncActive,
         discoveredDevices: state.discoveredDevices,
         recentAddresses: state.recentAddresses,
         recentLabels: state.recentLabels,
@@ -108,6 +110,14 @@ class ConnectionController extends StateNotifier<ConnectionState> {
   }
 
   Future<void> stopListening() async {
+    final int? listenPort = state.listenPort;
+    if (listenPort != null) {
+      try {
+        await _discovery.sendGoodbye(_buildLocalDevice(port: listenPort));
+      } catch (_) {
+        // Best effort only.
+      }
+    }
     await _listener.stop();
     await _discovery.stopBroadcasting();
     state = ConnectionState(
@@ -116,10 +126,26 @@ class ConnectionController extends StateNotifier<ConnectionState> {
           : ConnectionStatus.connected,
       peer: state.peer,
       remoteSnapshot: state.remoteSnapshot,
+      isIncomingSyncActive: state.isIncomingSyncActive,
       discoveredDevices: state.discoveredDevices,
       recentAddresses: state.recentAddresses,
       recentLabels: state.recentLabels,
     );
+  }
+
+  Future<void> refreshPresence() async {
+    final int? listenPort = state.listenPort;
+    if (listenPort != null) {
+      try {
+        await _discovery.startBroadcasting(_buildLocalDevice(port: listenPort));
+      } catch (_) {
+        // Best effort only.
+      }
+    }
+    _ensureConnectedPeerVisible();
+    if (state.peer != null && state.status == ConnectionStatus.connected) {
+      await refreshRemoteSnapshot(clearTransientState: false);
+    }
   }
 
   Future<void> connect({
@@ -134,6 +160,7 @@ class ConnectionController extends StateNotifier<ConnectionState> {
       peer: null,
       remoteSnapshot: null,
       isRemoteDirectoryReady: false,
+      isIncomingSyncActive: false,
       discoveredDevices: state.discoveredDevices,
       recentAddresses: state.recentAddresses,
       recentLabels: state.recentLabels,
@@ -232,6 +259,7 @@ class ConnectionController extends StateNotifier<ConnectionState> {
         peer: peer,
         remoteSnapshot: remoteSnapshot,
         isRemoteDirectoryReady: true,
+        isIncomingSyncActive: state.isIncomingSyncActive,
         listenPort: state.listenPort,
         discoveredDevices: state.discoveredDevices,
         recentAddresses: state.recentAddresses,
@@ -256,6 +284,7 @@ class ConnectionController extends StateNotifier<ConnectionState> {
             remoteDirectoryUnavailable ? null : state.remoteSnapshot,
         isRemoteDirectoryReady:
             remoteDirectoryUnavailable ? false : state.isRemoteDirectoryReady,
+        isIncomingSyncActive: state.isIncomingSyncActive,
         listenPort: state.listenPort,
         discoveredDevices: state.discoveredDevices,
         recentAddresses: state.recentAddresses,
@@ -281,6 +310,7 @@ class ConnectionController extends StateNotifier<ConnectionState> {
       peer: null,
       remoteSnapshot: null,
       isRemoteDirectoryReady: false,
+      isIncomingSyncActive: false,
     );
   }
 
@@ -345,6 +375,7 @@ class ConnectionController extends StateNotifier<ConnectionState> {
       peer: state.peer,
       remoteSnapshot: state.remoteSnapshot,
       isRemoteDirectoryReady: state.isRemoteDirectoryReady,
+      isIncomingSyncActive: state.isIncomingSyncActive,
       discoveredDevices: state.discoveredDevices,
       recentAddresses: await _store.loadRecentAddresses(),
       recentLabels: await _store.loadRecentAddressLabels(),
@@ -383,6 +414,7 @@ class ConnectionController extends StateNotifier<ConnectionState> {
               ),
               remoteSnapshot: state.remoteSnapshot,
               isRemoteDirectoryReady: state.isRemoteDirectoryReady,
+              isIncomingSyncActive: false,
               listenPort: state.listenPort,
               discoveredDevices: state.discoveredDevices,
               recentAddresses: state.recentAddresses,
@@ -438,6 +470,20 @@ class ConnectionController extends StateNotifier<ConnectionState> {
           return _handleDeleteEntry(message);
         case 'statEntry':
           return _handleStatEntry(message);
+        case 'syncSessionStart':
+          _setIncomingSyncActive(true);
+          return ProtocolMessage(
+            type: 'ok',
+            requestId: message.requestId,
+            payload: const <String, Object?>{},
+          );
+        case 'syncSessionEnd':
+          _setIncomingSyncActive(false);
+          return ProtocolMessage(
+            type: 'ok',
+            requestId: message.requestId,
+            payload: const <String, Object?>{},
+          );
         default:
           return ProtocolMessage(
             type: 'error',
@@ -520,6 +566,15 @@ class ConnectionController extends StateNotifier<ConnectionState> {
 
   Future<void> reloadRecent() => _loadRecent();
 
+  void _handleDiscoveryEvent(DiscoveryEvent event) {
+    switch (event.type) {
+      case DiscoveryEventType.announce:
+        _handleDiscoveredDevice(event.device);
+      case DiscoveryEventType.goodbye:
+        _handleRemovedDevice(event.device);
+    }
+  }
+
   void _handleDiscoveredDevice(DeviceInfo device) {
     final DeviceInfo local = _buildLocalDevice(
       port: state.listenPort ?? AppConstants.defaultPort,
@@ -539,7 +594,33 @@ class ConnectionController extends StateNotifier<ConnectionState> {
       peer: state.peer,
       remoteSnapshot: state.remoteSnapshot,
       isRemoteDirectoryReady: state.isRemoteDirectoryReady,
+      isIncomingSyncActive: state.isIncomingSyncActive,
       discoveredDevices: next.take(12).toList(),
+      recentAddresses: state.recentAddresses,
+      recentLabels: state.recentLabels,
+      listenPort: state.listenPort,
+      errorMessage: state.errorMessage,
+    );
+  }
+
+  void _handleRemovedDevice(DeviceInfo device) {
+    if (_isConnectedPeer(device)) {
+      return;
+    }
+    _discoveredAt.remove(device.deviceId);
+    final List<DeviceInfo> next = state.discoveredDevices
+        .where((DeviceInfo item) => item.deviceId != device.deviceId)
+        .toList();
+    if (next.length == state.discoveredDevices.length) {
+      return;
+    }
+    state = ConnectionState(
+      status: state.status,
+      peer: state.peer,
+      remoteSnapshot: state.remoteSnapshot,
+      isRemoteDirectoryReady: state.isRemoteDirectoryReady,
+      isIncomingSyncActive: state.isIncomingSyncActive,
+      discoveredDevices: next,
       recentAddresses: state.recentAddresses,
       recentLabels: state.recentLabels,
       listenPort: state.listenPort,
@@ -553,6 +634,9 @@ class ConnectionController extends StateNotifier<ConnectionState> {
         .removeWhere((String _, DateTime seenAt) => seenAt.isBefore(cutoff));
     final List<DeviceInfo> next =
         state.discoveredDevices.where((DeviceInfo device) {
+      if (_isConnectedPeer(device)) {
+        return true;
+      }
       final DateTime? seenAt = _discoveredAt[device.deviceId];
       return seenAt != null && !seenAt.isBefore(cutoff);
     }).toList();
@@ -564,7 +648,41 @@ class ConnectionController extends StateNotifier<ConnectionState> {
       peer: state.peer,
       remoteSnapshot: state.remoteSnapshot,
       isRemoteDirectoryReady: state.isRemoteDirectoryReady,
+      isIncomingSyncActive: state.isIncomingSyncActive,
       discoveredDevices: next,
+      recentAddresses: state.recentAddresses,
+      recentLabels: state.recentLabels,
+      listenPort: state.listenPort,
+      errorMessage: state.errorMessage,
+    );
+  }
+
+  bool _isConnectedPeer(DeviceInfo device) {
+    return state.status == ConnectionStatus.connected &&
+        state.peer?.deviceId == device.deviceId;
+  }
+
+  void _ensureConnectedPeerVisible() {
+    final DeviceInfo? peer = state.peer;
+    if (peer == null || state.status != ConnectionStatus.connected) {
+      return;
+    }
+    final bool alreadyVisible = state.discoveredDevices.any(
+      (DeviceInfo device) => device.deviceId == peer.deviceId,
+    );
+    if (alreadyVisible) {
+      return;
+    }
+    state = ConnectionState(
+      status: state.status,
+      peer: state.peer,
+      remoteSnapshot: state.remoteSnapshot,
+      isRemoteDirectoryReady: state.isRemoteDirectoryReady,
+      isIncomingSyncActive: state.isIncomingSyncActive,
+      discoveredDevices: <DeviceInfo>[
+        peer,
+        ...state.discoveredDevices,
+      ].take(12).toList(),
       recentAddresses: state.recentAddresses,
       recentLabels: state.recentLabels,
       listenPort: state.listenPort,
@@ -574,6 +692,7 @@ class ConnectionController extends StateNotifier<ConnectionState> {
 
   Future<ProtocolMessage> _handleBeginCopy(ProtocolMessage message) async {
     try {
+      _setIncomingSyncActive(true);
       final String remoteRootId =
           message.payload['remoteRootId'] as String? ?? '';
       final String relativePath =
@@ -848,6 +967,7 @@ class ConnectionController extends StateNotifier<ConnectionState> {
 
   Future<void> _cleanupIncomingTransfers() async {
     if (_incomingWriteSessions.isEmpty && _incomingWriteTargets.isEmpty) {
+      _setIncomingSyncActive(false);
       return;
     }
     final FileAccessGateway gateway = _ref.read(fileAccessGatewayProvider);
@@ -871,6 +991,7 @@ class ConnectionController extends StateNotifier<ConnectionState> {
         // Ignore cleanup failures during disconnect recovery.
       }
     }
+    _setIncomingSyncActive(false);
   }
 
   Future<void> handleLocalDirectoryChanged(DirectoryHandle? handle) async {
@@ -900,11 +1021,19 @@ class ConnectionController extends StateNotifier<ConnectionState> {
   }
 
   Future<void> _handleServiceMessage(ProtocolMessage message) async {
-    if (message.type != 'remoteDirectoryChanged') {
-      return;
-    }
     final DeviceInfo? peer = state.peer;
     if (peer == null) {
+      return;
+    }
+    if (message.type == 'syncSessionStart') {
+      _setIncomingSyncActive(true);
+      return;
+    }
+    if (message.type == 'syncSessionEnd') {
+      _setIncomingSyncActive(false);
+      return;
+    }
+    if (message.type != 'remoteDirectoryChanged') {
       return;
     }
     final bool isReady = message.payload['isReady'] as bool? ?? false;
@@ -915,6 +1044,7 @@ class ConnectionController extends StateNotifier<ConnectionState> {
         peer: peer,
         remoteSnapshot: null,
         isRemoteDirectoryReady: false,
+        isIncomingSyncActive: state.isIncomingSyncActive,
         listenPort: state.listenPort,
         discoveredDevices: state.discoveredDevices,
         recentAddresses: state.recentAddresses,
@@ -927,10 +1057,29 @@ class ConnectionController extends StateNotifier<ConnectionState> {
       peer: peer,
       remoteSnapshot: state.remoteSnapshot,
       isRemoteDirectoryReady: true,
+      isIncomingSyncActive: state.isIncomingSyncActive,
       listenPort: state.listenPort,
       discoveredDevices: state.discoveredDevices,
       recentAddresses: state.recentAddresses,
       recentLabels: state.recentLabels,
+    );
+  }
+
+  void _setIncomingSyncActive(bool value) {
+    if (state.isIncomingSyncActive == value) {
+      return;
+    }
+    state = ConnectionState(
+      status: state.status,
+      peer: state.peer,
+      remoteSnapshot: state.remoteSnapshot,
+      isRemoteDirectoryReady: state.isRemoteDirectoryReady,
+      isIncomingSyncActive: value,
+      discoveredDevices: state.discoveredDevices,
+      recentAddresses: state.recentAddresses,
+      recentLabels: state.recentLabels,
+      listenPort: state.listenPort,
+      errorMessage: state.errorMessage,
     );
   }
 }

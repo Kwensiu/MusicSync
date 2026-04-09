@@ -1,12 +1,12 @@
 {
   "@@locale": "en",
   "appTitle": "MusicSync",
-  "homeStepConnectionTitle": "Step 1: Connect Remote Device",
-  "homeStepConnectionHint": "Establish a connection to the remote device. After the connection is ready, directory state and preview update automatically.",
+  "homeStepConnectionTitle": "Step 1: Establish Device Session",
   "homeConnectionStateIdle": "Not listening",
   "homeConnectionStateConnecting": "Connecting",
   "homeConnectionStateListening": "Listening",
   "homeConnectionStateConnected": "Connected",
+  "homeConnectionStateConnectedListening": "Connected and Listening",
   "homePortChipLabel": "Port {port}",
   "@homePortChipLabel": {
     "placeholders": {
@@ -32,12 +32,6 @@
   "homeAdvancedTitle": "Advanced and Debug",
   "homeConnectionHelpersTitle": "Connection helpers",
   "homeConnectionActionsTitle": "Connection actions",
-  "homeAutoPreviewWaiting": "Automatic analysis will start after both the source and target directories are ready.",
-  "homeAutoPreviewWaitingLocal": "The target side is ready. Automatic analysis will start after you pick the local source directory.",
-  "homeAutoPreviewWaitingRemote": "The local source directory is ready. Automatic analysis will start after the remote device picks a target directory.",
-  "homeAutoPreviewRunning": "Directories are ready. Building the target preview automatically.",
-  "homeAutoPreviewReady": "Target preview is up to date and ready for review.",
-  "homeAutoPreviewRefresh": "Refresh the target index manually if you need to force a rescan.",
   "homeLocalLibraryTitle": "Local Library",
   "homeLocalSourceHint": "This directory is treated as the source. The target side will be aligned to it.",
   "directoryPreflightWarningTitle": "Preflight warning: this directory may be heavy and preview generation could be slow.",
@@ -84,7 +78,9 @@
   },
   "homeCleanupTempFailed": "Failed to clean temporary files. Please try again later.",
   "homeRecentAddresses": "Recent Addresses",
-  "homeDiscoveredDevices": "Discovered Devices",
+  "homeDiscoveredDevices": "Nearby Devices",
+  "homeRefreshConnectionState": "Update Connection Status",
+  "homeOpenConnectionPanel": "More Connection Options",
   "homeManageRecentItems": "Manage Records",
   "homeRecentEmpty": "No records yet",
   "homeRecentAlias": "Alias",
@@ -96,7 +92,14 @@
   "homeRecentAliasHint": "Enter a short name",
   "homeRemoteTargetTitle": "Target Side",
   "homeRemoteTargetHint": "Version 1 currently supports syncing only to the target side on a remote device.",
-  "homeRemoteIndexPending": "The target directory is ready. Syncing the latest index now.",
+  "homeIncomingSyncTitle": "Receiving Sync",
+  "homeIncomingSyncBody": "This device is currently receiving sync writes from {device}.",
+  "@homeIncomingSyncBody": {
+    "placeholders": {
+      "device": {}
+    }
+  },
+  "homeIncomingSyncHint": "Do not clear the directory, disconnect, switch flows, or leave the app.",
   "homeRemoteManualRefreshTitle": "Manual refresh",
   "homeListenerTitle": "Listener",
   "homeListenerStart": "Start Listening",
@@ -119,14 +122,7 @@
       "status": {}
     }
   },
-  "homePeerName": "Peer: {name}",
-  "@homePeerName": {
-    "placeholders": {
-      "name": {}
-    }
-  },
   "homeRefreshRemoteIndex": "Refresh Target Index",
-  "homeRefreshRemoteIndexHint": "Use this only when you think the target directory changed but automatic refresh has not caught up yet.",
   "homeRemoteRoot": "Target root: {name}",
   "@homeRemoteRoot": {
     "placeholders": {
@@ -278,8 +274,6 @@
     }
   },
   "previewStartSync": "Start Sync",
-  "previewDirectoryRequired": "Select a local directory before building preview.",
-  "previewRemoteDirectoryRequired": "Connect to the remote device and make sure the remote device has picked a target directory.",
   "errorRemoteDirectoryNotSelected": "The remote device has not selected a target directory yet.",
   "errorRemoteDeviceDisconnected": "The remote device disconnected. Keep the target device in foreground and reconnect.",
   "errorConnectionRefused": "Connection was refused. Check the target address and ensure the remote listener is running.",

@@ -12,10 +12,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appTitle => 'MusicSync';
 
   @override
-  String get homeStepConnectionTitle => '步骤 1：连接远端设备';
-
-  @override
-  String get homeStepConnectionHint => '建立与远端设备的连接。连接建立后，目录状态与预览会自动更新。';
+  String get homeStepConnectionTitle => '步骤 1：建立设备会话';
 
   @override
   String get homeConnectionStateIdle => '未监听';
@@ -28,6 +25,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get homeConnectionStateConnected => '已连接';
+
+  @override
+  String get homeConnectionStateConnectedListening => '已连接并监听';
 
   @override
   String homePortChipLabel(int port) {
@@ -84,24 +84,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get homeConnectionActionsTitle => '连接操作';
-
-  @override
-  String get homeAutoPreviewWaiting => '等待源端目录与目标端目录都准备就绪后自动分析。';
-
-  @override
-  String get homeAutoPreviewWaitingLocal => '目标端已就绪，等待选择本地源目录后自动分析。';
-
-  @override
-  String get homeAutoPreviewWaitingRemote => '本地源目录已就绪，等待远端设备选择目标端目录后自动分析。';
-
-  @override
-  String get homeAutoPreviewRunning => '目录已就绪，正在自动生成目标端预览。';
-
-  @override
-  String get homeAutoPreviewReady => '目标端预览已是最新，可直接检查并执行同步。';
-
-  @override
-  String get homeAutoPreviewRefresh => '如需强制重扫目标端，可手动刷新目标端索引。';
 
   @override
   String get homeLocalLibraryTitle => '本地音乐库';
@@ -162,7 +144,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get homeRecentAddresses => '最近地址';
 
   @override
-  String get homeDiscoveredDevices => '发现到的设备';
+  String get homeDiscoveredDevices => '附近的设备';
+
+  @override
+  String get homeRefreshConnectionState => '更新连接状态';
+
+  @override
+  String get homeOpenConnectionPanel => '更多连接方式';
 
   @override
   String get homeManageRecentItems => '管理记录';
@@ -198,7 +186,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get homeRemoteTargetHint => '当前第一版只支持从本机同步到远端设备的目标端。';
 
   @override
-  String get homeRemoteIndexPending => '目标端目录已就绪，正在同步索引。';
+  String get homeIncomingSyncTitle => '正在接收同步';
+
+  @override
+  String homeIncomingSyncBody(Object device) {
+    return '当前设备正在接收来自 $device 的同步写入。';
+  }
+
+  @override
+  String get homeIncomingSyncHint => '请不要清除目录、断开连接、切换流程或退出应用。';
 
   @override
   String get homeRemoteManualRefreshTitle => '手动刷新';
@@ -235,15 +231,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String homePeerName(Object name) {
-    return '设备：$name';
-  }
-
-  @override
   String get homeRefreshRemoteIndex => '刷新目标端索引';
-
-  @override
-  String get homeRefreshRemoteIndexHint => '仅在你怀疑目标端目录变化但自动刷新未跟上时使用。';
 
   @override
   String homeRemoteRoot(Object name) {
@@ -476,12 +464,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get previewStartSync => '开始同步';
-
-  @override
-  String get previewDirectoryRequired => '请先选择本地目录再生成预览。';
-
-  @override
-  String get previewRemoteDirectoryRequired => '请先连接远端设备，并让远端设备选择目标端目录。';
 
   @override
   String get errorRemoteDirectoryNotSelected => '远端设备尚未选择目标端目录。';
@@ -825,7 +807,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get previewDirectoryStatusLocal => '本地';
 
   @override
-  String get previewDirectoryStatusRemote => '对端';
+  String get previewDirectoryStatusRemote => '远端';
 
   @override
   String get diffTypeCopy => '复制';

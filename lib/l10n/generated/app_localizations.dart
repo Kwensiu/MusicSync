@@ -107,14 +107,8 @@ abstract class AppLocalizations {
   /// No description provided for @homeStepConnectionTitle.
   ///
   /// In en, this message translates to:
-  /// **'Step 1: Connect Remote Device'**
+  /// **'Step 1: Establish Device Session'**
   String get homeStepConnectionTitle;
-
-  /// No description provided for @homeStepConnectionHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Establish a connection to the remote device. After the connection is ready, directory state and preview update automatically.'**
-  String get homeStepConnectionHint;
 
   /// No description provided for @homeConnectionStateIdle.
   ///
@@ -139,6 +133,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Connected'**
   String get homeConnectionStateConnected;
+
+  /// No description provided for @homeConnectionStateConnectedListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected and Listening'**
+  String get homeConnectionStateConnectedListening;
 
   /// No description provided for @homePortChipLabel.
   ///
@@ -248,42 +248,6 @@ abstract class AppLocalizations {
   /// **'Connection actions'**
   String get homeConnectionActionsTitle;
 
-  /// No description provided for @homeAutoPreviewWaiting.
-  ///
-  /// In en, this message translates to:
-  /// **'Automatic analysis will start after both the source and target directories are ready.'**
-  String get homeAutoPreviewWaiting;
-
-  /// No description provided for @homeAutoPreviewWaitingLocal.
-  ///
-  /// In en, this message translates to:
-  /// **'The target side is ready. Automatic analysis will start after you pick the local source directory.'**
-  String get homeAutoPreviewWaitingLocal;
-
-  /// No description provided for @homeAutoPreviewWaitingRemote.
-  ///
-  /// In en, this message translates to:
-  /// **'The local source directory is ready. Automatic analysis will start after the remote device picks a target directory.'**
-  String get homeAutoPreviewWaitingRemote;
-
-  /// No description provided for @homeAutoPreviewRunning.
-  ///
-  /// In en, this message translates to:
-  /// **'Directories are ready. Building the target preview automatically.'**
-  String get homeAutoPreviewRunning;
-
-  /// No description provided for @homeAutoPreviewReady.
-  ///
-  /// In en, this message translates to:
-  /// **'Target preview is up to date and ready for review.'**
-  String get homeAutoPreviewReady;
-
-  /// No description provided for @homeAutoPreviewRefresh.
-  ///
-  /// In en, this message translates to:
-  /// **'Refresh the target index manually if you need to force a rescan.'**
-  String get homeAutoPreviewRefresh;
-
   /// No description provided for @homeLocalLibraryTitle.
   ///
   /// In en, this message translates to:
@@ -384,8 +348,20 @@ abstract class AppLocalizations {
   /// No description provided for @homeDiscoveredDevices.
   ///
   /// In en, this message translates to:
-  /// **'Discovered Devices'**
+  /// **'Nearby Devices'**
   String get homeDiscoveredDevices;
+
+  /// No description provided for @homeRefreshConnectionState.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Connection Status'**
+  String get homeRefreshConnectionState;
+
+  /// No description provided for @homeOpenConnectionPanel.
+  ///
+  /// In en, this message translates to:
+  /// **'More Connection Options'**
+  String get homeOpenConnectionPanel;
 
   /// No description provided for @homeManageRecentItems.
   ///
@@ -453,11 +429,23 @@ abstract class AppLocalizations {
   /// **'Version 1 currently supports syncing only to the target side on a remote device.'**
   String get homeRemoteTargetHint;
 
-  /// No description provided for @homeRemoteIndexPending.
+  /// No description provided for @homeIncomingSyncTitle.
   ///
   /// In en, this message translates to:
-  /// **'The target directory is ready. Syncing the latest index now.'**
-  String get homeRemoteIndexPending;
+  /// **'Receiving Sync'**
+  String get homeIncomingSyncTitle;
+
+  /// No description provided for @homeIncomingSyncBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This device is currently receiving sync writes from {device}.'**
+  String homeIncomingSyncBody(Object device);
+
+  /// No description provided for @homeIncomingSyncHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not clear the directory, disconnect, switch flows, or leave the app.'**
+  String get homeIncomingSyncHint;
 
   /// No description provided for @homeRemoteManualRefreshTitle.
   ///
@@ -519,23 +507,11 @@ abstract class AppLocalizations {
   /// **'Status: {status}'**
   String homeConnectionStatus(Object status);
 
-  /// No description provided for @homePeerName.
-  ///
-  /// In en, this message translates to:
-  /// **'Peer: {name}'**
-  String homePeerName(Object name);
-
   /// No description provided for @homeRefreshRemoteIndex.
   ///
   /// In en, this message translates to:
   /// **'Refresh Target Index'**
   String get homeRefreshRemoteIndex;
-
-  /// No description provided for @homeRefreshRemoteIndexHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Use this only when you think the target directory changed but automatic refresh has not caught up yet.'**
-  String get homeRefreshRemoteIndexHint;
 
   /// No description provided for @homeRemoteRoot.
   ///
@@ -944,18 +920,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start Sync'**
   String get previewStartSync;
-
-  /// No description provided for @previewDirectoryRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'Select a local directory before building preview.'**
-  String get previewDirectoryRequired;
-
-  /// No description provided for @previewRemoteDirectoryRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'Connect to the remote device and make sure the remote device has picked a target directory.'**
-  String get previewRemoteDirectoryRequired;
 
   /// No description provided for @errorRemoteDirectoryNotSelected.
   ///

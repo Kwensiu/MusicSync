@@ -19,6 +19,9 @@ class ConnectionSectionActions {
   ) {
     if (connectionState.peer != null &&
         connectionState.status == peer_connection.ConnectionStatus.connected) {
+      if (connectionState.listenPort != null) {
+        return context.l10n.homeConnectionStateConnectedListening;
+      }
       return context.l10n.homeConnectionStateConnected;
     }
     if (connectionState.status == peer_connection.ConnectionStatus.connecting) {
