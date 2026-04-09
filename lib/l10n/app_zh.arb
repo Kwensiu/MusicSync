@@ -474,7 +474,7 @@
   "previewTransferDirectionLabel": "传输状态",
   "previewDirectoryStatusLabel": "目录状态",
   "previewDirectoryStatusLocal": "本地",
-  "previewDirectoryStatusRemote": "目标端",
+  "previewDirectoryStatusRemote": "远端",
   "diffTypeCopy": "复制",
   "diffTypeDelete": "删除",
   "diffTypeConflict": "冲突",

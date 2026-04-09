@@ -1578,7 +1578,7 @@ abstract class AppLocalizations {
   /// No description provided for @previewDirectoryStatusRemote.
   ///
   /// In en, this message translates to:
-  /// **'Target'**
+  /// **'Peer'**
   String get previewDirectoryStatusRemote;
 
   /// No description provided for @diffTypeCopy.

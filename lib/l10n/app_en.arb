@@ -474,7 +474,7 @@
   "previewTransferDirectionLabel": "Transfer Status",
   "previewDirectoryStatusLabel": "Directory Status",
   "previewDirectoryStatusLocal": "Local",
-  "previewDirectoryStatusRemote": "Target",
+  "previewDirectoryStatusRemote": "Peer",
   "diffTypeCopy": "COPY",
   "diffTypeDelete": "DELETE",
   "diffTypeConflict": "CONFLICT",

@@ -17,6 +17,7 @@ import java.util.UUID
 
 class MainActivity : FlutterActivity() {
     private val channelName = "music_sync/android_file_access"
+    private val runtimeChannelName = "music_sync/android_runtime"
     private val pickDirectoryRequestCode = 44881
     private var pendingDirectoryResult: MethodChannel.Result? = null
     private val readSessions = mutableMapOf<String, InputStream>()
@@ -43,6 +44,30 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, runtimeChannelName)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "setKeepAliveEnabled" -> setKeepAliveEnabled(call, result)
+                    else -> result.notImplemented()
+                }
+            }
+    }
+
+    private fun setKeepAliveEnabled(call: MethodCall, result: MethodChannel.Result) {
+        try {
+            val enabled = call.argument<Boolean>("enabled") ?: false
+            if (enabled) {
+                ConnectionKeepAliveService.start(this)
+            } else {
+                ConnectionKeepAliveService.stop(this)
+            }
+            result.success(null)
+        } catch (error: SecurityException) {
+            result.error("set_keep_alive_permission_denied", error.message, null)
+        } catch (error: Exception) {
+            result.error("set_keep_alive_failed", error.message, null)
+        }
     }
 
     private fun pickDirectory(result: MethodChannel.Result) {

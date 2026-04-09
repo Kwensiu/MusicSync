@@ -882,7 +882,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get previewDirectoryStatusLocal => 'Local';
 
   @override
-  String get previewDirectoryStatusRemote => 'Target';
+  String get previewDirectoryStatusRemote => 'Peer';
 
   @override
   String get diffTypeCopy => 'COPY';

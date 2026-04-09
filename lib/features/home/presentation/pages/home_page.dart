@@ -29,6 +29,7 @@ import 'package:music_sync/models/diff_item.dart';
 import 'package:music_sync/models/scan_snapshot.dart';
 import 'package:music_sync/services/file_access/file_access_entry.dart';
 import 'package:music_sync/services/file_access/file_access_provider.dart';
+import 'package:music_sync/services/platform/android_background_runtime.dart';
 import 'package:music_sync/services/scanning/temp_file_cleanup_service.dart';
 import 'package:music_sync/services/storage/recent_items_store.dart';
 
@@ -52,6 +53,7 @@ class _HomePageState extends ConsumerState<HomePage>
   bool _isCleaningTargetTemp = false;
   String? _lastAutoPreviewSignature;
   bool _isAutoPreviewQueued = false;
+  AppLifecycleState? _appLifecycleState;
 
   @override
   void initState() {
@@ -68,6 +70,11 @@ class _HomePageState extends ConsumerState<HomePage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    _appLifecycleState = state;
+    _syncAndroidKeepAlive(
+      connectionState: ref.read(connectionControllerProvider),
+      executionState: ref.read(executionControllerProvider),
+    );
     if (state != AppLifecycleState.resumed || !mounted) {
       return;
     }
@@ -105,6 +112,10 @@ class _HomePageState extends ConsumerState<HomePage>
     ref.listen<peer_connection.ConnectionState>(
       connectionControllerProvider,
       (_, peer_connection.ConnectionState next) {
+        _syncAndroidKeepAlive(
+          connectionState: next,
+          executionState: ref.read(executionControllerProvider),
+        );
         _maybeScheduleAutoRemotePreview(
           directoryState: ref.read(directoryControllerProvider),
           connectionState: next,
@@ -112,6 +123,15 @@ class _HomePageState extends ConsumerState<HomePage>
           executionState: ref.read(executionControllerProvider),
           ignoredExtensions:
               ref.read(settingsControllerProvider).ignoredExtensions,
+        );
+      },
+    );
+    ref.listen<ExecutionState>(
+      executionControllerProvider,
+      (_, ExecutionState next) {
+        _syncAndroidKeepAlive(
+          connectionState: ref.read(connectionControllerProvider),
+          executionState: next,
         );
       },
     );
@@ -163,6 +183,9 @@ class _HomePageState extends ConsumerState<HomePage>
         connectionState.status == peer_connection.ConnectionStatus.connecting;
     final bool isPreviewLoading = previewState.status == PreviewStatus.loading;
     final bool isExecuting = executionState.status == ExecutionStatus.running;
+    final bool isRemoteSyncRunning =
+        executionState.status == ExecutionStatus.running &&
+            executionState.mode == ExecutionMode.remote;
     final bool hasFinishedExecution =
         executionState.status == ExecutionStatus.completed ||
             executionState.status == ExecutionStatus.cancelled ||
@@ -188,6 +211,10 @@ class _HomePageState extends ConsumerState<HomePage>
       ...?previewState.sourceSnapshot?.warnings,
       ...?previewState.targetSnapshot?.warnings,
     }.toList();
+    final bool showKeepAliveBadge = Platform.isAndroid &&
+        connectionState.peer != null &&
+        connectionState.status == peer_connection.ConnectionStatus.connected &&
+        isRemoteSyncRunning;
 
     return AppScaffold(
       title: context.l10n.appTitle,
@@ -198,287 +225,330 @@ class _HomePageState extends ConsumerState<HomePage>
           icon: const Icon(Icons.settings_outlined),
         ),
       ],
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Stack(
         children: <Widget>[
-          SectionCard(
-            title: context.l10n.homeStepConnectionTitle,
-            child: ConnectionSection(
-              connectionState: connectionState,
-              addressController: _addressController,
-              isConnectUiBusy: isConnectUiBusy,
-              isConnecting: isConnecting,
-              hasConnectedPeer: hasConnectedPeer,
-              onConnectionStateChipTap: () =>
-                  ConnectionSectionActions.handleConnectionStateChipTap(
-                ref: ref,
-                connectionState: connectionState,
-              ),
-              onPortTap: () => ConnectionSectionActions.showPortDialog(
-                context: context,
-                ref: ref,
-                currentPort: connectionState.listenPort ?? 44888,
-              ),
-              onShareTap: () => ConnectionSectionActions.showShareDialog(
-                context: context,
-                connectionState: connectionState,
-              ),
-              onConnectTap: () => ConnectionSectionActions.handleConnectButton(
-                ref: ref,
-                addressController: _addressController,
-                connectionState: connectionState,
-              ),
-              onManageRecentAddresses: _showRecentAddressManager,
-              onRecentAddressTap: (String address) {
-                _addressController.text = address;
-                ConnectionSectionActions.connectFromInput(
-                  ref: ref,
-                  addressController: _addressController,
-                );
-              },
-              localizeUiError: _localizeUiError,
-              connectionStateChipLabel:
-                  ConnectionSectionActions.connectionStateChipLabel,
-              connectionStateChipTone:
-                  ConnectionSectionActions.connectionStateChipTone,
-            ),
-          ),
-          const SizedBox(height: 16),
-          SectionCard(
-            title: context.l10n.homeStepSourceTitle,
-            child: SourceDirectorySection(
-              directoryState: directoryState,
-              isBusy: isBusy,
-              hasRemoteDirectoryReady: hasRemoteDirectoryReady,
-              isCleaningSourceTemp: _isCleaningSourceTemp,
-              onPickDirectory: () {
-                ref.read(directoryControllerProvider.notifier).pickDirectory();
-              },
-              onClearDirectory: () {
-                ref.read(directoryControllerProvider.notifier).clearDirectory();
-              },
-              onCleanupTempFiles: () => _cleanupTempFiles(
-                rootId: directoryState.handle!.entryId,
-                isSource: true,
-              ),
-              onManageRecentDirectories: _showRecentDirectoryManager,
-              onUseRecentDirectory: (DirectoryHandle handle) {
-                ref
-                    .read(directoryControllerProvider.notifier)
-                    .useRecentDirectory(handle);
-              },
-              localizePreflightReason: _localizePreflightReason,
-            ),
-          ),
-          const SizedBox(height: 16),
-          SectionCard(
-            title: context.l10n.homeStepPreviewTitle,
-            child: PreviewWorkbenchSection(
-              directoryState: directoryState,
-              connectionState: connectionState,
-              previewState: previewState,
-              executionState: executionState,
-              ignoredExtensions: ignoredExtensions,
-              filteredCopyItems: filteredCopyItems,
-              filteredDeleteItems: filteredDeleteItems,
-              filteredConflictItems: filteredConflictItems,
-              activeItems: activeItems,
-              extensionOptions: extensionOptions,
-              scanWarnings: scanWarnings,
-              isStalePlan: isStalePlan,
-              isBusy: isBusy,
-              isExecuting: isExecuting,
-              canStartRemoteSync: canStartRemoteSync,
-              canOpenResult: canOpenResult,
-              showExecutionPanel: showExecutionPanel,
-              hasRemoteDirectoryReady: hasRemoteDirectoryReady,
-              isAllExtensionsSelected: isAllExtensionsSelected,
-              selectAllSections: _selectAllSections,
-              selectedSections: _selectedSections,
-              selectedExtensions: _selectedExtensions,
-              sourceDeviceLabel: _localDeviceDisplayName(),
-              targetDeviceLabel: _targetDeviceDisplayName(
-                context,
-                connectionState: connectionState,
-                previewState: previewState,
-              ),
-              isTransferConnected: connectionState.peer != null &&
-                  connectionState.status ==
-                      peer_connection.ConnectionStatus.connected,
-              onBuildRemotePreview: () =>
-                  PreviewWorkbenchActions.buildRemotePreview(
-                ref: ref,
-                sourceRoot: directoryState.handle!,
-                ignoredExtensions: ignoredExtensions,
-              ),
-              onStartRemoteSync: () =>
-                  PreviewWorkbenchActions.executeRemoteSyncFlow(
-                context: context,
-                ref: ref,
-                previewState: previewState,
-                directoryState: directoryState,
-                connectionState: connectionState,
-              ),
-              onCancelSync: () {
-                ref.read(executionControllerProvider.notifier).cancel();
-              },
-              onToggleSection: (DiffType? type) {
-                setState(() {
-                  if (type == null) {
-                    _selectAllSections = true;
-                    _selectedSections = <DiffType>{
-                      DiffType.copy,
-                      DiffType.delete,
-                    };
-                    return;
-                  }
-                  final Set<DiffType> next = _selectAllSections
-                      ? <DiffType>{type}
-                      : <DiffType>{..._selectedSections};
-                  _selectAllSections = false;
-                  if (next.contains(type)) {
-                    next.remove(type);
-                  } else {
-                    next.add(type);
-                  }
-                  if (next.isEmpty) {
-                    next.add(type);
-                  }
-                  _selectedSections = next;
-                });
-              },
-              onToggleExtension: (String extension) {
-                setState(() {
-                  final bool selected = extension == '*'
-                      ? isAllExtensionsSelected
-                      : _selectedExtensions.contains(extension);
-                  _selectedExtensions =
-                      PreviewWorkbenchActions.toggleExtensionSelection(
-                    current: _selectedExtensions,
-                    extension: extension,
-                    selected: !selected,
-                  );
-                });
-              },
-              localizeUiError: _localizeUiError,
-              localizedExecutionStatus: _localizedExecutionStatus,
-              isScanTimeoutError: _isScanTimeoutError,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ExpansionTile(
-            title: Text(context.l10n.homeAdvancedTitle),
+          ListView(
+            padding: const EdgeInsets.all(16),
             children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: SectionCard(
-                  title: context.l10n.executionTargetTitle,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(context.l10n.executionTargetHint),
-                      const SizedBox(height: 8),
-                      Text(executionState.targetRoot ??
-                          context.l10n.executionNoTarget),
-                      const SizedBox(height: 12),
-                      FilledButton.tonal(
-                        onPressed: isBusy
-                            ? null
-                            : () async {
-                                final handle = await ref
-                                    .read(fileAccessGatewayProvider)
-                                    .pickDirectory();
-                                ref
-                                    .read(executionControllerProvider.notifier)
-                                    .setTargetRoot(handle?.entryId);
-                              },
-                        child: Text(context.l10n.executionPickTarget),
-                      ),
-                      const SizedBox(height: 8),
-                      OutlinedButton(
-                        onPressed: isBusy ||
-                                executionState.targetRoot == null ||
-                                _isCleaningTargetTemp
-                            ? null
-                            : () => _cleanupTempFiles(
-                                  rootId: executionState.targetRoot!,
-                                  isSource: false,
-                                ),
-                        child: Text(context.l10n.homeCleanupTempFiles),
-                      ),
-                      if (executionState.targetRoot == null) ...<Widget>[
-                        const SizedBox(height: 8),
-                        Text(context.l10n.executionTargetRequired),
-                      ],
-                      const SizedBox(height: 8),
-                      FilledButton.tonal(
-                        onPressed: isBusy ||
-                                executionState.targetRoot == null ||
-                                !hasExecutableItems ||
-                                !isLocalPreview
-                            ? null
-                            : () async {
-                                if (previewState.plan.deleteItems.isNotEmpty) {
-                                  final bool? confirmed =
-                                      await showDialog<bool>(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return AlertDialog(
-                                        title: Text(context
-                                            .l10n.executionConfirmDeleteTitle),
-                                        content: Text(
-                                          context.l10n
-                                              .executionConfirmDeleteBody(
-                                            previewState
-                                                .plan.deleteItems.length,
-                                          ),
-                                        ),
-                                        actions: <Widget>[
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.of(context)
-                                                    .pop(false),
-                                            child:
-                                                Text(context.l10n.commonCancel),
-                                          ),
-                                          FilledButton(
-                                            onPressed: () =>
-                                                Navigator.of(context).pop(true),
-                                            child: Text(
-                                                context.l10n.commonConfirm),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  );
-
-                                  if (confirmed != true) {
-                                    return;
-                                  }
-                                }
-                                await ref
-                                    .read(executionControllerProvider.notifier)
-                                    .execute(
-                                      plan: previewState.plan,
-                                      targetRoot: executionState.targetRoot!,
-                                    );
-                                await PreviewWorkbenchActions
-                                    .refreshPreviewAfterExecution(
-                                  ref: ref,
-                                  previewState: previewState,
-                                  directoryState: directoryState,
-                                  executionState:
-                                      ref.read(executionControllerProvider),
-                                );
-                              },
-                        child: Text(context.l10n.executionRunLocalDebug),
-                      ),
-                    ],
+              SectionCard(
+                title: context.l10n.homeStepConnectionTitle,
+                child: ConnectionSection(
+                  connectionState: connectionState,
+                  addressController: _addressController,
+                  isConnectUiBusy: isConnectUiBusy,
+                  isConnecting: isConnecting,
+                  hasConnectedPeer: hasConnectedPeer,
+                  onConnectionStateChipTap: () =>
+                      ConnectionSectionActions.handleConnectionStateChipTap(
+                    ref: ref,
+                    connectionState: connectionState,
                   ),
+                  onPortTap: () => ConnectionSectionActions.showPortDialog(
+                    context: context,
+                    ref: ref,
+                    currentPort: connectionState.listenPort ?? 44888,
+                  ),
+                  onShareTap: () => ConnectionSectionActions.showShareDialog(
+                    context: context,
+                    connectionState: connectionState,
+                  ),
+                  onConnectTap: () =>
+                      ConnectionSectionActions.handleConnectButton(
+                    ref: ref,
+                    addressController: _addressController,
+                    connectionState: connectionState,
+                  ),
+                  onManageRecentAddresses: _showRecentAddressManager,
+                  onRecentAddressTap: (String address) {
+                    _addressController.text = address;
+                    ConnectionSectionActions.connectFromInput(
+                      ref: ref,
+                      addressController: _addressController,
+                    );
+                  },
+                  localizeUiError: _localizeUiError,
+                  connectionStateChipLabel:
+                      ConnectionSectionActions.connectionStateChipLabel,
+                  connectionStateChipTone:
+                      ConnectionSectionActions.connectionStateChipTone,
                 ),
+              ),
+              const SizedBox(height: 16),
+              SectionCard(
+                title: context.l10n.homeStepSourceTitle,
+                child: SourceDirectorySection(
+                  directoryState: directoryState,
+                  isBusy: isBusy,
+                  hasRemoteDirectoryReady: hasRemoteDirectoryReady,
+                  isCleaningSourceTemp: _isCleaningSourceTemp,
+                  onPickDirectory: () {
+                    ref
+                        .read(directoryControllerProvider.notifier)
+                        .pickDirectory();
+                  },
+                  onClearDirectory: () {
+                    ref
+                        .read(directoryControllerProvider.notifier)
+                        .clearDirectory();
+                  },
+                  onCleanupTempFiles: () => _cleanupTempFiles(
+                    rootId: directoryState.handle!.entryId,
+                    isSource: true,
+                  ),
+                  onManageRecentDirectories: _showRecentDirectoryManager,
+                  onUseRecentDirectory: (DirectoryHandle handle) {
+                    ref
+                        .read(directoryControllerProvider.notifier)
+                        .useRecentDirectory(handle);
+                  },
+                  localizePreflightReason: _localizePreflightReason,
+                ),
+              ),
+              const SizedBox(height: 16),
+              SectionCard(
+                title: context.l10n.homeStepPreviewTitle,
+                child: PreviewWorkbenchSection(
+                  directoryState: directoryState,
+                  connectionState: connectionState,
+                  previewState: previewState,
+                  executionState: executionState,
+                  ignoredExtensions: ignoredExtensions,
+                  filteredCopyItems: filteredCopyItems,
+                  filteredDeleteItems: filteredDeleteItems,
+                  filteredConflictItems: filteredConflictItems,
+                  activeItems: activeItems,
+                  extensionOptions: extensionOptions,
+                  scanWarnings: scanWarnings,
+                  isStalePlan: isStalePlan,
+                  isBusy: isBusy,
+                  isExecuting: isExecuting,
+                  canStartRemoteSync: canStartRemoteSync,
+                  canOpenResult: canOpenResult,
+                  showExecutionPanel: showExecutionPanel,
+                  hasRemoteDirectoryReady: hasRemoteDirectoryReady,
+                  isAllExtensionsSelected: isAllExtensionsSelected,
+                  selectAllSections: _selectAllSections,
+                  selectedSections: _selectedSections,
+                  selectedExtensions: _selectedExtensions,
+                  sourceDeviceLabel: _localDeviceDisplayName(),
+                  targetDeviceLabel: _targetDeviceDisplayName(
+                    context,
+                    connectionState: connectionState,
+                    previewState: previewState,
+                  ),
+                  isTransferConnected: connectionState.peer != null &&
+                      connectionState.status ==
+                          peer_connection.ConnectionStatus.connected,
+                  onBuildRemotePreview: () =>
+                      PreviewWorkbenchActions.buildRemotePreview(
+                    ref: ref,
+                    sourceRoot: directoryState.handle!,
+                    ignoredExtensions: ignoredExtensions,
+                  ),
+                  onStartRemoteSync: () =>
+                      PreviewWorkbenchActions.executeRemoteSyncFlow(
+                    context: context,
+                    ref: ref,
+                    previewState: previewState,
+                    directoryState: directoryState,
+                    connectionState: connectionState,
+                  ),
+                  onCancelSync: () {
+                    ref.read(executionControllerProvider.notifier).cancel();
+                  },
+                  onToggleSection: (DiffType? type) {
+                    setState(() {
+                      if (type == null) {
+                        _selectAllSections = true;
+                        _selectedSections = <DiffType>{
+                          DiffType.copy,
+                          DiffType.delete,
+                        };
+                        return;
+                      }
+                      final Set<DiffType> next = _selectAllSections
+                          ? <DiffType>{type}
+                          : <DiffType>{..._selectedSections};
+                      _selectAllSections = false;
+                      if (next.contains(type)) {
+                        next.remove(type);
+                      } else {
+                        next.add(type);
+                      }
+                      if (next.isEmpty) {
+                        next.add(type);
+                      }
+                      _selectedSections = next;
+                    });
+                  },
+                  onToggleExtension: (String extension) {
+                    setState(() {
+                      final bool selected = extension == '*'
+                          ? isAllExtensionsSelected
+                          : _selectedExtensions.contains(extension);
+                      _selectedExtensions =
+                          PreviewWorkbenchActions.toggleExtensionSelection(
+                        current: _selectedExtensions,
+                        extension: extension,
+                        selected: !selected,
+                      );
+                    });
+                  },
+                  localizeUiError: _localizeUiError,
+                  localizedExecutionStatus: _localizedExecutionStatus,
+                  isScanTimeoutError: _isScanTimeoutError,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ExpansionTile(
+                title: Text(context.l10n.homeAdvancedTitle),
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: SectionCard(
+                      title: context.l10n.executionTargetTitle,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(context.l10n.executionTargetHint),
+                          const SizedBox(height: 8),
+                          Text(executionState.targetRoot ??
+                              context.l10n.executionNoTarget),
+                          const SizedBox(height: 12),
+                          FilledButton.tonal(
+                            onPressed: isBusy
+                                ? null
+                                : () async {
+                                    final handle = await ref
+                                        .read(fileAccessGatewayProvider)
+                                        .pickDirectory();
+                                    ref
+                                        .read(executionControllerProvider
+                                            .notifier)
+                                        .setTargetRoot(handle?.entryId);
+                                  },
+                            child: Text(context.l10n.executionPickTarget),
+                          ),
+                          const SizedBox(height: 8),
+                          OutlinedButton(
+                            onPressed: isBusy ||
+                                    executionState.targetRoot == null ||
+                                    _isCleaningTargetTemp
+                                ? null
+                                : () => _cleanupTempFiles(
+                                      rootId: executionState.targetRoot!,
+                                      isSource: false,
+                                    ),
+                            child: Text(context.l10n.homeCleanupTempFiles),
+                          ),
+                          if (executionState.targetRoot == null) ...<Widget>[
+                            const SizedBox(height: 8),
+                            Text(context.l10n.executionTargetRequired),
+                          ],
+                          const SizedBox(height: 8),
+                          FilledButton.tonal(
+                            onPressed: isBusy ||
+                                    executionState.targetRoot == null ||
+                                    !hasExecutableItems ||
+                                    !isLocalPreview
+                                ? null
+                                : () async {
+                                    if (previewState
+                                        .plan.deleteItems.isNotEmpty) {
+                                      final bool? confirmed =
+                                          await showDialog<bool>(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            title: Text(context.l10n
+                                                .executionConfirmDeleteTitle),
+                                            content: Text(
+                                              context.l10n
+                                                  .executionConfirmDeleteBody(
+                                                previewState
+                                                    .plan.deleteItems.length,
+                                              ),
+                                            ),
+                                            actions: <Widget>[
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.of(context)
+                                                        .pop(false),
+                                                child: Text(
+                                                    context.l10n.commonCancel),
+                                              ),
+                                              FilledButton(
+                                                onPressed: () =>
+                                                    Navigator.of(context)
+                                                        .pop(true),
+                                                child: Text(
+                                                    context.l10n.commonConfirm),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+
+                                      if (confirmed != true) {
+                                        return;
+                                      }
+                                    }
+                                    await ref
+                                        .read(executionControllerProvider
+                                            .notifier)
+                                        .execute(
+                                          plan: previewState.plan,
+                                          targetRoot:
+                                              executionState.targetRoot!,
+                                        );
+                                    await PreviewWorkbenchActions
+                                        .refreshPreviewAfterExecution(
+                                      ref: ref,
+                                      previewState: previewState,
+                                      directoryState: directoryState,
+                                      executionState:
+                                          ref.read(executionControllerProvider),
+                                    );
+                                  },
+                            child: Text(context.l10n.executionRunLocalDebug),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
+          if (showKeepAliveBadge)
+            Positioned(
+              left: 12,
+              top: 12,
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.tertiaryContainer,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                  ),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    child: Text(
+                      '🏷 后台保活已就绪',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onTertiaryContainer,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -537,6 +607,22 @@ class _HomePageState extends ConsumerState<HomePage>
       return fallbackName;
     }
     return hostName;
+  }
+
+  void _syncAndroidKeepAlive({
+    required peer_connection.ConnectionState connectionState,
+    required ExecutionState executionState,
+  }) {
+    final bool isRemoteSyncRunning =
+        executionState.status == ExecutionStatus.running &&
+            executionState.mode == ExecutionMode.remote;
+    final bool shouldEnable = Platform.isAndroid &&
+        _appLifecycleState != null &&
+        _appLifecycleState != AppLifecycleState.resumed &&
+        connectionState.peer != null &&
+        connectionState.status == peer_connection.ConnectionStatus.connected &&
+        isRemoteSyncRunning;
+    AndroidBackgroundRuntime.setKeepAliveEnabled(shouldEnable);
   }
 
   void _maybeScheduleAutoRemotePreview({

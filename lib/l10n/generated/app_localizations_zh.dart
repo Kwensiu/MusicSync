@@ -825,7 +825,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get previewDirectoryStatusLocal => '本地';
 
   @override
-  String get previewDirectoryStatusRemote => '目标端';
+  String get previewDirectoryStatusRemote => '对端';
 
   @override
   String get diffTypeCopy => '复制';
