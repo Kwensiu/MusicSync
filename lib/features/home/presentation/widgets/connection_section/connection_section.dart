@@ -134,7 +134,6 @@ class ConnectionSection extends StatelessWidget {
               ),
             ),
             if (connectionState.recentAddresses.isNotEmpty) ...<Widget>[
-              const SizedBox(height: 12),
               Row(
                 children: <Widget>[
                   Expanded(
@@ -150,7 +149,6 @@ class ConnectionSection extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,

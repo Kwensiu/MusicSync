@@ -207,58 +207,59 @@ class SourceDirectorySection extends StatelessWidget {
                     ),
                   ),
                 ],
+                if (directoryState.recentHandles.isNotEmpty) ...<Widget>[
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          context.l10n.homeRecentDirectories,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: context.l10n.homeManageRecentItems,
+                        onPressed: isBusy ? null : onManageRecentDirectories,
+                        icon: const Icon(Icons.tune_rounded),
+                      ),
+                    ],
+                  ),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: directoryState.recentHandles.map((handle) {
+                      final bool isCurrent =
+                          directoryState.handle?.entryId == handle.entryId;
+                      return ActionChip(
+                        backgroundColor: isCurrent
+                            ? scheme.secondaryContainer
+                            : scheme.surface,
+                        side: BorderSide(
+                          color: isCurrent
+                              ? scheme.secondary
+                              : scheme.outlineVariant,
+                        ),
+                        avatar: isCurrent
+                            ? Icon(
+                                Icons.check_circle_outline,
+                                size: 18,
+                                color: scheme.onSecondaryContainer,
+                              )
+                            : null,
+                        label: Text(
+                          directoryState.recentLabels[handle.entryId] ??
+                              handle.displayName,
+                        ),
+                        onPressed: isBusy || isCurrent
+                            ? null
+                            : () => onUseRecentDirectory(handle),
+                      );
+                    }).toList(),
+                  ),
+                ],
               ],
             ),
           ),
         ),
-        if (directoryState.recentHandles.isNotEmpty) ...<Widget>[
-          const SizedBox(height: 12),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  context.l10n.homeRecentDirectories,
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
-              ),
-              IconButton(
-                tooltip: context.l10n.homeManageRecentItems,
-                onPressed: isBusy ? null : onManageRecentDirectories,
-                icon: const Icon(Icons.tune_rounded),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: directoryState.recentHandles.map((handle) {
-              final bool isCurrent =
-                  directoryState.handle?.entryId == handle.entryId;
-              return ActionChip(
-                backgroundColor:
-                    isCurrent ? scheme.secondaryContainer : scheme.surface,
-                side: BorderSide(
-                  color: isCurrent ? scheme.secondary : scheme.outlineVariant,
-                ),
-                avatar: isCurrent
-                    ? Icon(
-                        Icons.check_circle_outline,
-                        size: 18,
-                        color: scheme.onSecondaryContainer,
-                      )
-                    : null,
-                label: Text(
-                  directoryState.recentLabels[handle.entryId] ??
-                      handle.displayName,
-                ),
-                onPressed: isBusy || isCurrent
-                    ? null
-                    : () => onUseRecentDirectory(handle),
-              );
-            }).toList(),
-          ),
-        ],
       ],
     );
   }

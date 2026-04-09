@@ -9,7 +9,7 @@ class PlanItemList extends StatefulWidget {
     required this.items,
     super.key,
     this.header,
-    this.maxHeight = 360,
+    this.maxHeight = 280,
     this.borderRadius = const BorderRadius.all(Radius.circular(18)),
     this.contentPadding = const EdgeInsets.symmetric(vertical: 0),
     this.showTopBorder = true,
@@ -96,7 +96,7 @@ class PlanItemEmptyState extends StatelessWidget {
 }
 
 class _PlanItemListState extends State<PlanItemList> {
-  static const double _rowHeight = 44;
+  static const double _rowHeight = 50;
   static const double _separatorHeight = 1;
   late final ScrollController _controller;
 
@@ -122,114 +122,112 @@ class _PlanItemListState extends State<PlanItemList> {
     final double verticalPadding = widget.contentPadding.vertical;
     final double separatorsHeight =
         widget.items.isEmpty ? 0 : (widget.items.length - 1) * _separatorHeight;
-    final double desiredHeight =
+    final double desiredListHeight =
         (widget.items.length * _rowHeight) + separatorsHeight + verticalPadding;
-    final double resolvedHeight =
-        desiredHeight.clamp(0, widget.maxHeight).toDouble();
+    final double resolvedListHeight =
+        desiredListHeight.clamp(0, widget.maxHeight).toDouble();
 
-    return SizedBox(
-      height: resolvedHeight + (widget.header == null ? 0 : 8 + 56),
-      child: Container(
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerLow,
-          borderRadius: widget.borderRadius,
-          border: Border(
-            top: widget.showTopBorder
-                ? BorderSide(
-                    color: scheme.outlineVariant.withValues(alpha: 1.0),
-                  )
-                : BorderSide.none,
-            left:
-                BorderSide(color: scheme.outlineVariant.withValues(alpha: 1.0)),
-            right:
-                BorderSide(color: scheme.outlineVariant.withValues(alpha: 1.0)),
-            bottom:
-                BorderSide(color: scheme.outlineVariant.withValues(alpha: 1.0)),
-          ),
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: widget.borderRadius,
+        border: Border(
+          top: widget.showTopBorder
+              ? BorderSide(
+                  color: scheme.outlineVariant.withValues(alpha: 1.0),
+                )
+              : BorderSide.none,
+          left: BorderSide(color: scheme.outlineVariant.withValues(alpha: 1.0)),
+          right:
+              BorderSide(color: scheme.outlineVariant.withValues(alpha: 1.0)),
+          bottom:
+              BorderSide(color: scheme.outlineVariant.withValues(alpha: 1.0)),
         ),
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(0, containerTopPadding, 0, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              if (widget.header != null) ...<Widget>[
-                widget.header!,
-                const SizedBox(height: 6),
-              ],
-              Expanded(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: scheme.surface,
-                    borderRadius: innerListBorderRadius,
-                  ),
-                  child: ClipRRect(
-                    borderRadius: innerListBorderRadius,
-                    child: Padding(
-                      padding: widget.contentPadding,
-                      child: Scrollbar(
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(0, containerTopPadding, 0, 0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            if (widget.header != null) ...<Widget>[
+              widget.header!,
+              const SizedBox(height: 6),
+            ],
+            SizedBox(
+              height: resolvedListHeight,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: scheme.surface,
+                  borderRadius: innerListBorderRadius,
+                ),
+                child: ClipRRect(
+                  borderRadius: innerListBorderRadius,
+                  child: Padding(
+                    padding: widget.contentPadding,
+                    child: Scrollbar(
+                      controller: _controller,
+                      thumbVisibility: widget.items.length > 12,
+                      child: ListView.separated(
                         controller: _controller,
-                        thumbVisibility: widget.items.length > 12,
-                        child: ListView.separated(
-                          controller: _controller,
-                          itemCount: widget.items.length,
-                          separatorBuilder: (BuildContext context, int index) {
-                            return Divider(
-                              height: _separatorHeight,
-                              thickness: _separatorHeight,
-                              color:
-                                  scheme.outlineVariant.withValues(alpha: 0.32),
-                            );
-                          },
-                          itemBuilder: (BuildContext context, int index) {
-                            final DiffItem item = widget.items[index];
-                            return Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () => showDiffItemDetailSheet(
-                                  context,
-                                  data: DiffItemDetailViewData.fromDiffItem(
-                                    item,
-                                    sourceIsRemote: widget.sourceIsRemote,
-                                    targetIsRemote: widget.targetIsRemote,
-                                  ),
+                        itemCount: widget.items.length,
+                        separatorBuilder: (BuildContext context, int index) {
+                          return Divider(
+                            height: _separatorHeight,
+                            thickness: _separatorHeight,
+                            color:
+                                scheme.outlineVariant.withValues(alpha: 0.32),
+                          );
+                        },
+                        itemBuilder: (BuildContext context, int index) {
+                          final DiffItem item = widget.items[index];
+                          return Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => showDiffItemDetailSheet(
+                                context,
+                                data: DiffItemDetailViewData.fromDiffItem(
+                                  item,
+                                  sourceIsRemote: widget.sourceIsRemote,
+                                  targetIsRemote: widget.targetIsRemote,
                                 ),
-                                child: SizedBox(
-                                  height: _rowHeight,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                    ),
-                                    child: Row(
-                                      children: <Widget>[
-                                        Expanded(
-                                          child: Text(
-                                            item.relativePath,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: theme.textTheme.bodySmall,
-                                          ),
+                              ),
+                              child: SizedBox(
+                                height: _rowHeight,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                  child: Row(
+                                    children: <Widget>[
+                                      Expanded(
+                                        child: Text(
+                                          item.relativePath,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: theme.textTheme.bodySmall,
                                         ),
-                                        const SizedBox(width: 8),
-                                        _TypeBadge(
-                                          type: item.type,
-                                          reason: item.reason,
-                                        ),
-                                      ],
-                                    ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      _TypeBadge(
+                                        type: item.type,
+                                        reason: item.reason,
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

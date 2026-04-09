@@ -639,3 +639,49 @@
 - 结果
 
 也就是说，这一块已经从“探索期 UI”进入“可以围绕细节做小修”的阶段，后续不建议再做大结构摇摆。
+
+## 22. 首页结构继续拆分与步骤 3 列表高度修正
+
+这一轮没有新增功能，重点是继续降低 `home_page.dart` 的体积，同时修正步骤 3 预览列表的一处高度计算问题。
+
+已完成：
+
+- 首页结构继续拆分
+  - 连接相关行为继续收口到
+    - `widgets/connection_section/connection_section_actions.dart`
+  - 最近记录管理弹窗已独立为
+    - `widgets/recent_record_managers/recent_record_managers.dart`
+  - 分享地址 / 备注 / 地址编辑弹窗已独立为
+    - `widgets/home_dialogs/home_dialogs.dart`
+  - 步骤 3 计划区已独立为
+    - `widgets/preview_workbench_section/preview_plan_section.dart`
+  - 步骤 3 的筛选、远端预览、执行后刷新等行为已开始收口到
+    - `widgets/preview_workbench_section/preview_workbench_actions.dart`
+
+- 步骤 3 的局部展示状态继续下沉
+  - 冲突项展开 / 收起状态不再由首页持有
+  - 已收进 `PreviewPlanSection` 自身管理
+
+- 步骤 3 无列表时的底部空白已收口
+  - 只在存在计划区时才插入状态区与列表区之间的分隔间距
+  - 去掉了无列表状态下多余的底部留白
+
+- 预览列表高度计算已修正
+  - 之前 `PlanItemList` 会用写死值为筛选区 header 预留高度
+  - 当筛选区实际高度超过预留值时，会挤压列表可见区域
+  - 表现为“条目不多，但只显示很少几项且出现滚动条”
+  - 当前已改为：
+    - header 使用自然高度
+    - 列表区域单独按自身高度计算
+    - `maxHeight` 恢复为真正控制列表上限的参数
+
+这一轮之后，首页主文件的职责继续变得更清楚：
+
+- `home_page.dart`
+  - 负责页面拼装、跨区状态监听、少量协调逻辑
+- 各分区组件
+  - 负责各自展示
+- 分区 actions / dialogs / managers
+  - 负责局部行为和弹窗实现
+
+也就是说，首页已经不只是“拆 UI”，而是在逐步形成后续可持续维护的职责边界。

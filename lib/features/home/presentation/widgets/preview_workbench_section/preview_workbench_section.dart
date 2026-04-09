@@ -6,17 +6,10 @@ import 'package:music_sync/features/connection/state/connection_state.dart'
     as peer_connection;
 import 'package:music_sync/features/directory/state/directory_state.dart';
 import 'package:music_sync/features/execution/state/execution_state.dart';
+import 'package:music_sync/features/home/presentation/widgets/preview_workbench_section/preview_plan_section.dart';
 import 'package:music_sync/features/preview/state/preview_state.dart';
 import 'package:music_sync/l10n/app_localizations_ext.dart';
 import 'package:music_sync/models/diff_item.dart';
-
-typedef PreviewSectionBuilder = Widget Function(
-  BuildContext context, {
-  required Widget? header,
-  required List<DiffItem> items,
-  required List<DiffItem> conflictItems,
-  required bool targetIsRemote,
-});
 
 class PreviewWorkbenchSection extends StatelessWidget {
   const PreviewWorkbenchSection({
@@ -51,7 +44,6 @@ class PreviewWorkbenchSection extends StatelessWidget {
     required this.onCancelSync,
     required this.onToggleSection,
     required this.onToggleExtension,
-    required this.buildSection,
     required this.localizeUiError,
     required this.localizedExecutionStatus,
     required this.isScanTimeoutError,
@@ -87,7 +79,6 @@ class PreviewWorkbenchSection extends StatelessWidget {
   final VoidCallback onCancelSync;
   final ValueChanged<DiffType?> onToggleSection;
   final ValueChanged<String> onToggleExtension;
-  final PreviewSectionBuilder buildSection;
   final String Function(BuildContext context, String value) localizeUiError;
   final String Function(BuildContext context, ExecutionStatus status)
       localizedExecutionStatus;
@@ -268,10 +259,9 @@ class PreviewWorkbenchSection extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 12),
         if (hasPlanItems) ...<Widget>[
-          buildSection(
-            context,
+          const SizedBox(height: 12),
+          PreviewPlanSection(
             header: _FilterPanel(
               sectionTitle: context.l10n.previewSectionTitle,
               sectionChild: Wrap(
@@ -342,7 +332,6 @@ class PreviewWorkbenchSection extends StatelessWidget {
             targetIsRemote: previewState.mode == PreviewMode.remote,
           ),
         ],
-        const SizedBox(height: 16),
       ],
     );
   }

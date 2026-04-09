@@ -1,14 +1,12 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:music_sync/app/routes/route_names.dart';
 import 'package:music_sync/app/widgets/app_scaffold.dart';
 import 'package:music_sync/app/widgets/section_card.dart';
 import 'package:music_sync/core/errors/app_error_localizer.dart';
-import 'package:music_sync/core/utils/path_display_format.dart';
 import 'package:music_sync/features/connection/state/connection_controller.dart';
 import 'package:music_sync/features/connection/state/connection_state.dart'
     as peer_connection;
@@ -16,19 +14,19 @@ import 'package:music_sync/features/directory/state/directory_controller.dart';
 import 'package:music_sync/features/directory/state/directory_state.dart';
 import 'package:music_sync/features/execution/state/execution_controller.dart';
 import 'package:music_sync/features/execution/state/execution_state.dart';
-import 'package:music_sync/features/home/presentation/widgets/action_chip_button.dart';
 import 'package:music_sync/features/home/presentation/widgets/connection_section/connection_section.dart';
+import 'package:music_sync/features/home/presentation/widgets/connection_section/connection_section_actions.dart';
+import 'package:music_sync/features/home/presentation/widgets/home_dialogs/home_dialogs.dart';
+import 'package:music_sync/features/home/presentation/widgets/preview_workbench_section/preview_workbench_actions.dart';
 import 'package:music_sync/features/home/presentation/widgets/preview_workbench_section/preview_workbench_section.dart';
-import 'package:music_sync/features/home/presentation/widgets/recent_record_card/recent_record_card.dart';
+import 'package:music_sync/features/home/presentation/widgets/recent_record_managers/recent_record_managers.dart';
 import 'package:music_sync/features/home/presentation/widgets/source_directory_section/source_directory_section.dart';
-import 'package:music_sync/features/preview/presentation/widgets/plan_item_list.dart';
 import 'package:music_sync/features/preview/state/preview_controller.dart';
 import 'package:music_sync/features/preview/state/preview_state.dart';
 import 'package:music_sync/features/settings/state/settings_controller.dart';
 import 'package:music_sync/l10n/app_localizations_ext.dart';
 import 'package:music_sync/models/diff_item.dart';
 import 'package:music_sync/models/scan_snapshot.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:music_sync/services/file_access/file_access_entry.dart';
 import 'package:music_sync/services/file_access/file_access_provider.dart';
 import 'package:music_sync/services/scanning/temp_file_cleanup_service.dart';
@@ -51,7 +49,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   };
   bool _isCleaningSourceTemp = false;
   bool _isCleaningTargetTemp = false;
-  bool _showConflictItems = false;
   String? _lastAutoPreviewSignature;
   bool _isAutoPreviewQueued = false;
 
@@ -100,15 +97,18 @@ class _HomePageState extends ConsumerState<HomePage> {
     final bool isStalePlan = previewState.sourceRootId != null &&
         previewState.sourceRootId != directoryState.handle?.entryId;
     final List<String> extensionOptions = previewState.availableExtensions;
-    final List<DiffItem> filteredCopyItems = _filterItemsByExtensions(
+    final List<DiffItem> filteredCopyItems =
+        PreviewWorkbenchActions.filterItemsByExtensions(
       previewState.plan.copyItems,
       _selectedExtensions,
     );
-    final List<DiffItem> filteredDeleteItems = _filterItemsByExtensions(
+    final List<DiffItem> filteredDeleteItems =
+        PreviewWorkbenchActions.filterItemsByExtensions(
       previewState.plan.deleteItems,
       _selectedExtensions,
     );
-    final List<DiffItem> filteredConflictItems = _filterItemsByExtensions(
+    final List<DiffItem> filteredConflictItems =
+        PreviewWorkbenchActions.filterItemsByExtensions(
       previewState.plan.conflictItems,
       _selectedExtensions,
     );
@@ -179,19 +179,37 @@ class _HomePageState extends ConsumerState<HomePage> {
               isConnecting: isConnecting,
               hasConnectedPeer: hasConnectedPeer,
               onConnectionStateChipTap: () =>
-                  _handleConnectionStateChipTap(connectionState),
-              onPortTap: () =>
-                  _showPortDialog(connectionState.listenPort ?? 44888),
-              onShareTap: () => _showShareDialog(connectionState),
-              onConnectTap: () => _handleConnectButton(connectionState),
+                  ConnectionSectionActions.handleConnectionStateChipTap(
+                ref: ref,
+                connectionState: connectionState,
+              ),
+              onPortTap: () => ConnectionSectionActions.showPortDialog(
+                context: context,
+                ref: ref,
+                currentPort: connectionState.listenPort ?? 44888,
+              ),
+              onShareTap: () => ConnectionSectionActions.showShareDialog(
+                context: context,
+                connectionState: connectionState,
+              ),
+              onConnectTap: () => ConnectionSectionActions.handleConnectButton(
+                ref: ref,
+                addressController: _addressController,
+                connectionState: connectionState,
+              ),
               onManageRecentAddresses: _showRecentAddressManager,
               onRecentAddressTap: (String address) {
                 _addressController.text = address;
-                _connectFromInput();
+                ConnectionSectionActions.connectFromInput(
+                  ref: ref,
+                  addressController: _addressController,
+                );
               },
               localizeUiError: _localizeUiError,
-              connectionStateChipLabel: _connectionStateChipLabel,
-              connectionStateChipTone: _connectionStateChipTone,
+              connectionStateChipLabel:
+                  ConnectionSectionActions.connectionStateChipLabel,
+              connectionStateChipTone:
+                  ConnectionSectionActions.connectionStateChipTone,
             ),
           ),
           const SizedBox(height: 16),
@@ -256,12 +274,16 @@ class _HomePageState extends ConsumerState<HomePage> {
               isTransferConnected: connectionState.peer != null &&
                   connectionState.status ==
                       peer_connection.ConnectionStatus.connected,
-              onBuildRemotePreview: () => _buildRemotePreview(
+              onBuildRemotePreview: () =>
+                  PreviewWorkbenchActions.buildRemotePreview(
+                ref: ref,
                 sourceRoot: directoryState.handle!,
                 ignoredExtensions: ignoredExtensions,
               ),
-              onStartRemoteSync: () => _executeRemoteSyncFlow(
+              onStartRemoteSync: () =>
+                  PreviewWorkbenchActions.executeRemoteSyncFlow(
                 context: context,
+                ref: ref,
                 previewState: previewState,
                 directoryState: directoryState,
                 connectionState: connectionState,
@@ -299,14 +321,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                   final bool selected = extension == '*'
                       ? isAllExtensionsSelected
                       : _selectedExtensions.contains(extension);
-                  _selectedExtensions = _toggleExtensionSelection(
+                  _selectedExtensions =
+                      PreviewWorkbenchActions.toggleExtensionSelection(
                     current: _selectedExtensions,
                     extension: extension,
                     selected: !selected,
                   );
                 });
               },
-              buildSection: _buildSection,
               localizeUiError: _localizeUiError,
               localizedExecutionStatus: _localizedExecutionStatus,
               isScanTimeoutError: _isScanTimeoutError,
@@ -409,7 +431,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                                       plan: previewState.plan,
                                       targetRoot: executionState.targetRoot!,
                                     );
-                                await _refreshPreviewAfterExecution(
+                                await PreviewWorkbenchActions
+                                    .refreshPreviewAfterExecution(
+                                  ref: ref,
                                   previewState: previewState,
                                   directoryState: directoryState,
                                   executionState:
@@ -426,124 +450,6 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSection(
-    BuildContext context, {
-    required Widget? header,
-    required List<DiffItem> items,
-    required List<DiffItem> conflictItems,
-    required bool targetIsRemote,
-  }) {
-    if (items.isEmpty && conflictItems.isEmpty) {
-      return PlanItemEmptyState(
-        header: header,
-        message: context.l10n.previewNoItemsInSection,
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        if (items.isNotEmpty) ...<Widget>[
-          PlanItemList(
-            header: header,
-            items: items,
-            sourceIsRemote: false,
-            targetIsRemote: targetIsRemote,
-          ),
-        ],
-        if (conflictItems.isNotEmpty) ...<Widget>[
-          if (items.isNotEmpty) const SizedBox(height: 8),
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _showConflictItems = !_showConflictItems;
-              });
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: _showConflictItems
-                    ? const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12),
-                      )
-                    : BorderRadius.circular(12),
-                border: _showConflictItems
-                    ? Border(
-                        top: BorderSide(
-                          color: Theme.of(context).colorScheme.outlineVariant,
-                        ),
-                        left: BorderSide(
-                          color: Theme.of(context).colorScheme.outlineVariant,
-                        ),
-                        right: BorderSide(
-                          color: Theme.of(context).colorScheme.outlineVariant,
-                        ),
-                        bottom: BorderSide.none,
-                      )
-                    : Border.all(
-                        color: Theme.of(context).colorScheme.outlineVariant,
-                      ),
-              ),
-              child: Row(
-                children: <Widget>[
-                  Icon(
-                    Icons.warning_amber_rounded,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '${context.l10n.previewSectionConflict} ${conflictItems.length}',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                  ),
-                  AnimatedRotation(
-                    turns: _showConflictItems ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 180),
-                    curve: Curves.easeOutCubic,
-                    child: Icon(
-                      Icons.expand_more_rounded,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOutCubic,
-            child: ClipRect(
-              child: Align(
-                alignment: Alignment.topCenter,
-                heightFactor: _showConflictItems ? 1 : 0,
-                child: PlanItemList(
-                  items: conflictItems,
-                  maxHeight: 220,
-                  sourceIsRemote: false,
-                  targetIsRemote: targetIsRemote,
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(12),
-                    bottomRight: Radius.circular(12),
-                  ),
-                  showTopBorder: false,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ],
     );
   }
 
@@ -602,238 +508,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     return hostName;
   }
 
-  String _connectionStateChipLabel(
-    BuildContext context,
-    peer_connection.ConnectionState connectionState,
-  ) {
-    if (connectionState.peer != null &&
-        connectionState.status == peer_connection.ConnectionStatus.connected) {
-      return context.l10n.homeConnectionStateConnected;
-    }
-    if (connectionState.status == peer_connection.ConnectionStatus.connecting) {
-      return context.l10n.homeConnectionStateConnecting;
-    }
-    if (connectionState.status == peer_connection.ConnectionStatus.listening) {
-      return context.l10n.homeConnectionStateListening;
-    }
-    return context.l10n.homeConnectionStateIdle;
-  }
-
-  ActionChipTone _connectionStateChipTone(
-    peer_connection.ConnectionState connectionState,
-  ) {
-    if (connectionState.peer != null &&
-        connectionState.status == peer_connection.ConnectionStatus.connected) {
-      return ActionChipTone.success;
-    }
-    if (connectionState.status == peer_connection.ConnectionStatus.listening ||
-        connectionState.status == peer_connection.ConnectionStatus.connecting) {
-      return ActionChipTone.active;
-    }
-    return ActionChipTone.neutral;
-  }
-
-  Future<void> _handleConnectionStateChipTap(
-    peer_connection.ConnectionState connectionState,
-  ) async {
-    if (connectionState.peer != null &&
-        connectionState.status == peer_connection.ConnectionStatus.connected) {
-      await ref.read(connectionControllerProvider.notifier).disconnect();
-      return;
-    }
-    if (connectionState.status == peer_connection.ConnectionStatus.connecting) {
-      await ref.read(connectionControllerProvider.notifier).disconnect();
-      return;
-    }
-    if (connectionState.status == peer_connection.ConnectionStatus.listening) {
-      await ref.read(connectionControllerProvider.notifier).stopListening();
-      return;
-    }
-    await ref.read(connectionControllerProvider.notifier).startListening(
-          port: connectionState.listenPort ?? 44888,
-        );
-  }
-
-  void _connectFromInput() {
-    final String input = _addressController.text.trim();
-    if (input.isEmpty) {
-      return;
-    }
-    final List<String> parts = input.split(':');
-    final String host = parts.first;
-    final int port = parts.length > 1 ? int.tryParse(parts[1]) ?? 44888 : 44888;
-    ref.read(connectionControllerProvider.notifier).connect(
-          address: host,
-          port: port,
-        );
-  }
-
-  Future<void> _handleConnectButton(
-    peer_connection.ConnectionState connectionState,
-  ) async {
-    final bool hasConnectedPeer = connectionState.peer != null &&
-        connectionState.status == peer_connection.ConnectionStatus.connected;
-    if (hasConnectedPeer ||
-        connectionState.status == peer_connection.ConnectionStatus.connecting) {
-      await ref.read(connectionControllerProvider.notifier).disconnect();
-      return;
-    }
-    _connectFromInput();
-  }
-
-  Future<void> _showPortDialog(int currentPort) async {
-    final int? port = await showDialog<int>(
-      context: context,
-      builder: (BuildContext context) {
-        return _PortDialog(initialPort: currentPort);
-      },
-    );
-    if (port == null || !mounted) {
-      return;
-    }
-    final peer_connection.ConnectionState connectionState =
-        ref.read(connectionControllerProvider);
-    if (connectionState.status == peer_connection.ConnectionStatus.listening) {
-      await ref.read(connectionControllerProvider.notifier).stopListening();
-      await ref
-          .read(connectionControllerProvider.notifier)
-          .startListening(port: port);
-    } else {
-      await ref
-          .read(connectionControllerProvider.notifier)
-          .startListening(port: port);
-    }
-  }
-
-  Future<void> _showShareDialog(
-    peer_connection.ConnectionState connectionState,
-  ) async {
-    final BuildContext pageContext = context;
-    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(pageContext);
-    final String copyDoneText = pageContext.l10n.homeShareCopyDone;
-    final int port = connectionState.listenPort ?? 44888;
-    final String host = await _resolveLocalShareHost();
-    final String address = '$host:$port';
-    if (!mounted) {
-      return;
-    }
-    await showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        final ColorScheme scheme = Theme.of(context).colorScheme;
-        final TextTheme textTheme = Theme.of(context).textTheme;
-        return Dialog(
-          insetPadding:
-              const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 228),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  Text(
-                    context.l10n.homeShareDialogTitle,
-                    textAlign: TextAlign.center,
-                    style: textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  QrImageView(
-                    data: address,
-                    size: 180,
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: 180,
-                    child: Material(
-                      color: scheme.surfaceContainerLow,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                        side: BorderSide(color: scheme.outlineVariant),
-                      ),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(18),
-                        onTap: () async {
-                          await Clipboard.setData(ClipboardData(text: address));
-                          if (!mounted) {
-                            return;
-                          }
-                          messenger.showSnackBar(
-                            SnackBar(content: Text(copyDoneText)),
-                          );
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 12),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              Expanded(
-                                child: SelectableText(
-                                  address,
-                                  textAlign: TextAlign.center,
-                                  style: textTheme.bodyMedium?.copyWith(
-                                    fontFamily: 'monospace',
-                                    letterSpacing: 0.1,
-                                    color: scheme.onSurface,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                width: 30,
-                                height: 30,
-                                decoration: BoxDecoration(
-                                  color: scheme.secondaryContainer,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                alignment: Alignment.center,
-                                child: Icon(
-                                  Icons.content_copy_outlined,
-                                  size: 16,
-                                  color: scheme.onSecondaryContainer,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<String> _resolveLocalShareHost() async {
-    try {
-      final List<NetworkInterface> interfaces = await NetworkInterface.list(
-        includeLoopback: false,
-        type: InternetAddressType.IPv4,
-      );
-      for (final NetworkInterface interface in interfaces) {
-        for (final InternetAddress address in interface.addresses) {
-          final String host = address.address.trim();
-          if (host.isEmpty) {
-            continue;
-          }
-          if (host.startsWith('169.254.')) {
-            continue;
-          }
-          return host;
-        }
-      }
-    } catch (_) {
-      // Fallback below.
-    }
-    return InternetAddress.loopbackIPv4.address;
-  }
-
   void _maybeScheduleAutoRemotePreview({
     required DirectoryState directoryState,
     required peer_connection.ConnectionState connectionState,
@@ -862,14 +536,18 @@ class _HomePageState extends ConsumerState<HomePage> {
         previewState.sourceRootId == sourceRoot.entryId &&
         previewState.targetSnapshot?.rootId == remoteSnapshot.rootId &&
         previewState.targetSnapshot?.scannedAt == remoteSnapshot.scannedAt &&
-        _listEquals(previewState.ignoredExtensions, ignoredExtensions);
+        PreviewWorkbenchActions.listEquals(
+          previewState.ignoredExtensions,
+          ignoredExtensions,
+        );
     if (alreadyCurrent || _lastAutoPreviewSignature == signature) {
       return;
     }
     _isAutoPreviewQueued = true;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
-        await _buildRemotePreview(
+        await PreviewWorkbenchActions.buildRemotePreview(
+          ref: ref,
           sourceRoot: sourceRoot,
           remoteSnapshot: remoteSnapshot,
           ignoredExtensions: ignoredExtensions,
@@ -887,81 +565,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
   }
 
-  Future<void> _buildRemotePreview({
-    required DirectoryHandle sourceRoot,
-    ScanSnapshot? remoteSnapshot,
-    List<String> ignoredExtensions = const <String>[],
-  }) async {
-    final ScanSnapshot? targetSnapshot = remoteSnapshot ??
-        await ref
-            .read(connectionControllerProvider.notifier)
-            .refreshRemoteSnapshot();
-    if (targetSnapshot == null) {
-      return;
-    }
-    final ScanSnapshot localSnapshot =
-        await ref.read(directoryScannerProvider).scan(
-              root: sourceRoot,
-              deviceId: 'local-device',
-            );
-    await ref
-        .read(previewControllerProvider.notifier)
-        .buildPreviewFromSnapshots(
-          source: localSnapshot,
-          target: targetSnapshot,
-          deleteEnabled: true,
-          extensionFilter: '*',
-          ignoredExtensions: ignoredExtensions,
-          sourceRootId: sourceRoot.entryId,
-        );
-  }
-
-  Future<void> _executeRemoteSyncFlow({
-    required BuildContext context,
-    required PreviewState previewState,
-    required DirectoryState directoryState,
-    required peer_connection.ConnectionState connectionState,
-  }) async {
-    if (previewState.plan.deleteItems.isNotEmpty) {
-      final bool? confirmed = await showDialog<bool>(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text(context.l10n.executionConfirmDeleteTitle),
-            content: Text(
-              context.l10n.executionConfirmDeleteBody(
-                previewState.plan.deleteItems.length,
-              ),
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text(context.l10n.commonCancel),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: Text(context.l10n.commonConfirm),
-              ),
-            ],
-          );
-        },
-      );
-      if (confirmed != true) {
-        return;
-      }
-    }
-
-    await ref.read(executionControllerProvider.notifier).executeRemote(
-          plan: previewState.plan,
-          remoteRootId: connectionState.remoteSnapshot!.rootId,
-        );
-    await _refreshPreviewAfterExecution(
-      previewState: previewState,
-      directoryState: directoryState,
-      executionState: ref.read(executionControllerProvider),
-    );
-  }
-
   String _localizePreflightReason(BuildContext context, String reason) {
     switch (reason) {
       case 'many_root_children':
@@ -975,59 +578,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       default:
         return reason;
     }
-  }
-
-  List<DiffItem> _filterItemsByExtensions(
-    List<DiffItem> items,
-    Set<String> extensions,
-  ) {
-    if (extensions.contains('*')) {
-      return items;
-    }
-    return items
-        .where((DiffItem item) =>
-            extensions.contains(_extensionOf(item.relativePath)))
-        .toList();
-  }
-
-  String _extensionOf(String path) {
-    final int dotIndex = path.lastIndexOf('.');
-    if (dotIndex < 0 || dotIndex == path.length - 1) {
-      return '';
-    }
-    return path.substring(dotIndex + 1).toLowerCase();
-  }
-
-  Set<String> _toggleExtensionSelection({
-    required Set<String> current,
-    required String extension,
-    required bool selected,
-  }) {
-    if (extension == '*') {
-      return <String>{'*'};
-    }
-    final Set<String> next = <String>{...current}..remove('*');
-    if (selected) {
-      next.add(extension);
-    } else {
-      next.remove(extension);
-    }
-    if (next.isEmpty) {
-      return <String>{'*'};
-    }
-    return next;
-  }
-
-  bool _listEquals(List<String> a, List<String> b) {
-    if (a.length != b.length) {
-      return false;
-    }
-    for (int index = 0; index < a.length; index += 1) {
-      if (a[index] != b[index]) {
-        return false;
-      }
-    }
-    return true;
   }
 
   Future<void> _cleanupTempFiles({
@@ -1090,138 +640,38 @@ class _HomePageState extends ConsumerState<HomePage> {
     await showDialog<void>(
       context: context,
       builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return Dialog(
-              child: ConstrainedBox(
-                constraints:
-                    const BoxConstraints(maxWidth: 520, maxHeight: 560),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: Text(
-                              context.l10n.homeRecentDirectories,
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            icon: const Icon(Icons.close_rounded),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Expanded(
-                        child: records.isEmpty
-                            ? Center(child: Text(context.l10n.homeRecentEmpty))
-                            : ReorderableListView.builder(
-                                buildDefaultDragHandles: false,
-                                proxyDecorator: (
-                                  Widget child,
-                                  int index,
-                                  Animation<double> animation,
-                                ) {
-                                  return child;
-                                },
-                                itemCount: records.length,
-                                onReorder: (int oldIndex, int newIndex) async {
-                                  if (newIndex > oldIndex) {
-                                    newIndex -= 1;
-                                  }
-                                  final RecentDirectoryRecord item =
-                                      records.removeAt(oldIndex);
-                                  records.insert(newIndex, item);
-                                  setModalState(() {});
-                                  await store.reorderRecentDirectories(records);
-                                  await ref
-                                      .read(
-                                          directoryControllerProvider.notifier)
-                                      .reloadRecent();
-                                },
-                                itemBuilder: (BuildContext context, int index) {
-                                  final RecentDirectoryRecord record =
-                                      records[index];
-                                  return Padding(
-                                    key:
-                                        ValueKey<String>(record.handle.entryId),
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: RecentRecordCard(
-                                      title: record.label,
-                                      subtitle: record.note == null ||
-                                              record.note!.trim().isEmpty
-                                          ? null
-                                          : record.handle.displayName ==
-                                                  record.label
-                                              ? formatDisplayPath(
-                                                  record.handle.entryId,
-                                                )
-                                              : formatDisplayPath(
-                                                  record.handle.displayName,
-                                                ),
-                                      dragHandle: ReorderableDragStartListener(
-                                        index: index,
-                                        child: Icon(
-                                          Icons.drag_indicator_rounded,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant,
-                                        ),
-                                      ),
-                                      onUse: () {
-                                        Navigator.of(context).pop();
-                                        ref
-                                            .read(directoryControllerProvider
-                                                .notifier)
-                                            .useRecentDirectory(record.handle);
-                                      },
-                                      onEditRecord: () async {
-                                        await _showRecentAliasDialog(
-                                          initialValue: record.note,
-                                          title:
-                                              context.l10n.homeRecentEditAlias,
-                                          onSave: (String? value) async {
-                                            await store
-                                                .updateRecentDirectoryNote(
-                                              record.handle.entryId,
-                                              value,
-                                            );
-                                            records = await store
-                                                .loadRecentDirectoryRecords();
-                                            await ref
-                                                .read(
-                                                    directoryControllerProvider
-                                                        .notifier)
-                                                .reloadRecent();
-                                          },
-                                        );
-                                        setModalState(() {});
-                                      },
-                                      onDelete: () async {
-                                        await store.removeRecentDirectory(
-                                            record.handle.entryId);
-                                        records = await store
-                                            .loadRecentDirectoryRecords();
-                                        await ref
-                                            .read(directoryControllerProvider
-                                                .notifier)
-                                            .reloadRecent();
-                                        setModalState(() {});
-                                      },
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+        return RecentDirectoryManagerDialog(
+          initialRecords: records,
+          onUse: (RecentDirectoryRecord record) async {
+            ref
+                .read(directoryControllerProvider.notifier)
+                .useRecentDirectory(record.handle);
+          },
+          onReorder: (List<RecentDirectoryRecord> next) async {
+            await store.reorderRecentDirectories(next);
+            await ref.read(directoryControllerProvider.notifier).reloadRecent();
+            return store.loadRecentDirectoryRecords();
+          },
+          onEdit: (RecentDirectoryRecord record) async {
+            await _showRecentAliasDialog(
+              initialValue: record.note,
+              title: context.l10n.homeRecentEditAlias,
+              onSave: (String? value) async {
+                await store.updateRecentDirectoryNote(
+                  record.handle.entryId,
+                  value,
+                );
+                await ref
+                    .read(directoryControllerProvider.notifier)
+                    .reloadRecent();
+              },
             );
+            return store.loadRecentDirectoryRecords();
+          },
+          onDelete: (RecentDirectoryRecord record) async {
+            await store.removeRecentDirectory(record.handle.entryId);
+            await ref.read(directoryControllerProvider.notifier).reloadRecent();
+            return store.loadRecentDirectoryRecords();
           },
         );
       },
@@ -1237,130 +687,48 @@ class _HomePageState extends ConsumerState<HomePage> {
     await showDialog<void>(
       context: context,
       builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return Dialog(
-              child: ConstrainedBox(
-                constraints:
-                    const BoxConstraints(maxWidth: 520, maxHeight: 560),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: Text(
-                              context.l10n.homeRecentAddresses,
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            icon: const Icon(Icons.close_rounded),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Expanded(
-                        child: records.isEmpty
-                            ? Center(child: Text(context.l10n.homeRecentEmpty))
-                            : ReorderableListView.builder(
-                                buildDefaultDragHandles: false,
-                                proxyDecorator: (
-                                  Widget child,
-                                  int index,
-                                  Animation<double> animation,
-                                ) {
-                                  return child;
-                                },
-                                itemCount: records.length,
-                                onReorder: (int oldIndex, int newIndex) async {
-                                  if (newIndex > oldIndex) {
-                                    newIndex -= 1;
-                                  }
-                                  final RecentAddressRecord item =
-                                      records.removeAt(oldIndex);
-                                  records.insert(newIndex, item);
-                                  setModalState(() {});
-                                  await store.reorderRecentAddresses(records);
-                                  await ref
-                                      .read(
-                                          connectionControllerProvider.notifier)
-                                      .reloadRecent();
-                                },
-                                itemBuilder: (BuildContext context, int index) {
-                                  final RecentAddressRecord record =
-                                      records[index];
-                                  return Padding(
-                                    key: ValueKey<String>(record.address),
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: RecentRecordCard(
-                                      title: record.label,
-                                      subtitle: record.address == record.label
-                                          ? null
-                                          : record.address,
-                                      dragHandle: ReorderableDragStartListener(
-                                        index: index,
-                                        child: Icon(
-                                          Icons.drag_indicator_rounded,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant,
-                                        ),
-                                      ),
-                                      onUse: () {
-                                        Navigator.of(context).pop();
-                                        _addressController.text =
-                                            record.address;
-                                        _connectFromInput();
-                                      },
-                                      onEditRecord: () async {
-                                        await _showRecentAddressDialog(
-                                          initialAddress: record.address,
-                                          initialAlias: record.note,
-                                          onSave: ({
-                                            required String address,
-                                            required String? alias,
-                                          }) async {
-                                            await store.updateRecentAddress(
-                                              oldAddress: record.address,
-                                              newAddress: address,
-                                              note: alias,
-                                            );
-                                            records = await store
-                                                .loadRecentAddressRecords();
-                                            await ref
-                                                .read(
-                                                    connectionControllerProvider
-                                                        .notifier)
-                                                .reloadRecent();
-                                          },
-                                        );
-                                        setModalState(() {});
-                                      },
-                                      onDelete: () async {
-                                        await store.removeRecentAddress(
-                                            record.address);
-                                        records = await store
-                                            .loadRecentAddressRecords();
-                                        await ref
-                                            .read(connectionControllerProvider
-                                                .notifier)
-                                            .reloadRecent();
-                                        setModalState(() {});
-                                      },
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+        return RecentAddressManagerDialog(
+          initialRecords: records,
+          onUse: (RecentAddressRecord record) async {
+            _addressController.text = record.address;
+            ConnectionSectionActions.connectFromInput(
+              ref: ref,
+              addressController: _addressController,
             );
+          },
+          onReorder: (List<RecentAddressRecord> next) async {
+            await store.reorderRecentAddresses(next);
+            await ref
+                .read(connectionControllerProvider.notifier)
+                .reloadRecent();
+            return store.loadRecentAddressRecords();
+          },
+          onEdit: (RecentAddressRecord record) async {
+            await _showRecentAddressDialog(
+              initialAddress: record.address,
+              initialAlias: record.note,
+              onSave: ({
+                required String address,
+                required String? alias,
+              }) async {
+                await store.updateRecentAddress(
+                  oldAddress: record.address,
+                  newAddress: address,
+                  note: alias,
+                );
+                await ref
+                    .read(connectionControllerProvider.notifier)
+                    .reloadRecent();
+              },
+            );
+            return store.loadRecentAddressRecords();
+          },
+          onDelete: (RecentAddressRecord record) async {
+            await store.removeRecentAddress(record.address);
+            await ref
+                .read(connectionControllerProvider.notifier)
+                .reloadRecent();
+            return store.loadRecentAddressRecords();
           },
         );
       },
@@ -1375,7 +743,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final String? value = await showDialog<String>(
       context: context,
       builder: (BuildContext context) {
-        return _RecentAliasDialog(
+        return RecentAliasDialog(
           title: title,
           initialValue: initialValue,
         );
@@ -1398,7 +766,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         await showDialog<({String address, String alias})>(
       context: context,
       builder: (BuildContext context) {
-        return _RecentAddressDialog(
+        return RecentAddressDialog(
           initialAddress: initialAddress,
           initialAlias: initialAlias,
         );
@@ -1410,318 +778,5 @@ class _HomePageState extends ConsumerState<HomePage> {
         alias: result.alias,
       );
     }
-  }
-
-  Future<void> _refreshPreviewAfterExecution({
-    required PreviewState previewState,
-    required DirectoryState directoryState,
-    required ExecutionState executionState,
-  }) async {
-    final ExecutionStatus status = executionState.status;
-    if (status != ExecutionStatus.completed &&
-        status != ExecutionStatus.cancelled) {
-      return;
-    }
-
-    final DirectoryHandle? sourceRoot = directoryState.handle;
-    if (sourceRoot == null) {
-      ref.read(previewControllerProvider.notifier).clear();
-      return;
-    }
-
-    if (previewState.mode == PreviewMode.local) {
-      final String? targetRootId = executionState.targetRoot;
-      if (targetRootId == null || targetRootId.isEmpty) {
-        ref.read(previewControllerProvider.notifier).clear();
-        return;
-      }
-      await ref.read(previewControllerProvider.notifier).buildLocalPreview(
-            sourceRoot: sourceRoot,
-            targetRoot: DirectoryHandle(
-              entryId: targetRootId,
-              displayName: targetRootId,
-            ),
-            deleteEnabled: previewState.deleteEnabled,
-            extensionFilter: previewState.activeExtension,
-            ignoredExtensions:
-                ref.read(settingsControllerProvider).ignoredExtensions,
-          );
-      return;
-    }
-
-    if (previewState.mode == PreviewMode.remote) {
-      final ScanSnapshot? remoteSnapshot = await ref
-          .read(connectionControllerProvider.notifier)
-          .refreshRemoteSnapshot(
-            clearTransientState: false,
-          );
-      if (remoteSnapshot == null) {
-        ref.read(previewControllerProvider.notifier).clear();
-        return;
-      }
-      final ScanSnapshot localSnapshot =
-          await ref.read(directoryScannerProvider).scan(
-                root: sourceRoot,
-                deviceId: 'local-device',
-              );
-      await ref
-          .read(previewControllerProvider.notifier)
-          .buildPreviewFromSnapshots(
-            source: localSnapshot,
-            target: remoteSnapshot,
-            deleteEnabled: previewState.deleteEnabled,
-            extensionFilter: previewState.activeExtension,
-            ignoredExtensions:
-                ref.read(settingsControllerProvider).ignoredExtensions,
-            sourceRootId: sourceRoot.entryId,
-          );
-      return;
-    }
-
-    ref.read(previewControllerProvider.notifier).clear();
-  }
-}
-
-class _PortDialog extends StatefulWidget {
-  const _PortDialog({
-    required this.initialPort,
-  });
-
-  final int initialPort;
-
-  @override
-  State<_PortDialog> createState() => _PortDialogState();
-}
-
-class _PortDialogState extends State<_PortDialog> {
-  late final TextEditingController _controller = TextEditingController(
-    text: widget.initialPort.toString(),
-  );
-  String? _errorText;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(context.l10n.homePortDialogTitle),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(context.l10n.homePortDialogBody),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _controller,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              hintText: context.l10n.homePortDialogHint,
-              errorText: _errorText,
-            ),
-          ),
-        ],
-      ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(context.l10n.commonCancel),
-        ),
-        FilledButton(
-          onPressed: () {
-            final int? value = int.tryParse(_controller.text.trim());
-            if (value == null || value < 1 || value > 65535) {
-              setState(() {
-                _errorText = context.l10n.homePortDialogInvalid;
-              });
-              return;
-            }
-            Navigator.of(context).pop(value);
-          },
-          child: Text(context.l10n.commonConfirm),
-        ),
-      ],
-    );
-  }
-}
-
-class _RecentAliasDialog extends StatefulWidget {
-  const _RecentAliasDialog({
-    required this.title,
-    required this.initialValue,
-  });
-
-  final String title;
-  final String? initialValue;
-
-  @override
-  State<_RecentAliasDialog> createState() => _RecentAliasDialogState();
-}
-
-class _RecentAliasDialogState extends State<_RecentAliasDialog> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.initialValue ?? '');
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                widget.title,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _controller,
-                decoration: InputDecoration(
-                  labelText: context.l10n.homeRecentAlias,
-                  hintText: context.l10n.homeRecentAliasHint,
-                  filled: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                maxLength: 24,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: <Widget>[
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text(context.l10n.commonCancel),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton(
-                    onPressed: () =>
-                        Navigator.of(context).pop(_controller.text),
-                    child: Text(context.l10n.commonConfirm),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RecentAddressDialog extends StatefulWidget {
-  const _RecentAddressDialog({
-    required this.initialAddress,
-    required this.initialAlias,
-  });
-
-  final String initialAddress;
-  final String? initialAlias;
-
-  @override
-  State<_RecentAddressDialog> createState() => _RecentAddressDialogState();
-}
-
-class _RecentAddressDialogState extends State<_RecentAddressDialog> {
-  late final TextEditingController _addressController =
-      TextEditingController(text: widget.initialAddress);
-  late final TextEditingController _aliasController =
-      TextEditingController(text: widget.initialAlias ?? '');
-  String? _addressError;
-
-  @override
-  void dispose() {
-    _addressController.dispose();
-    _aliasController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                context.l10n.homeRecentEditAddress,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _addressController,
-                decoration: InputDecoration(
-                  labelText: context.l10n.homeRecentAddressField,
-                  hintText: context.l10n.homePeerAddressHint,
-                  errorText: _addressError,
-                  filled: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _aliasController,
-                decoration: InputDecoration(
-                  labelText: context.l10n.homeRecentAlias,
-                  hintText: context.l10n.homeRecentAliasHint,
-                  filled: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                maxLength: 24,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: <Widget>[
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text(context.l10n.commonCancel),
-                  ),
-                  const SizedBox(width: 8),
-                  FilledButton(
-                    onPressed: () {
-                      if (_addressController.text.trim().isEmpty) {
-                        setState(() {
-                          _addressError =
-                              context.l10n.homeRecentAddressRequired;
-                        });
-                        return;
-                      }
-                      Navigator.of(context).pop((
-                        address: _addressController.text,
-                        alias: _aliasController.text,
-                      ));
-                    },
-                    child: Text(context.l10n.commonConfirm),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
