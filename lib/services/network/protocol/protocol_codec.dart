@@ -15,9 +15,7 @@ class ProtocolCodec {
       throw const FormatException('Invalid protocol frame.');
     }
     return ProtocolMessage.fromJson(
-      value.map(
-        (Object? key, Object? data) => MapEntry(key.toString(), data),
-      ),
+      value.map((Object? key, Object? data) => MapEntry(key.toString(), data)),
     );
   }
 }

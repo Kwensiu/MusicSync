@@ -5,16 +5,10 @@ import 'dart:io';
 import 'package:music_sync/core/constants/app_constants.dart';
 import 'package:music_sync/models/device_info.dart';
 
-enum DiscoveryEventType {
-  announce,
-  goodbye,
-}
+enum DiscoveryEventType { announce, goodbye }
 
 class DiscoveryEvent {
-  const DiscoveryEvent({
-    required this.type,
-    required this.device,
-  });
+  const DiscoveryEvent({required this.type, required this.device});
 
   final DiscoveryEventType type;
   final DeviceInfo device;
@@ -31,9 +25,7 @@ class DiscoveryService {
   bool get isReceiving => _receiver != null;
   bool get isBroadcasting => _broadcastTimer != null;
 
-  Future<void> startReceiving({
-    required DiscoveryCallback onDevice,
-  }) async {
+  Future<void> startReceiving({required DiscoveryCallback onDevice}) async {
     _onDevice = onDevice;
     if (_receiver != null) {
       return;
@@ -69,12 +61,7 @@ class DiscoveryService {
         final DiscoveryEventType type = payload['action'] == 'goodbye'
             ? DiscoveryEventType.goodbye
             : DiscoveryEventType.announce;
-        _onDevice?.call(
-          DiscoveryEvent(
-            type: type,
-            device: device,
-          ),
-        );
+        _onDevice?.call(DiscoveryEvent(type: type, device: device));
       } catch (_) {
         // Ignore malformed discovery packets.
       }
@@ -87,9 +74,9 @@ class DiscoveryService {
     _senders.addAll(await _createBroadcastSenders());
 
     void broadcastOnce() => _broadcastDeviceEvent(
-          device: device,
-          type: DiscoveryEventType.announce,
-        );
+      device: device,
+      type: DiscoveryEventType.announce,
+    );
 
     broadcastOnce();
     _broadcastTimer = Timer.periodic(
@@ -102,10 +89,7 @@ class DiscoveryService {
     if (_senders.isEmpty) {
       _senders.addAll(await _createBroadcastSenders());
     }
-    _broadcastDeviceEvent(
-      device: device,
-      type: DiscoveryEventType.goodbye,
-    );
+    _broadcastDeviceEvent(device: device, type: DiscoveryEventType.goodbye);
   }
 
   Future<void> stopBroadcasting() async {
@@ -178,8 +162,10 @@ class DiscoveryService {
             continue;
           }
           try {
-            final RawDatagramSocket socket =
-                await RawDatagramSocket.bind(address, 0);
+            final RawDatagramSocket socket = await RawDatagramSocket.bind(
+              address,
+              0,
+            );
             socket.broadcastEnabled = true;
             sockets.add(socket);
           } catch (_) {
@@ -192,8 +178,10 @@ class DiscoveryService {
     }
 
     if (sockets.isEmpty) {
-      final RawDatagramSocket fallback =
-          await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+      final RawDatagramSocket fallback = await RawDatagramSocket.bind(
+        InternetAddress.anyIPv4,
+        0,
+      );
       fallback.broadcastEnabled = true;
       sockets.add(fallback);
       return sockets;
@@ -201,8 +189,10 @@ class DiscoveryService {
 
     if (boundAddresses.add(InternetAddress.anyIPv4.address)) {
       try {
-        final RawDatagramSocket fallback =
-            await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+        final RawDatagramSocket fallback = await RawDatagramSocket.bind(
+          InternetAddress.anyIPv4,
+          0,
+        );
         fallback.broadcastEnabled = true;
         sockets.add(fallback);
       } catch (_) {

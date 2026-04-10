@@ -4,17 +4,15 @@ import 'package:music_sync/services/file_access/file_access_gateway.dart';
 import 'package:music_sync/services/media/audio_metadata_reader.dart';
 
 class LocalDetailLoader {
-  LocalDetailLoader(
-    this._gateway, {
-    this.loadRemoteEntryDetail,
-  }) : _metadataReader = AudioMetadataReader(_gateway);
+  LocalDetailLoader(this._gateway, {this.loadRemoteEntryDetail})
+    : _metadataReader = AudioMetadataReader(_gateway);
 
   static const Duration _entryRefreshTimeout = Duration(seconds: 2);
   static const Duration _metadataReadTimeout = Duration(seconds: 2);
 
   final FileAccessGateway _gateway;
   final Future<DiffEntryDetailViewData?> Function(String entryId)?
-      loadRemoteEntryDetail;
+  loadRemoteEntryDetail;
   final AudioMetadataReader _metadataReader;
 
   Future<DiffItemDetailViewData> refresh(DiffItemDetailViewData data) async {
@@ -59,8 +57,9 @@ class LocalDetailLoader {
     }
 
     try {
-      final FileAccessEntry refreshed =
-          await _gateway.stat(entry.entryId).timeout(_entryRefreshTimeout);
+      final FileAccessEntry refreshed = await _gateway
+          .stat(entry.entryId)
+          .timeout(_entryRefreshTimeout);
       return DiffEntryDetailViewData(
         entryId: refreshed.entryId,
         displayName: refreshed.name,
@@ -70,9 +69,9 @@ class LocalDetailLoader {
         audioMetadata: isRemote
             ? entry.audioMetadata
             : await _metadataReader
-                    .read(entry.entryId)
-                    .timeout(_metadataReadTimeout) ??
-                entry.audioMetadata,
+                      .read(entry.entryId)
+                      .timeout(_metadataReadTimeout) ??
+                  entry.audioMetadata,
       );
     } catch (_) {
       return entry;

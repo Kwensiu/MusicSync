@@ -64,87 +64,92 @@ void main() {
     expect(refreshed.target?.size, 256);
   });
 
-  test('refresh applies remote audio metadata when remote detail succeeds',
-      () async {
-    final LocalDetailLoader loader = LocalDetailLoader(
-      _NoopGateway(),
-      loadRemoteEntryDetail: (String entryId) async => DiffEntryDetailViewData(
-        entryId: entryId,
-        displayName: 'song.mp3',
-        size: 512,
-        modifiedTime: DateTime.fromMillisecondsSinceEpoch(4),
-        isDirectory: false,
-        audioMetadata: const AudioMetadataViewData(
-          title: 'Remote Song',
-          artist: 'Remote Artist',
-          album: 'Remote Album',
-        ),
-      ),
-    );
-    final DiffItemDetailViewData data = DiffItemDetailViewData(
-      path: 'Music/song.mp3',
-      type: DiffType.delete,
-      reason: null,
-      side: DiffItemDetailSide.targetOnly,
-      source: null,
-      target: DiffEntryDetailViewData(
-        entryId: 'remote-entry',
-        displayName: 'song.mp3',
-        size: 256,
-        modifiedTime: DateTime.fromMillisecondsSinceEpoch(2),
-        isDirectory: false,
-      ),
-      sourceIsRemote: false,
-      targetIsRemote: true,
-    );
-
-    final DiffItemDetailViewData refreshed = await loader.refresh(data);
-
-    expect(refreshed.target?.size, 512);
-    expect(refreshed.target?.audioMetadata?.title, 'Remote Song');
-    expect(refreshed.target?.audioMetadata?.artist, 'Remote Artist');
-  });
-
-  test('refresh keeps existing remote entry when remote detail stalls',
-      () async {
-    final LocalDetailLoader loader = LocalDetailLoader(
-      _NoopGateway(),
-      loadRemoteEntryDetail: (String entryId) async {
-        await Future<void>.delayed(const Duration(seconds: 5));
-        return DiffEntryDetailViewData(
-          entryId: entryId,
-          displayName: 'late.mp3',
-          size: 999,
-          modifiedTime: DateTime.fromMillisecondsSinceEpoch(9),
+  test(
+    'refresh applies remote audio metadata when remote detail succeeds',
+    () async {
+      final LocalDetailLoader loader = LocalDetailLoader(
+        _NoopGateway(),
+        loadRemoteEntryDetail: (String entryId) async =>
+            DiffEntryDetailViewData(
+              entryId: entryId,
+              displayName: 'song.mp3',
+              size: 512,
+              modifiedTime: DateTime.fromMillisecondsSinceEpoch(4),
+              isDirectory: false,
+              audioMetadata: const AudioMetadataViewData(
+                title: 'Remote Song',
+                artist: 'Remote Artist',
+                album: 'Remote Album',
+              ),
+            ),
+      );
+      final DiffItemDetailViewData data = DiffItemDetailViewData(
+        path: 'Music/song.mp3',
+        type: DiffType.delete,
+        reason: null,
+        side: DiffItemDetailSide.targetOnly,
+        source: null,
+        target: DiffEntryDetailViewData(
+          entryId: 'remote-entry',
+          displayName: 'song.mp3',
+          size: 256,
+          modifiedTime: DateTime.fromMillisecondsSinceEpoch(2),
           isDirectory: false,
-        );
-      },
-    );
-    final DiffItemDetailViewData data = DiffItemDetailViewData(
-      path: 'Music/song.mp3',
-      type: DiffType.delete,
-      reason: null,
-      side: DiffItemDetailSide.targetOnly,
-      source: null,
-      target: DiffEntryDetailViewData(
-        entryId: 'remote-entry',
-        displayName: 'song.mp3',
-        size: 256,
-        modifiedTime: DateTime.fromMillisecondsSinceEpoch(2),
-        isDirectory: false,
-      ),
-      sourceIsRemote: false,
-      targetIsRemote: true,
-    );
+        ),
+        sourceIsRemote: false,
+        targetIsRemote: true,
+      );
 
-    final DateTime startedAt = DateTime.now();
-    final DiffItemDetailViewData refreshed = await loader.refresh(data);
-    final Duration elapsed = DateTime.now().difference(startedAt);
+      final DiffItemDetailViewData refreshed = await loader.refresh(data);
 
-    expect(refreshed.target?.entryId, 'remote-entry');
-    expect(refreshed.target?.size, 256);
-    expect(elapsed, lessThan(const Duration(seconds: 4)));
-  });
+      expect(refreshed.target?.size, 512);
+      expect(refreshed.target?.audioMetadata?.title, 'Remote Song');
+      expect(refreshed.target?.audioMetadata?.artist, 'Remote Artist');
+    },
+  );
+
+  test(
+    'refresh keeps existing remote entry when remote detail stalls',
+    () async {
+      final LocalDetailLoader loader = LocalDetailLoader(
+        _NoopGateway(),
+        loadRemoteEntryDetail: (String entryId) async {
+          await Future<void>.delayed(const Duration(seconds: 5));
+          return DiffEntryDetailViewData(
+            entryId: entryId,
+            displayName: 'late.mp3',
+            size: 999,
+            modifiedTime: DateTime.fromMillisecondsSinceEpoch(9),
+            isDirectory: false,
+          );
+        },
+      );
+      final DiffItemDetailViewData data = DiffItemDetailViewData(
+        path: 'Music/song.mp3',
+        type: DiffType.delete,
+        reason: null,
+        side: DiffItemDetailSide.targetOnly,
+        source: null,
+        target: DiffEntryDetailViewData(
+          entryId: 'remote-entry',
+          displayName: 'song.mp3',
+          size: 256,
+          modifiedTime: DateTime.fromMillisecondsSinceEpoch(2),
+          isDirectory: false,
+        ),
+        sourceIsRemote: false,
+        targetIsRemote: true,
+      );
+
+      final DateTime startedAt = DateTime.now();
+      final DiffItemDetailViewData refreshed = await loader.refresh(data);
+      final Duration elapsed = DateTime.now().difference(startedAt);
+
+      expect(refreshed.target?.entryId, 'remote-entry');
+      expect(refreshed.target?.size, 256);
+      expect(elapsed, lessThan(const Duration(seconds: 4)));
+    },
+  );
 }
 
 class _NoopGateway implements FileAccessGateway {

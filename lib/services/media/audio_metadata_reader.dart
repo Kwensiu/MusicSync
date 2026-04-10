@@ -16,8 +16,10 @@ class AudioMetadataReader {
 
   Future<AudioMetadataViewData?> read(String entryId) async {
     try {
-      final Uint8List prefixBytes =
-          await _readPrefix(entryId, _fastReadLimit).timeout(_readTimeout);
+      final Uint8List prefixBytes = await _readPrefix(
+        entryId,
+        _fastReadLimit,
+      ).timeout(_readTimeout);
       if (prefixBytes.isEmpty) {
         return null;
       }
@@ -31,8 +33,9 @@ class AudioMetadataReader {
           if (flacMetadata != null) {
             return flacMetadata;
           }
-          final Uint8List fullFlacBytes =
-              await _readAll(entryId).timeout(_readTimeout);
+          final Uint8List fullFlacBytes = await _readAll(
+            entryId,
+          ).timeout(_readTimeout);
           final AudioMetadataViewData? fullFlacMetadata = _readFlacMetadata(
             fullFlacBytes,
           );
@@ -46,8 +49,9 @@ class AudioMetadataReader {
           if (oggMetadata != null) {
             return oggMetadata;
           }
-          final Uint8List fullOggBytes =
-              await _readAll(entryId).timeout(_readTimeout);
+          final Uint8List fullOggBytes = await _readAll(
+            entryId,
+          ).timeout(_readTimeout);
           final AudioMetadataViewData? fullOggMetadata = _readOggMetadata(
             fullOggBytes,
           );
@@ -61,8 +65,9 @@ class AudioMetadataReader {
           if (mp4Metadata != null) {
             return mp4Metadata;
           }
-          final Uint8List fullMp4Bytes =
-              await _readAll(entryId).timeout(_readTimeout);
+          final Uint8List fullMp4Bytes = await _readAll(
+            entryId,
+          ).timeout(_readTimeout);
           final AudioMetadataViewData? fullMp4Metadata = _readMp4Metadata(
             fullMp4Bytes,
           );
@@ -75,8 +80,9 @@ class AudioMetadataReader {
 
       Tag? tagWithValues = await _readPreferredTag(prefixBytes);
       if (tagWithValues == null) {
-        final Uint8List fullBytes =
-            await _readAll(entryId).timeout(_readTimeout);
+        final Uint8List fullBytes = await _readAll(
+          entryId,
+        ).timeout(_readTimeout);
         if (fullBytes.isEmpty) {
           return null;
         }
@@ -157,15 +163,17 @@ class AudioMetadataReader {
   }
 
   Tag? _selectBestTag(List<Tag> tags) {
-    final List<Tag> candidates =
-        tags.where((Tag tag) => tag.tags.isNotEmpty).toList();
+    final List<Tag> candidates = tags
+        .where((Tag tag) => tag.tags.isNotEmpty)
+        .toList();
     if (candidates.isEmpty) {
       return null;
     }
 
     candidates.sort((Tag left, Tag right) {
-      final int versionOrder =
-          _tagPriority(right).compareTo(_tagPriority(left));
+      final int versionOrder = _tagPriority(
+        right,
+      ).compareTo(_tagPriority(left));
       if (versionOrder != 0) {
         return versionOrder;
       }
@@ -244,7 +252,8 @@ class AudioMetadataReader {
       final int header = bytes[offset];
       final bool isLastBlock = (header & 0x80) != 0;
       final int blockType = header & 0x7F;
-      final int blockLength = (bytes[offset + 1] << 16) |
+      final int blockLength =
+          (bytes[offset + 1] << 16) |
           (bytes[offset + 2] << 8) |
           bytes[offset + 3];
       offset += 4;
@@ -542,8 +551,9 @@ class AudioMetadataReader {
         break;
       }
 
-      final String key =
-          ascii.decode(bytes.sublist(offset, keyEnd)).toUpperCase();
+      final String key = ascii
+          .decode(bytes.sublist(offset, keyEnd))
+          .toUpperCase();
       offset = keyEnd + 1;
       if (offset + valueSize > footerOffset) {
         break;
@@ -679,12 +689,14 @@ class AudioMetadataReader {
         final int dataType = _readUint32Be(dataPayload, 0);
         final Uint8List valueBytes = dataPayload.sublist(8);
         if (dataType == 1 || dataType == 0) {
-          final String value =
-              utf8.decode(valueBytes, allowMalformed: true).trim();
+          final String value = utf8
+              .decode(valueBytes, allowMalformed: true)
+              .trim();
           return value.isEmpty ? null : value;
         }
-        final String fallback =
-            utf8.decode(valueBytes, allowMalformed: true).trim();
+        final String fallback = utf8
+            .decode(valueBytes, allowMalformed: true)
+            .trim();
         return fallback.isEmpty ? null : fallback;
       }
       offset = header.end;
@@ -721,8 +733,10 @@ class AudioMetadataReader {
     return null;
   }
 
-  List<Uint8List> _extractOggPackets(Uint8List bytes,
-      {required int maxPackets}) {
+  List<Uint8List> _extractOggPackets(
+    Uint8List bytes, {
+    required int maxPackets,
+  }) {
     final List<Uint8List> packets = <Uint8List>[];
     final BytesBuilder packetBuilder = BytesBuilder(copy: false);
     int offset = 0;
@@ -817,8 +831,9 @@ class AudioMetadataReader {
       return null;
     }
     final int size32 = _readUint32Be(bytes, offset);
-    final String type =
-        String.fromCharCodes(bytes.sublist(offset + 4, offset + 8));
+    final String type = String.fromCharCodes(
+      bytes.sublist(offset + 4, offset + 8),
+    );
     int headerSize = 8;
     int size = size32;
     if (size32 == 1) {
@@ -844,12 +859,7 @@ class AudioMetadataReader {
   }
 }
 
-enum _AudioContainerKind {
-  flac,
-  ogg,
-  mp4,
-  id3OrUnknown,
-}
+enum _AudioContainerKind { flac, ogg, mp4, id3OrUnknown }
 
 class _Mp4AtomHeader {
   const _Mp4AtomHeader({

@@ -51,8 +51,9 @@ class RemoteSyncExecutor {
             transferId: transferId,
           );
 
-          await for (final List<int> chunk
-              in _fileAccessGateway.openRead(sourceEntryId)) {
+          await for (final List<int> chunk in _fileAccessGateway.openRead(
+            sourceEntryId,
+          )) {
             cancelToken?.throwIfCancelled();
             await _connectionService.writeRemoteChunk(
               transferId: transferId,
@@ -87,9 +88,7 @@ class RemoteSyncExecutor {
         } catch (error) {
           if (cancelToken?.isCancelled == true) {
             try {
-              await _connectionService.abortRemoteCopy(
-                transferId: transferId,
-              );
+              await _connectionService.abortRemoteCopy(transferId: transferId);
             } catch (_) {
               // Ignore cleanup failures while cancelling.
             }
@@ -99,9 +98,7 @@ class RemoteSyncExecutor {
           processedFiles++;
           lastError = error.toString();
           try {
-            await _connectionService.abortRemoteCopy(
-              transferId: transferId,
-            );
+            await _connectionService.abortRemoteCopy(transferId: transferId);
           } catch (_) {
             // Ignore cleanup failures; preserve original transfer error.
           }

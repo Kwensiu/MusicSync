@@ -18,9 +18,7 @@ void main() {
               _dir('album-b', 'AlbumB'),
               _file('track-1', 'song.mp3'),
             ],
-            'album-a': <FileAccessEntry>[
-              _file('track-2', 'song-a.flac'),
-            ],
+            'album-a': <FileAccessEntry>[_file('track-2', 'song-a.flac')],
           },
           inaccessibleIds: <String>{'album-b'},
         ),
@@ -32,8 +30,10 @@ void main() {
         deviceId: 'local-device',
       );
 
-      expect(snapshot.asPathMap().keys,
-          containsAll(<String>['song.mp3', 'AlbumA/song-a.flac']));
+      expect(
+        snapshot.asPathMap().keys,
+        containsAll(<String>['song.mp3', 'AlbumA/song-a.flac']),
+      );
       expect(snapshot.warnings, <String>['AlbumB']);
     });
 
@@ -74,8 +74,10 @@ void main() {
       );
 
       expect(snapshot.asPathMap().keys, contains('song.mp3'));
-      expect(snapshot.asPathMap().keys,
-          isNot(contains('song.mp3.music_sync_tmp')));
+      expect(
+        snapshot.asPathMap().keys,
+        isNot(contains('song.mp3.music_sync_tmp')),
+      );
     });
   });
 }

@@ -1,26 +1,38 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:music_sync/features/directory/state/directory_controller.dart';
 import 'package:music_sync/features/directory/state/directory_state.dart';
+import 'package:music_sync/features/preview/state/preview_controller.dart';
 import 'package:music_sync/services/file_access/file_access_entry.dart';
 import 'package:music_sync/services/file_access/file_access_gateway.dart';
-import 'package:music_sync/services/scanning/directory_preflight_service.dart';
+import 'package:music_sync/services/file_access/file_access_provider.dart';
+import 'package:music_sync/services/diff/diff_engine.dart';
+import 'package:music_sync/services/scanning/directory_scanner.dart';
+import 'package:music_sync/services/scanning/scan_cache_service.dart';
 import 'package:music_sync/services/scanning/temp_file_cleanup_service.dart';
 import 'package:music_sync/services/storage/recent_items_store.dart';
 
 void main() {
   test('pickDirectory stores preflight risk summary', () async {
     final _FakeRecentItemsStore store = _FakeRecentItemsStore();
-    final DirectoryController controller = DirectoryController(
-      _FakeFileAccessGateway(),
-      () async =>
-          const DirectoryHandle(entryId: 'root', displayName: 'AppData'),
-      ({required bool hadDirectorySelected}) {},
-      (_) async {},
-      store,
-      DirectoryPreflightService(
-        _FakePreflightGateway(),
-      ),
-      TempFileCleanupService(_FakeFileAccessGateway()),
+    final _FakePreflightGateway gateway = _FakePreflightGateway();
+    final ProviderContainer container = ProviderContainer(
+      overrides: [
+        recentItemsStoreProvider.overrideWithValue(store),
+        fileAccessGatewayProvider.overrideWithValue(gateway),
+        tempFileCleanupServiceProvider.overrideWithValue(
+          TempFileCleanupService(_FakeFileAccessGateway()),
+        ),
+        diffEngineProvider.overrideWithValue(DiffEngine()),
+        scanCacheServiceProvider.overrideWithValue(ScanCacheService()),
+        directoryScannerProvider.overrideWithValue(
+          DirectoryScanner(gateway: gateway, cacheService: ScanCacheService()),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    final DirectoryController controller = container.read(
+      directoryControllerProvider.notifier,
     );
 
     await controller.pickDirectory();
@@ -65,6 +77,10 @@ class _FakeFileAccessGateway implements FileAccessGateway {
 }
 
 class _FakePreflightGateway extends _FakeFileAccessGateway {
+  @override
+  Future<DirectoryHandle?> pickDirectory() async =>
+      const DirectoryHandle(entryId: 'root', displayName: 'AppData');
+
   @override
   Future<List<FileAccessEntry>> listChildren(String directoryId) async {
     if (directoryId == 'root') {

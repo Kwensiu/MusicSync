@@ -115,14 +115,14 @@ class SettingsPage extends ConsumerWidget {
                   onTap: settingsState.isLoading
                       ? null
                       : () => showIgnoredFileTypesDialog(
-                            context: context,
-                            initialValues: settingsState.ignoredExtensions,
-                            onSave: (List<String> values) {
-                              return ref
-                                  .read(settingsControllerProvider.notifier)
-                                  .saveIgnoredExtensions(values);
-                            },
-                          ),
+                          context: context,
+                          initialValues: settingsState.ignoredExtensions,
+                          onSave: (List<String> values) {
+                            return ref
+                                .read(settingsControllerProvider.notifier)
+                                .saveIgnoredExtensions(values);
+                          },
+                        ),
                 ),
               ],
             ),
@@ -149,10 +149,10 @@ class SettingsPage extends ConsumerWidget {
                   onTap: settingsState.isLoading
                       ? null
                       : () => showThemeModeDialog(
-                            context: context,
-                            ref: ref,
-                            initialValue: settingsState.themeMode,
-                          ),
+                          context: context,
+                          ref: ref,
+                          initialValue: settingsState.themeMode,
+                        ),
                 ),
                 SettingsGroupDivider(color: scheme.outlineVariant),
                 SettingsActionRow(
@@ -163,10 +163,10 @@ class SettingsPage extends ConsumerWidget {
                   onTap: settingsState.isLoading
                       ? null
                       : () => showPaletteDialog(
-                            context: context,
-                            ref: ref,
-                            initialValue: settingsState.palette,
-                          ),
+                          context: context,
+                          ref: ref,
+                          initialValue: settingsState.palette,
+                        ),
                 ),
               ],
             ),

@@ -5,14 +5,12 @@ import 'dart:io';
 import 'package:music_sync/services/network/protocol/protocol_codec.dart';
 import 'package:music_sync/services/network/protocol/protocol_message.dart';
 
-typedef MessageHandler = FutureOr<ProtocolMessage?> Function(
-    ProtocolMessage message);
+typedef MessageHandler =
+    FutureOr<ProtocolMessage?> Function(ProtocolMessage message);
 
 class PeerSession {
-  PeerSession(
-    this._socket, {
-    ProtocolCodec codec = const ProtocolCodec(),
-  }) : _codec = codec {
+  PeerSession(this._socket, {ProtocolCodec codec = const ProtocolCodec()})
+    : _codec = codec {
     _subscription = _socket
         .cast<List<int>>()
         .transform(utf8.decoder)
@@ -69,8 +67,9 @@ class PeerSession {
 
   void _onLine(String line) async {
     final ProtocolMessage message = _codec.decode(line);
-    final Completer<ProtocolMessage>? pending =
-        _pending.remove(message.requestId);
+    final Completer<ProtocolMessage>? pending = _pending.remove(
+      message.requestId,
+    );
     if (pending != null) {
       pending.complete(message);
       return;

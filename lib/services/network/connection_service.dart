@@ -34,8 +34,8 @@ class ConnectionService {
       payload: <String, Object?>{
         'device': localDevice.toJson(),
         'directoryReady': isDirectoryReady,
-        if (directoryDisplayName != null)
-          'directoryDisplayName': directoryDisplayName,
+        if (directoryDisplayName case final String value)
+          'directoryDisplayName': value,
       },
     );
     if (response.type != 'helloAck') {
@@ -79,14 +79,12 @@ class ConnectionService {
       requestId: _nextRequestId(),
       payload: <String, Object?>{
         'isReady': isReady,
-        if (displayName != null) 'displayName': displayName,
+        if (displayName case final String value) 'displayName': value,
       },
     );
   }
 
-  Future<void> notifySyncSessionState({
-    required bool active,
-  }) async {
+  Future<void> notifySyncSessionState({required bool active}) async {
     final PeerSession session = _requireSession();
     await session.sendMessage(
       type: active ? 'syncSessionStart' : 'syncSessionEnd',
@@ -107,7 +105,8 @@ class ConnectionService {
     );
     if (response.type == 'error') {
       throw SocketException(
-          response.payload['message'] as String? ?? 'Peer error');
+        response.payload['message'] as String? ?? 'Peer error',
+      );
     }
     if (response.type != 'scanResponse') {
       throw const SocketException('Peer scan response invalid.');
@@ -163,30 +162,22 @@ class ConnectionService {
     _ensureOk(response, 'Remote chunk write failed.');
   }
 
-  Future<void> finishRemoteCopy({
-    required String transferId,
-  }) async {
+  Future<void> finishRemoteCopy({required String transferId}) async {
     final PeerSession session = _requireSession();
     final ProtocolMessage response = await session.sendRequest(
       type: 'finishCopy',
       requestId: _nextRequestId(),
-      payload: <String, Object?>{
-        'transferId': transferId,
-      },
+      payload: <String, Object?>{'transferId': transferId},
     );
     _ensureOk(response, 'Remote copy finish failed.');
   }
 
-  Future<void> abortRemoteCopy({
-    required String transferId,
-  }) async {
+  Future<void> abortRemoteCopy({required String transferId}) async {
     final PeerSession session = _requireSession();
     final ProtocolMessage response = await session.sendRequest(
       type: 'abortCopy',
       requestId: _nextRequestId(),
-      payload: <String, Object?>{
-        'transferId': transferId,
-      },
+      payload: <String, Object?>{'transferId': transferId},
     );
     _ensureOk(response, 'Remote copy abort failed.');
   }
@@ -229,9 +220,7 @@ class ConnectionService {
     final ProtocolMessage response = await session.sendRequest(
       type: 'statEntry',
       requestId: _nextRequestId(),
-      payload: <String, Object?>{
-        'entryId': entryId,
-      },
+      payload: <String, Object?>{'entryId': entryId},
     );
     if (response.type == 'error') {
       throw SocketException(
@@ -250,11 +239,11 @@ class ConnectionService {
     );
     final Map<String, Object?>? audioMetadata =
         switch (response.payload['audioMetadata']) {
-      final Map<Object?, Object?> raw => raw.map(
-          (Object? key, Object? value) => MapEntry(key.toString(), value),
-        ),
-      _ => null,
-    };
+          final Map<Object?, Object?> raw => raw.map(
+            (Object? key, Object? value) => MapEntry(key.toString(), value),
+          ),
+          _ => null,
+        };
     return DiffEntryDetailViewData(
       entryId: entry['entryId'] as String? ?? '',
       displayName: entry['name'] as String? ?? '',
@@ -336,7 +325,8 @@ class ConnectionService {
   }
 
   Future<ProtocolMessage?> _handleIncomingMessage(
-      ProtocolMessage message) async {
+    ProtocolMessage message,
+  ) async {
     await onMessage?.call(message);
     return null;
   }

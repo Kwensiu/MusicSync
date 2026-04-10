@@ -67,14 +67,16 @@ class ConnectionSection extends StatelessWidget {
                         (int index) {
                           final DeviceInfo device =
                               connectionState.discoveredDevices[index];
-                          final bool isLast = index ==
+                          final bool isLast =
+                              index ==
                               connectionState.discoveredDevices.length - 1;
                           return Padding(
                             padding: EdgeInsets.only(bottom: isLast ? 0 : 8),
                             child: _DiscoveredDeviceCard(
                               device: device,
                               enabled: !isConnectUiBusy,
-                              connected: connectionState.peer?.deviceId ==
+                              connected:
+                                  connectionState.peer?.deviceId ==
                                       device.deviceId &&
                                   hasConnectedPeer,
                               onTap: () => onDiscoveredDeviceTap(device),
@@ -84,7 +86,8 @@ class ConnectionSection extends StatelessWidget {
                       ),
                     )
                   : const _EmptyDeviceSkeleton(
-                      key: ValueKey<String>('empty-skeleton')),
+                      key: ValueKey<String>('empty-skeleton'),
+                    ),
             ),
             const SizedBox(height: 12),
             SizedBox(
@@ -166,10 +169,7 @@ class _EmptyDeviceSkeletonState extends State<_EmptyDeviceSkeleton>
                 ),
               ),
               const SizedBox(width: 12),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: scheme.onSurfaceVariant,
-              ),
+              Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
             ],
           ),
         ),
@@ -220,8 +220,8 @@ class _DiscoveredDeviceCard extends StatelessWidget {
                     Text(
                       '${device.platform} | ${device.address}:${device.port}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -230,8 +230,10 @@ class _DiscoveredDeviceCard extends StatelessWidget {
               if (connected)
                 Icon(Icons.check_circle_rounded, color: scheme.primary)
               else
-                Icon(Icons.chevron_right_rounded,
-                    color: scheme.onSurfaceVariant),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: scheme.onSurfaceVariant,
+                ),
             ],
           ),
         ),

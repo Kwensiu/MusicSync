@@ -58,10 +58,7 @@ class ConnectionSectionActions {
           listenPort: connectionState.listenPort ?? 44888,
           isListening: isListening,
           onSavePort: (int port) async {
-            await _applyListenPort(
-              ref: ref,
-              port: port,
-            );
+            await _applyListenPort(ref: ref, port: port);
           },
           onToggleListening: () async {
             if (isListening) {
@@ -72,9 +69,7 @@ class ConnectionSectionActions {
             }
             await ref
                 .read(connectionControllerProvider.notifier)
-                .startListening(
-                  port: connectionState.listenPort ?? 44888,
-                );
+                .startListening(port: connectionState.listenPort ?? 44888);
           },
         );
       },
@@ -92,10 +87,9 @@ class ConnectionSectionActions {
     final List<String> parts = input.split(':');
     final String host = parts.first;
     final int port = parts.length > 1 ? int.tryParse(parts[1]) ?? 44888 : 44888;
-    ref.read(connectionControllerProvider.notifier).connect(
-          address: host,
-          port: port,
-        );
+    ref
+        .read(connectionControllerProvider.notifier)
+        .connect(address: host, port: port);
   }
 
   static Future<void> handleConnectButton({
@@ -103,17 +97,15 @@ class ConnectionSectionActions {
     required TextEditingController addressController,
     required peer_connection.ConnectionState connectionState,
   }) async {
-    final bool hasConnectedPeer = connectionState.peer != null &&
+    final bool hasConnectedPeer =
+        connectionState.peer != null &&
         connectionState.status == peer_connection.ConnectionStatus.connected;
     if (hasConnectedPeer ||
         connectionState.status == peer_connection.ConnectionStatus.connecting) {
       await ref.read(connectionControllerProvider.notifier).disconnect();
       return;
     }
-    connectFromInput(
-      ref: ref,
-      addressController: addressController,
-    );
+    connectFromInput(ref: ref, addressController: addressController);
   }
 
   static Future<String> resolveLocalShareHost() async {
@@ -152,18 +144,16 @@ class ConnectionSectionActions {
     if (port == null || !context.mounted) {
       return;
     }
-    await _applyListenPort(
-      ref: ref,
-      port: port,
-    );
+    await _applyListenPort(ref: ref, port: port);
   }
 
   static Future<void> _applyListenPort({
     required WidgetRef ref,
     required int port,
   }) async {
-    final peer_connection.ConnectionState connectionState =
-        ref.read(connectionControllerProvider);
+    final peer_connection.ConnectionState connectionState = ref.read(
+      connectionControllerProvider,
+    );
     if (connectionState.isListening) {
       await ref.read(connectionControllerProvider.notifier).stopListening();
       await ref
@@ -171,9 +161,9 @@ class ConnectionSectionActions {
           .startListening(port: port);
       return;
     }
-    await ref.read(connectionControllerProvider.notifier).startListening(
-          port: port,
-        );
+    await ref
+        .read(connectionControllerProvider.notifier)
+        .startListening(port: port);
   }
 
   static Future<void> showShareDialog({
@@ -198,9 +188,7 @@ class ConnectionSectionActions {
             if (!context.mounted) {
               return;
             }
-            messenger.showSnackBar(
-              SnackBar(content: Text(copyDoneText)),
-            );
+            messenger.showSnackBar(SnackBar(content: Text(copyDoneText)));
           },
         );
       },

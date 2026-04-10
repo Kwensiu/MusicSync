@@ -57,7 +57,8 @@ class WindowsFileAccessGateway implements FileAccessGateway {
           return;
         default:
           throw FileAccessException(
-              'Unsupported entry type for delete: $entryId');
+            'Unsupported entry type for delete: $entryId',
+          );
       }
     } on FileSystemException catch (error) {
       throw FileAccessException(
@@ -76,10 +77,12 @@ class WindowsFileAccessGateway implements FileAccessGateway {
         throw FileAccessException('Directory does not exist: $directoryId');
       }
 
-      final List<FileSystemEntity> children =
-          await directory.list(followLinks: false).toList();
+      final List<FileSystemEntity> children = await directory
+          .list(followLinks: false)
+          .toList();
       children.sort(
-          (FileSystemEntity a, FileSystemEntity b) => a.path.compareTo(b.path));
+        (FileSystemEntity a, FileSystemEntity b) => a.path.compareTo(b.path),
+      );
 
       return children.map(_toEntry).toList();
     } on FileSystemException catch (error) {
@@ -136,7 +139,8 @@ class WindowsFileAccessGateway implements FileAccessGateway {
           throw FileAccessException('Entry does not exist: $entryId');
         default:
           throw FileAccessException(
-              'Unsupported entry type for rename: $entryId');
+            'Unsupported entry type for rename: $entryId',
+          );
       }
     } on FileSystemException catch (error) {
       throw FileAccessException(
@@ -154,10 +158,7 @@ class WindowsFileAccessGateway implements FileAccessGateway {
       return null;
     }
 
-    return DirectoryHandle(
-      entryId: path,
-      displayName: path,
-    );
+    return DirectoryHandle(entryId: path, displayName: path);
   }
 
   @override
@@ -190,7 +191,8 @@ class WindowsFileAccessGateway implements FileAccessGateway {
           throw FileAccessException('Entry does not exist: $entryId');
         default:
           throw FileAccessException(
-              'Unsupported entry type for stat: $entryId');
+            'Unsupported entry type for stat: $entryId',
+          );
       }
     } on FileSystemException catch (error) {
       throw FileAccessException(

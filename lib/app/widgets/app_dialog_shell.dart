@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum AppDialogSize {
-  micro,
-  compact,
-  form,
-  panel,
-}
+enum AppDialogSize { micro, compact, form, panel }
 
 class AppDialogShell extends StatelessWidget {
   const AppDialogShell({
@@ -55,11 +50,8 @@ class AppDialogShell extends StatelessWidget {
     final double resolvedVerticalInset =
         minVerticalInset ?? _defaultVerticalInset(size);
     final double screenWidth = MediaQuery.sizeOf(context).width;
-    final double targetWidth =
-        (screenWidth - (resolvedHorizontalInset * 2)).clamp(
-      resolvedMinWidth,
-      resolvedMaxWidth,
-    );
+    final double targetWidth = (screenWidth - (resolvedHorizontalInset * 2))
+        .clamp(resolvedMinWidth, resolvedMaxWidth);
     final ThemeData baseTheme = Theme.of(context);
     final bool hasActions = actions.isNotEmpty;
     final ButtonStyle actionButtonStyle = const ButtonStyle(
@@ -98,10 +90,7 @@ class AppDialogShell extends StatelessWidget {
                   horizontal: -2,
                   vertical: -2,
                 ),
-                constraints: const BoxConstraints(
-                  minWidth: 32,
-                  minHeight: 32,
-                ),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               ),
             ],
           ],

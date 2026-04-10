@@ -31,382 +31,429 @@ import 'package:music_sync/services/storage/recent_items_store.dart';
 void main() {
   group('ConnectionController', () {
     test(
-        'disconnect clears remote state but preserves listener and local target',
-        () async {
-      final _FakeConnectionService connectionService = _FakeConnectionService(
-        snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
-      );
-      final ProviderContainer container = ProviderContainer(
-        overrides: <Override>[
-          connectionServiceProvider.overrideWithValue(connectionService),
-          listenerServiceProvider.overrideWithValue(_FakeListenerService()),
-          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
-          fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
-        ],
-      );
-      addTearDown(container.dispose);
+      'disconnect clears remote state but preserves listener and local target',
+      () async {
+        final _FakeConnectionService connectionService = _FakeConnectionService(
+          snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
+        );
+        final ProviderContainer container = ProviderContainer(
+          overrides: [
+            connectionServiceProvider.overrideWithValue(connectionService),
+            listenerServiceProvider.overrideWithValue(_FakeListenerService()),
+            recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+            fileAccessGatewayProvider.overrideWithValue(
+              _FakeFileAccessGateway(),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      await container
-          .read(connectionControllerProvider.notifier)
-          .startListening(port: 44888);
-      await container.read(connectionControllerProvider.notifier).connect(
-            address: '192.168.1.2',
-            port: 44888,
-          );
+        await container
+            .read(connectionControllerProvider.notifier)
+            .startListening(port: 44888);
+        await container
+            .read(connectionControllerProvider.notifier)
+            .connect(address: '192.168.1.2', port: 44888);
 
-      container
-          .read(executionControllerProvider.notifier)
-          .setTargetRoot('local-target');
-      container.read(directoryControllerProvider.notifier).setDirectory(
-            const DirectoryHandle(entryId: 'root', displayName: 'Music'),
-          );
-      container.read(previewControllerProvider.notifier).loadPlan(
-            source: _localSnapshot(),
-            target: _remoteSnapshot('Remote A'),
-            deleteEnabled: true,
-          );
+        container
+            .read(executionControllerProvider.notifier)
+            .setTargetRoot('local-target');
+        container
+            .read(directoryControllerProvider.notifier)
+            .setDirectory(
+              const DirectoryHandle(entryId: 'root', displayName: 'Music'),
+            );
+        container
+            .read(previewControllerProvider.notifier)
+            .loadPlan(
+              source: _localSnapshot(),
+              target: _remoteSnapshot('Remote A'),
+              deleteEnabled: true,
+            );
 
-      await container.read(connectionControllerProvider.notifier).disconnect();
+        await container
+            .read(connectionControllerProvider.notifier)
+            .disconnect();
 
-      final connectionState = container.read(connectionControllerProvider);
-      final previewState = container.read(previewControllerProvider);
-      final executionState = container.read(executionControllerProvider);
+        final connectionState = container.read(connectionControllerProvider);
+        final previewState = container.read(previewControllerProvider);
+        final executionState = container.read(executionControllerProvider);
 
-      expect(connectionState.status, ConnectionStatus.idle);
-      expect(connectionState.isListening, isTrue);
-      expect(connectionState.peer, isNull);
-      expect(connectionState.remoteSnapshot, isNull);
-      expect(previewState.status, PreviewStatus.idle);
-      expect(executionState.status, ExecutionStatus.idle);
-      expect(executionState.targetRoot, 'local-target');
-      expect(connectionService.disconnectCalls, 1);
-    });
-
-    test('stop listening disconnects peer session and resets connection state',
-        () async {
-      final _FakeConnectionService connectionService = _FakeConnectionService(
-        snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
-      );
-      final ProviderContainer container = ProviderContainer(
-        overrides: <Override>[
-          connectionServiceProvider.overrideWithValue(connectionService),
-          listenerServiceProvider.overrideWithValue(_FakeListenerService()),
-          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
-          fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      await container
-          .read(connectionControllerProvider.notifier)
-          .startListening(port: 44888);
-      await container.read(connectionControllerProvider.notifier).connect(
-            address: '192.168.1.2',
-            port: 44888,
-          );
-
-      await container
-          .read(connectionControllerProvider.notifier)
-          .stopListening();
-
-      final ConnectionState connectionState =
-          container.read(connectionControllerProvider);
-      expect(connectionState.status, ConnectionStatus.idle);
-      expect(connectionState.isListening, isFalse);
-      expect(connectionState.listenPort, isNull);
-      expect(connectionState.peer, isNull);
-      expect(connectionState.remoteSnapshot, isNull);
-      expect(connectionState.isRemoteDirectoryReady, isFalse);
-      expect(connectionService.disconnectCalls, 1);
-    });
+        expect(connectionState.status, ConnectionStatus.idle);
+        expect(connectionState.isListening, isTrue);
+        expect(connectionState.peer, isNull);
+        expect(connectionState.remoteSnapshot, isNull);
+        expect(previewState.status, PreviewStatus.idle);
+        expect(executionState.status, ExecutionStatus.idle);
+        expect(executionState.targetRoot, 'local-target');
+        expect(connectionService.disconnectCalls, 1);
+      },
+    );
 
     test(
-        'connect succeeds even when remote shared directory is not selected yet',
-        () async {
-      final _FakeConnectionService connectionService = _FakeConnectionService(
-        snapshots: <ScanSnapshot>[],
-        scanErrorMessage: 'No shared directory selected on peer.',
-      );
-      final ProviderContainer container = ProviderContainer(
-        overrides: <Override>[
-          connectionServiceProvider.overrideWithValue(connectionService),
-          listenerServiceProvider.overrideWithValue(_FakeListenerService()),
-          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
-          fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
-        ],
-      );
-      addTearDown(container.dispose);
+      'stop listening disconnects peer session and resets connection state',
+      () async {
+        final _FakeConnectionService connectionService = _FakeConnectionService(
+          snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
+        );
+        final ProviderContainer container = ProviderContainer(
+          overrides: [
+            connectionServiceProvider.overrideWithValue(connectionService),
+            listenerServiceProvider.overrideWithValue(_FakeListenerService()),
+            recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+            fileAccessGatewayProvider.overrideWithValue(
+              _FakeFileAccessGateway(),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      await container.read(connectionControllerProvider.notifier).connect(
-            address: '192.168.1.2',
-            port: 44888,
-          );
+        await container
+            .read(connectionControllerProvider.notifier)
+            .startListening(port: 44888);
+        await container
+            .read(connectionControllerProvider.notifier)
+            .connect(address: '192.168.1.2', port: 44888);
 
-      final ConnectionState connectionState =
-          container.read(connectionControllerProvider);
-      expect(connectionState.status, ConnectionStatus.connected);
-      expect(connectionState.peer, isNotNull);
-      expect(connectionState.remoteSnapshot, isNull);
-      expect(connectionState.isRemoteDirectoryReady, isFalse);
-      expect(connectionState.errorMessage, isNull);
-    });
+        await container
+            .read(connectionControllerProvider.notifier)
+            .stopListening();
 
-    test(
-        'refreshRemoteSnapshot keeps connection and clears remote-ready state when remote directory is unavailable',
-        () async {
-      final _FakeConnectionService connectionService = _FakeConnectionService(
-        snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
-        refreshScanErrorMessage: 'No shared directory selected on peer.',
-      );
-      final ProviderContainer container = ProviderContainer(
-        overrides: <Override>[
-          connectionServiceProvider.overrideWithValue(connectionService),
-          listenerServiceProvider.overrideWithValue(_FakeListenerService()),
-          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
-          fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      container.read(directoryControllerProvider.notifier).setDirectory(
-            const DirectoryHandle(entryId: 'root', displayName: 'Music'),
-          );
-      await container.read(connectionControllerProvider.notifier).connect(
-            address: '192.168.1.2',
-            port: 44888,
-          );
-      container.read(previewControllerProvider.notifier).loadPlan(
-            source: _localSnapshot(),
-            target: _remoteSnapshot('Remote A'),
-            deleteEnabled: true,
-          );
-      container
-          .read(executionControllerProvider.notifier)
-          .setTargetRoot('local-target');
-
-      final ScanSnapshot? refreshed = await container
-          .read(connectionControllerProvider.notifier)
-          .refreshRemoteSnapshot();
-
-      final ConnectionState connectionState =
-          container.read(connectionControllerProvider);
-      final PreviewState previewState =
-          container.read(previewControllerProvider);
-      final ExecutionState executionState =
-          container.read(executionControllerProvider);
-
-      expect(refreshed, isNull);
-      expect(connectionState.status, ConnectionStatus.connected);
-      expect(connectionState.peer, isNotNull);
-      expect(connectionState.remoteSnapshot, isNull);
-      expect(connectionState.isRemoteDirectoryReady, isFalse);
-      expect(connectionState.errorMessage, isNotEmpty);
-      expect(previewState.status, PreviewStatus.idle);
-      expect(executionState.status, ExecutionStatus.idle);
-      expect(executionState.targetRoot, 'local-target');
-    });
+        final ConnectionState connectionState = container.read(
+          connectionControllerProvider,
+        );
+        expect(connectionState.status, ConnectionStatus.idle);
+        expect(connectionState.isListening, isFalse);
+        expect(connectionState.listenPort, isNull);
+        expect(connectionState.peer, isNull);
+        expect(connectionState.remoteSnapshot, isNull);
+        expect(connectionState.isRemoteDirectoryReady, isFalse);
+        expect(connectionService.disconnectCalls, 1);
+      },
+    );
 
     test(
-        'remoteDirectoryChanged ready message refreshes remote snapshot automatically',
-        () async {
-      final _FakeConnectionService connectionService = _FakeConnectionService(
-        snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
-        scanErrorMessage: 'No shared directory selected on peer.',
-      );
-      final ProviderContainer container = ProviderContainer(
-        overrides: <Override>[
-          connectionServiceProvider.overrideWithValue(connectionService),
-          listenerServiceProvider.overrideWithValue(_FakeListenerService()),
-          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
-          fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
-        ],
-      );
-      addTearDown(container.dispose);
+      'connect succeeds even when remote shared directory is not selected yet',
+      () async {
+        final _FakeConnectionService connectionService = _FakeConnectionService(
+          snapshots: <ScanSnapshot>[],
+          scanErrorMessage: 'No shared directory selected on peer.',
+        );
+        final ProviderContainer container = ProviderContainer(
+          overrides: [
+            connectionServiceProvider.overrideWithValue(connectionService),
+            listenerServiceProvider.overrideWithValue(_FakeListenerService()),
+            recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+            fileAccessGatewayProvider.overrideWithValue(
+              _FakeFileAccessGateway(),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      await container.read(connectionControllerProvider.notifier).connect(
-            address: '192.168.1.2',
-            port: 44888,
-          );
+        await container
+            .read(connectionControllerProvider.notifier)
+            .connect(address: '192.168.1.2', port: 44888);
 
-      expect(
-        container.read(connectionControllerProvider).remoteSnapshot,
-        isNull,
-      );
-      expect(
-        container.read(connectionControllerProvider).isRemoteDirectoryReady,
-        isFalse,
-      );
-
-      await connectionService.onMessage?.call(
-        const ProtocolMessage(
-          type: 'remoteDirectoryChanged',
-          requestId: 'dir-ready-1',
-          payload: <String, Object?>{
-            'isReady': true,
-            'displayName': 'Remote Music',
-          },
-        ),
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-
-      final ConnectionState connectionState =
-          container.read(connectionControllerProvider);
-      expect(connectionState.isRemoteDirectoryReady, isTrue);
-      expect(connectionState.remoteSnapshot?.rootDisplayName, 'Remote A');
-    });
+        final ConnectionState connectionState = container.read(
+          connectionControllerProvider,
+        );
+        expect(connectionState.status, ConnectionStatus.connected);
+        expect(connectionState.peer, isNotNull);
+        expect(connectionState.remoteSnapshot, isNull);
+        expect(connectionState.isRemoteDirectoryReady, isFalse);
+        expect(connectionState.errorMessage, isNull);
+      },
+    );
 
     test(
-        'refreshRemoteSnapshot fails running remote execution when remote directory becomes unavailable',
-        () async {
-      final _FakeConnectionService connectionService = _FakeConnectionService(
-        snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
-        refreshScanErrorMessage:
-            'The selected directory is not accessible anymore.',
-      );
-      final ProviderContainer container = ProviderContainer(
-        overrides: <Override>[
-          connectionServiceProvider.overrideWithValue(connectionService),
-          listenerServiceProvider.overrideWithValue(_FakeListenerService()),
-          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
-          fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
-        ],
-      );
-      addTearDown(container.dispose);
+      'refreshRemoteSnapshot keeps connection and clears remote-ready state when remote directory is unavailable',
+      () async {
+        final _FakeConnectionService connectionService = _FakeConnectionService(
+          snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
+          refreshScanErrorMessage: 'No shared directory selected on peer.',
+        );
+        final ProviderContainer container = ProviderContainer(
+          overrides: [
+            connectionServiceProvider.overrideWithValue(connectionService),
+            listenerServiceProvider.overrideWithValue(_FakeListenerService()),
+            recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+            fileAccessGatewayProvider.overrideWithValue(
+              _FakeFileAccessGateway(),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      container.read(directoryControllerProvider.notifier).setDirectory(
-            const DirectoryHandle(entryId: 'root', displayName: 'Music'),
-          );
-      await container.read(connectionControllerProvider.notifier).connect(
-            address: '192.168.1.2',
-            port: 44888,
-          );
-      container.read(previewControllerProvider.notifier).loadPlan(
-            source: _localSnapshot(),
-            target: _remoteSnapshot('Remote A'),
-            deleteEnabled: true,
-          );
-      container.read(executionControllerProvider.notifier).state =
-          ExecutionState(
-        status: ExecutionStatus.running,
-        progress: container.read(executionControllerProvider).progress,
-        result: const ExecutionResult(
-          copiedCount: 0,
-          deletedCount: 0,
-          failedCount: 0,
-          totalBytes: 0,
+        container
+            .read(directoryControllerProvider.notifier)
+            .setDirectory(
+              const DirectoryHandle(entryId: 'root', displayName: 'Music'),
+            );
+        await container
+            .read(connectionControllerProvider.notifier)
+            .connect(address: '192.168.1.2', port: 44888);
+        container
+            .read(previewControllerProvider.notifier)
+            .loadPlan(
+              source: _localSnapshot(),
+              target: _remoteSnapshot('Remote A'),
+              deleteEnabled: true,
+            );
+        container
+            .read(executionControllerProvider.notifier)
+            .setTargetRoot('local-target');
+
+        final ScanSnapshot? refreshed = await container
+            .read(connectionControllerProvider.notifier)
+            .refreshRemoteSnapshot();
+
+        final ConnectionState connectionState = container.read(
+          connectionControllerProvider,
+        );
+        final PreviewState previewState = container.read(
+          previewControllerProvider,
+        );
+        final ExecutionState executionState = container.read(
+          executionControllerProvider,
+        );
+
+        expect(refreshed, isNull);
+        expect(connectionState.status, ConnectionStatus.connected);
+        expect(connectionState.peer, isNotNull);
+        expect(connectionState.remoteSnapshot, isNull);
+        expect(connectionState.isRemoteDirectoryReady, isFalse);
+        expect(connectionState.errorMessage, isNotEmpty);
+        expect(previewState.status, PreviewStatus.idle);
+        expect(executionState.status, ExecutionStatus.idle);
+        expect(executionState.targetRoot, 'local-target');
+      },
+    );
+
+    test(
+      'remoteDirectoryChanged ready message refreshes remote snapshot automatically',
+      () async {
+        final _FakeConnectionService connectionService = _FakeConnectionService(
+          snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
+          scanErrorMessage: 'No shared directory selected on peer.',
+        );
+        final ProviderContainer container = ProviderContainer(
+          overrides: [
+            connectionServiceProvider.overrideWithValue(connectionService),
+            listenerServiceProvider.overrideWithValue(_FakeListenerService()),
+            recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+            fileAccessGatewayProvider.overrideWithValue(
+              _FakeFileAccessGateway(),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await container
+            .read(connectionControllerProvider.notifier)
+            .connect(address: '192.168.1.2', port: 44888);
+
+        expect(
+          container.read(connectionControllerProvider).remoteSnapshot,
+          isNull,
+        );
+        expect(
+          container.read(connectionControllerProvider).isRemoteDirectoryReady,
+          isFalse,
+        );
+
+        await connectionService.onMessage?.call(
+          const ProtocolMessage(
+            type: 'remoteDirectoryChanged',
+            requestId: 'dir-ready-1',
+            payload: <String, Object?>{
+              'isReady': true,
+              'displayName': 'Remote Music',
+            },
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+
+        final ConnectionState connectionState = container.read(
+          connectionControllerProvider,
+        );
+        expect(connectionState.isRemoteDirectoryReady, isTrue);
+        expect(connectionState.remoteSnapshot?.rootDisplayName, 'Remote A');
+      },
+    );
+
+    test(
+      'refreshRemoteSnapshot fails running remote execution when remote directory becomes unavailable',
+      () async {
+        final _FakeConnectionService connectionService = _FakeConnectionService(
+          snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
+          refreshScanErrorMessage:
+              'The selected directory is not accessible anymore.',
+        );
+        final ProviderContainer container = ProviderContainer(
+          overrides: [
+            connectionServiceProvider.overrideWithValue(connectionService),
+            listenerServiceProvider.overrideWithValue(_FakeListenerService()),
+            recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+            fileAccessGatewayProvider.overrideWithValue(
+              _FakeFileAccessGateway(),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        container
+            .read(directoryControllerProvider.notifier)
+            .setDirectory(
+              const DirectoryHandle(entryId: 'root', displayName: 'Music'),
+            );
+        await container
+            .read(connectionControllerProvider.notifier)
+            .connect(address: '192.168.1.2', port: 44888);
+        container
+            .read(previewControllerProvider.notifier)
+            .loadPlan(
+              source: _localSnapshot(),
+              target: _remoteSnapshot('Remote A'),
+              deleteEnabled: true,
+            );
+        container
+            .read(executionControllerProvider.notifier)
+            .state = ExecutionState(
+          status: ExecutionStatus.running,
+          progress: container.read(executionControllerProvider).progress,
+          result: const ExecutionResult(
+            copiedCount: 0,
+            deletedCount: 0,
+            failedCount: 0,
+            totalBytes: 0,
+            targetRoot: 'remote-root',
+          ),
+          mode: ExecutionMode.remote,
           targetRoot: 'remote-root',
-        ),
-        mode: ExecutionMode.remote,
-        targetRoot: 'remote-root',
-      );
+        );
 
-      await container
-          .read(connectionControllerProvider.notifier)
-          .refreshRemoteSnapshot(clearTransientState: false);
+        await container
+            .read(connectionControllerProvider.notifier)
+            .refreshRemoteSnapshot(clearTransientState: false);
 
-      final ExecutionState executionState =
-          container.read(executionControllerProvider);
-      final ConnectionState connectionState =
-          container.read(connectionControllerProvider);
+        final ExecutionState executionState = container.read(
+          executionControllerProvider,
+        );
+        final ConnectionState connectionState = container.read(
+          connectionControllerProvider,
+        );
 
-      expect(connectionState.status, ConnectionStatus.connected);
-      expect(connectionState.isRemoteDirectoryReady, isFalse);
-      expect(executionState.status, ExecutionStatus.failed);
-      expect(executionState.mode, ExecutionMode.remote);
-      expect(executionState.errorMessage, isNotEmpty);
-    });
+        expect(connectionState.status, ConnectionStatus.connected);
+        expect(connectionState.isRemoteDirectoryReady, isFalse);
+        expect(executionState.status, ExecutionStatus.failed);
+        expect(executionState.mode, ExecutionMode.remote);
+        expect(executionState.errorMessage, isNotEmpty);
+      },
+    );
 
     test(
-        'refreshRemoteSnapshot marks connection disconnected when peer is no longer connected',
-        () async {
-      final _FakeConnectionService connectionService = _FakeConnectionService(
-        snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
-        refreshScanErrorMessage: 'Not connected to any peer.',
-      );
-      final ProviderContainer container = ProviderContainer(
-        overrides: <Override>[
-          connectionServiceProvider.overrideWithValue(connectionService),
-          listenerServiceProvider.overrideWithValue(_FakeListenerService()),
-          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
-          fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
-        ],
-      );
-      addTearDown(container.dispose);
+      'refreshRemoteSnapshot marks connection disconnected when peer is no longer connected',
+      () async {
+        final _FakeConnectionService connectionService = _FakeConnectionService(
+          snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
+          refreshScanErrorMessage: 'Not connected to any peer.',
+        );
+        final ProviderContainer container = ProviderContainer(
+          overrides: [
+            connectionServiceProvider.overrideWithValue(connectionService),
+            listenerServiceProvider.overrideWithValue(_FakeListenerService()),
+            recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+            fileAccessGatewayProvider.overrideWithValue(
+              _FakeFileAccessGateway(),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      await container.read(connectionControllerProvider.notifier).connect(
-            address: '192.168.1.2',
-            port: 44888,
-          );
+        await container
+            .read(connectionControllerProvider.notifier)
+            .connect(address: '192.168.1.2', port: 44888);
 
-      final ScanSnapshot? refreshed = await container
-          .read(connectionControllerProvider.notifier)
-          .refreshRemoteSnapshot(clearTransientState: false);
+        final ScanSnapshot? refreshed = await container
+            .read(connectionControllerProvider.notifier)
+            .refreshRemoteSnapshot(clearTransientState: false);
 
-      final ConnectionState connectionState =
-          container.read(connectionControllerProvider);
+        final ConnectionState connectionState = container.read(
+          connectionControllerProvider,
+        );
 
-      expect(refreshed, isNull);
-      expect(connectionState.status, ConnectionStatus.disconnected);
-      expect(connectionState.peer, isNull);
-      expect(connectionState.remoteSnapshot, isNull);
-      expect(connectionState.isRemoteDirectoryReady, isFalse);
-      expect(connectionState.errorMessage, isNotEmpty);
-    });
+        expect(refreshed, isNull);
+        expect(connectionState.status, ConnectionStatus.disconnected);
+        expect(connectionState.peer, isNull);
+        expect(connectionState.remoteSnapshot, isNull);
+        expect(connectionState.isRemoteDirectoryReady, isFalse);
+        expect(connectionState.errorMessage, isNotEmpty);
+      },
+    );
 
-    test('passive disconnect clears remote state and keeps local target root',
-        () async {
-      final _FakeConnectionService connectionService = _FakeConnectionService(
-        snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
-      );
-      final ProviderContainer container = ProviderContainer(
-        overrides: <Override>[
-          connectionServiceProvider.overrideWithValue(connectionService),
-          listenerServiceProvider.overrideWithValue(_FakeListenerService()),
-          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
-          fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
-        ],
-      );
-      addTearDown(container.dispose);
+    test(
+      'passive disconnect clears remote state and keeps local target root',
+      () async {
+        final _FakeConnectionService connectionService = _FakeConnectionService(
+          snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
+        );
+        final ProviderContainer container = ProviderContainer(
+          overrides: [
+            connectionServiceProvider.overrideWithValue(connectionService),
+            listenerServiceProvider.overrideWithValue(_FakeListenerService()),
+            recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+            fileAccessGatewayProvider.overrideWithValue(
+              _FakeFileAccessGateway(),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      await container.read(connectionControllerProvider.notifier).connect(
-            address: '192.168.1.2',
-            port: 44888,
-          );
-      container
-          .read(executionControllerProvider.notifier)
-          .setTargetRoot('local-target');
-      container.read(previewControllerProvider.notifier).loadPlan(
-            source: _localSnapshot(),
-            target: _remoteSnapshot('Remote A'),
-            deleteEnabled: true,
-          );
+        await container
+            .read(connectionControllerProvider.notifier)
+            .connect(address: '192.168.1.2', port: 44888);
+        container
+            .read(executionControllerProvider.notifier)
+            .setTargetRoot('local-target');
+        container
+            .read(previewControllerProvider.notifier)
+            .loadPlan(
+              source: _localSnapshot(),
+              target: _remoteSnapshot('Remote A'),
+              deleteEnabled: true,
+            );
 
-      connectionService.onDisconnected?.call(null);
-      await Future<void>.delayed(Duration.zero);
+        connectionService.onDisconnected?.call(null);
+        await Future<void>.delayed(Duration.zero);
 
-      final ConnectionState connectionState =
-          container.read(connectionControllerProvider);
-      final PreviewState previewState =
-          container.read(previewControllerProvider);
-      final ExecutionState executionState =
-          container.read(executionControllerProvider);
+        final ConnectionState connectionState = container.read(
+          connectionControllerProvider,
+        );
+        final PreviewState previewState = container.read(
+          previewControllerProvider,
+        );
+        final ExecutionState executionState = container.read(
+          executionControllerProvider,
+        );
 
-      expect(connectionState.status, ConnectionStatus.disconnected);
-      expect(connectionState.peer, isNull);
-      expect(connectionState.remoteSnapshot, isNull);
-      expect(connectionState.isRemoteDirectoryReady, isFalse);
-      expect(connectionState.errorMessage, isNotEmpty);
-      expect(previewState.status, PreviewStatus.idle);
-      expect(executionState.status, ExecutionStatus.idle);
-      expect(executionState.targetRoot, 'local-target');
-    });
+        expect(connectionState.status, ConnectionStatus.disconnected);
+        expect(connectionState.peer, isNull);
+        expect(connectionState.remoteSnapshot, isNull);
+        expect(connectionState.isRemoteDirectoryReady, isFalse);
+        expect(connectionState.errorMessage, isNotEmpty);
+        expect(previewState.status, PreviewStatus.idle);
+        expect(executionState.status, ExecutionStatus.idle);
+        expect(executionState.targetRoot, 'local-target');
+      },
+    );
 
     test('passive disconnect fails running remote execution', () async {
       final _FakeConnectionService connectionService = _FakeConnectionService(
         snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
       );
       final ProviderContainer container = ProviderContainer(
-        overrides: <Override>[
+        overrides: [
           connectionServiceProvider.overrideWithValue(connectionService),
           listenerServiceProvider.overrideWithValue(_FakeListenerService()),
           recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
@@ -415,12 +462,12 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await container.read(connectionControllerProvider.notifier).connect(
-            address: '192.168.1.2',
-            port: 44888,
-          );
-      container.read(executionControllerProvider.notifier).state =
-          const ExecutionState(
+      await container
+          .read(connectionControllerProvider.notifier)
+          .connect(address: '192.168.1.2', port: 44888);
+      container
+          .read(executionControllerProvider.notifier)
+          .state = const ExecutionState(
         status: ExecutionStatus.running,
         progress: TransferProgress(
           stage: SyncStage.copying,
@@ -434,7 +481,9 @@ void main() {
         mode: ExecutionMode.remote,
         targetRoot: 'remote-root',
       );
-      container.read(previewControllerProvider.notifier).loadPlan(
+      container
+          .read(previewControllerProvider.notifier)
+          .loadPlan(
             source: _localSnapshot(),
             target: _remoteSnapshot('Remote A'),
             deleteEnabled: true,
@@ -443,12 +492,15 @@ void main() {
       connectionService.onDisconnected?.call(null);
       await Future<void>.delayed(Duration.zero);
 
-      final ConnectionState connectionState =
-          container.read(connectionControllerProvider);
-      final PreviewState previewState =
-          container.read(previewControllerProvider);
-      final ExecutionState executionState =
-          container.read(executionControllerProvider);
+      final ConnectionState connectionState = container.read(
+        connectionControllerProvider,
+      );
+      final PreviewState previewState = container.read(
+        previewControllerProvider,
+      );
+      final ExecutionState executionState = container.read(
+        executionControllerProvider,
+      );
 
       expect(connectionState.status, ConnectionStatus.disconnected);
       expect(previewState.status, PreviewStatus.idle);
@@ -462,10 +514,11 @@ void main() {
       final _FakeListenerService listener = _FakeListenerService();
       final _TransferTrackingGateway gateway = _TransferTrackingGateway();
       final ProviderContainer container = ProviderContainer(
-        overrides: <Override>[
+        overrides: [
           connectionServiceProvider.overrideWithValue(
             _FakeConnectionService(
-                snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')]),
+              snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
+            ),
           ),
           listenerServiceProvider.overrideWithValue(listener),
           recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
@@ -500,9 +553,7 @@ void main() {
       await pair.client.sendRequest(
         type: 'finishCopy',
         requestId: 'req-3',
-        payload: const <String, Object?>{
-          'transferId': 'transfer-1',
-        },
+        payload: const <String, Object?>{'transferId': 'transfer-1'},
       );
 
       expect(gateway.entryNames, contains('song.mp3'));
@@ -512,60 +563,62 @@ void main() {
     });
 
     test(
-        'incoming remote copy deletes temp file when peer disconnects mid-transfer',
-        () async {
-      final _FakeListenerService listener = _FakeListenerService();
-      final _TransferTrackingGateway gateway = _TransferTrackingGateway();
-      final ProviderContainer container = ProviderContainer(
-        overrides: <Override>[
-          connectionServiceProvider.overrideWithValue(
-            _FakeConnectionService(
-                snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')]),
-          ),
-          listenerServiceProvider.overrideWithValue(listener),
-          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
-          fileAccessGatewayProvider.overrideWithValue(gateway),
-        ],
-      );
-      addTearDown(container.dispose);
+      'incoming remote copy deletes temp file when peer disconnects mid-transfer',
+      () async {
+        final _FakeListenerService listener = _FakeListenerService();
+        final _TransferTrackingGateway gateway = _TransferTrackingGateway();
+        final ProviderContainer container = ProviderContainer(
+          overrides: [
+            connectionServiceProvider.overrideWithValue(
+              _FakeConnectionService(
+                snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
+              ),
+            ),
+            listenerServiceProvider.overrideWithValue(listener),
+            recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+            fileAccessGatewayProvider.overrideWithValue(gateway),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      await container
-          .read(connectionControllerProvider.notifier)
-          .startListening(port: 44888);
-      final _PeerPair pair = await _PeerPair.open(listener.onClient!);
-      addTearDown(pair.close);
+        await container
+            .read(connectionControllerProvider.notifier)
+            .startListening(port: 44888);
+        final _PeerPair pair = await _PeerPair.open(listener.onClient!);
+        addTearDown(pair.close);
 
-      await pair.client.sendRequest(
-        type: 'beginCopy',
-        requestId: 'req-1',
-        payload: const <String, Object?>{
-          'remoteRootId': 'root',
-          'relativePath': 'Album/song.mp3',
-          'transferId': 'transfer-1',
-        },
-      );
-      await pair.client.sendRequest(
-        type: 'writeChunk',
-        requestId: 'req-2',
-        payload: <String, Object?>{
-          'transferId': 'transfer-1',
-          'data': base64Encode(utf8.encode('partial')),
-        },
-      );
+        await pair.client.sendRequest(
+          type: 'beginCopy',
+          requestId: 'req-1',
+          payload: const <String, Object?>{
+            'remoteRootId': 'root',
+            'relativePath': 'Album/song.mp3',
+            'transferId': 'transfer-1',
+          },
+        );
+        await pair.client.sendRequest(
+          type: 'writeChunk',
+          requestId: 'req-2',
+          payload: <String, Object?>{
+            'transferId': 'transfer-1',
+            'data': base64Encode(utf8.encode('partial')),
+          },
+        );
 
-      await pair.closeClientOnly();
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+        await pair.closeClientOnly();
+        await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      expect(gateway.entryNames, isNot(contains('song.mp3.music_sync_tmp')));
-      expect(gateway.deletedEntries, hasLength(1));
-    });
+        expect(gateway.entryNames, isNot(contains('song.mp3.music_sync_tmp')));
+        expect(gateway.deletedEntries, hasLength(1));
+      },
+    );
 
     test('remote entry detail request can return audio metadata', () async {
       final ListenerService listener = ListenerService();
       final _MetadataGateway gateway = await _MetadataGateway.create();
       const int port = 44991;
       final ProviderContainer server = ProviderContainer(
-        overrides: <Override>[
+        overrides: [
           connectionServiceProvider.overrideWithValue(
             _FakeConnectionService(
               snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
@@ -577,7 +630,7 @@ void main() {
         ],
       );
       final ProviderContainer client = ProviderContainer(
-        overrides: <Override>[
+        overrides: [
           connectionServiceProvider.overrideWithValue(ConnectionService()),
           listenerServiceProvider.overrideWithValue(_FakeListenerService()),
           recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
@@ -604,10 +657,9 @@ void main() {
       await server
           .read(connectionControllerProvider.notifier)
           .startListening(port: port);
-      await client.read(connectionControllerProvider.notifier).connect(
-            address: '127.0.0.1',
-            port: port,
-          );
+      await client
+          .read(connectionControllerProvider.notifier)
+          .connect(address: '127.0.0.1', port: port);
 
       final DiffEntryDetailViewData? detail = await client
           .read(connectionControllerProvider.notifier)
@@ -625,7 +677,7 @@ void main() {
       final _MetadataGateway gateway = await _MetadataGateway.create();
       const int port = 44992;
       final ProviderContainer server = ProviderContainer(
-        overrides: <Override>[
+        overrides: [
           connectionServiceProvider.overrideWithValue(
             _FakeConnectionService(
               snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
@@ -637,7 +689,7 @@ void main() {
         ],
       );
       final ProviderContainer client = ProviderContainer(
-        overrides: <Override>[
+        overrides: [
           connectionServiceProvider.overrideWithValue(ConnectionService()),
           listenerServiceProvider.overrideWithValue(_FakeListenerService()),
           recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
@@ -660,10 +712,9 @@ void main() {
       await server
           .read(connectionControllerProvider.notifier)
           .startListening(port: port);
-      await client.read(connectionControllerProvider.notifier).connect(
-            address: '127.0.0.1',
-            port: port,
-          );
+      await client
+          .read(connectionControllerProvider.notifier)
+          .connect(address: '127.0.0.1', port: port);
 
       final DiffEntryDetailViewData? detail = await client
           .read(connectionControllerProvider.notifier)
@@ -675,174 +726,194 @@ void main() {
     });
 
     test(
-        'clearing local directory fails running remote execution instead of resetting to idle',
-        () async {
-      final _FakeConnectionService connectionService = _FakeConnectionService(
-        snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
-      );
-      final ProviderContainer container = ProviderContainer(
-        overrides: <Override>[
-          connectionServiceProvider.overrideWithValue(connectionService),
-          listenerServiceProvider.overrideWithValue(_FakeListenerService()),
-          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
-          fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
-        ],
-      );
-      addTearDown(container.dispose);
+      'clearing local directory fails running remote execution instead of resetting to idle',
+      () async {
+        final _FakeConnectionService connectionService = _FakeConnectionService(
+          snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
+        );
+        final ProviderContainer container = ProviderContainer(
+          overrides: [
+            connectionServiceProvider.overrideWithValue(connectionService),
+            listenerServiceProvider.overrideWithValue(_FakeListenerService()),
+            recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+            fileAccessGatewayProvider.overrideWithValue(
+              _FakeFileAccessGateway(),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      container.read(directoryControllerProvider.notifier).setDirectory(
-            const DirectoryHandle(entryId: 'root', displayName: 'Music'),
-          );
-      await container.read(connectionControllerProvider.notifier).connect(
-            address: '192.168.1.2',
-            port: 44888,
-          );
-      container.read(executionControllerProvider.notifier).state =
-          const ExecutionState(
-        status: ExecutionStatus.running,
-        progress: TransferProgress(
-          stage: SyncStage.copying,
-          processedFiles: 1,
-          totalFiles: 3,
-          processedBytes: 64,
-          totalBytes: 256,
-          currentPath: 'Album/song.mp3',
-        ),
-        result: ExecutionResult.empty(),
-        mode: ExecutionMode.remote,
-        targetRoot: 'remote-root',
-      );
+        container
+            .read(directoryControllerProvider.notifier)
+            .setDirectory(
+              const DirectoryHandle(entryId: 'root', displayName: 'Music'),
+            );
+        await container
+            .read(connectionControllerProvider.notifier)
+            .connect(address: '192.168.1.2', port: 44888);
+        container
+            .read(executionControllerProvider.notifier)
+            .state = const ExecutionState(
+          status: ExecutionStatus.running,
+          progress: TransferProgress(
+            stage: SyncStage.copying,
+            processedFiles: 1,
+            totalFiles: 3,
+            processedBytes: 64,
+            totalBytes: 256,
+            currentPath: 'Album/song.mp3',
+          ),
+          result: ExecutionResult.empty(),
+          mode: ExecutionMode.remote,
+          targetRoot: 'remote-root',
+        );
 
-      await container
-          .read(directoryControllerProvider.notifier)
-          .clearDirectory();
+        await container
+            .read(directoryControllerProvider.notifier)
+            .clearDirectory();
 
-      final ExecutionState executionState =
-          container.read(executionControllerProvider);
-      final PreviewState previewState =
-          container.read(previewControllerProvider);
+        final ExecutionState executionState = container.read(
+          executionControllerProvider,
+        );
+        final PreviewState previewState = container.read(
+          previewControllerProvider,
+        );
 
-      expect(executionState.status, ExecutionStatus.failed);
-      expect(executionState.mode, ExecutionMode.remote);
-      expect(executionState.progress.stage, SyncStage.failed);
-      expect(executionState.errorMessage, isNotEmpty);
-      expect(previewState.status, PreviewStatus.idle);
-    });
+        expect(executionState.status, ExecutionStatus.failed);
+        expect(executionState.mode, ExecutionMode.remote);
+        expect(executionState.progress.stage, SyncStage.failed);
+        expect(executionState.errorMessage, isNotEmpty);
+        expect(previewState.status, PreviewStatus.idle);
+      },
+    );
 
-    test('passive incoming hello initializes remote directory ready state',
-        () async {
-      final _FakeListenerService listener = _FakeListenerService();
-      final ProviderContainer container = ProviderContainer(
-        overrides: <Override>[
-          listenerServiceProvider.overrideWithValue(listener),
-          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
-          fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
-        ],
-      );
-      addTearDown(container.dispose);
+    test(
+      'passive incoming hello initializes remote directory ready state',
+      () async {
+        final _FakeListenerService listener = _FakeListenerService();
+        final ProviderContainer container = ProviderContainer(
+          overrides: [
+            listenerServiceProvider.overrideWithValue(listener),
+            recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+            fileAccessGatewayProvider.overrideWithValue(
+              _FakeFileAccessGateway(),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      await container
-          .read(connectionControllerProvider.notifier)
-          .startListening(port: 44888);
+        await container
+            .read(connectionControllerProvider.notifier)
+            .startListening(port: 44888);
 
-      final _PeerPair pair = await _PeerPair.open((PeerSession session) {
-        listener.onClient?.call(session);
-      });
-      addTearDown(pair.close);
+        final _PeerPair pair = await _PeerPair.open((PeerSession session) {
+          listener.onClient?.call(session);
+        });
+        addTearDown(pair.close);
 
-      final ProtocolMessage response = await pair.client.sendRequest(
-        type: 'hello',
-        requestId: 'hello-1',
-        payload: <String, Object?>{
-          'device': const DeviceInfo(
-            deviceId: 'peer-device',
-            deviceName: 'Peer Device',
-            platform: 'android',
-            address: '192.168.1.10',
-            port: 44888,
-          ).toJson(),
-          'directoryReady': true,
-          'directoryDisplayName': 'Peer Music',
-        },
-      );
-
-      expect(response.type, 'helloAck');
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-
-      final ConnectionState connectionState =
-          container.read(connectionControllerProvider);
-      expect(connectionState.status, ConnectionStatus.connected);
-      expect(connectionState.peer?.deviceId, 'peer-device');
-      expect(connectionState.isRemoteDirectoryReady, isTrue);
-      expect(connectionState.remoteSnapshot, isNull);
-    });
-
-    test('passive incoming session applies remoteDirectoryChanged after hello',
-        () async {
-      final _FakeListenerService listener = _FakeListenerService();
-      final ProviderContainer container = ProviderContainer(
-        overrides: <Override>[
-          listenerServiceProvider.overrideWithValue(listener),
-          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
-          fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      await container
-          .read(connectionControllerProvider.notifier)
-          .startListening(port: 44888);
-
-      final _PeerPair pair = await _PeerPair.open((PeerSession session) {
-        listener.onClient?.call(session);
-      });
-      addTearDown(pair.close);
-
-      pair.client.onMessage = (ProtocolMessage message) {
-        if (message.type != 'scanRequest') {
-          return null;
-        }
-        return ProtocolMessage(
-          type: 'scanResponse',
-          requestId: message.requestId,
+        final ProtocolMessage response = await pair.client.sendRequest(
+          type: 'hello',
+          requestId: 'hello-1',
           payload: <String, Object?>{
-            'snapshot': _remoteSnapshot('Remote Passive').toJson(),
+            'device': const DeviceInfo(
+              deviceId: 'peer-device',
+              deviceName: 'Peer Device',
+              platform: 'android',
+              address: '192.168.1.10',
+              port: 44888,
+            ).toJson(),
+            'directoryReady': true,
+            'directoryDisplayName': 'Peer Music',
           },
         );
-      };
 
-      await pair.client.sendRequest(
-        type: 'hello',
-        requestId: 'hello-passive-1',
-        payload: <String, Object?>{
-          'device': const DeviceInfo(
-            deviceId: 'peer-device',
-            deviceName: 'Peer Device',
-            platform: 'android',
-            address: '192.168.1.10',
-            port: 44888,
-          ).toJson(),
-          'directoryReady': false,
-        },
-      );
+        expect(response.type, 'helloAck');
+        await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      await pair.client.sendMessage(
-        type: 'remoteDirectoryChanged',
-        requestId: 'rdc-1',
-        payload: const <String, Object?>{
-          'isReady': true,
-          'displayName': 'Peer Music',
-        },
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 30));
+        final ConnectionState connectionState = container.read(
+          connectionControllerProvider,
+        );
+        expect(connectionState.status, ConnectionStatus.connected);
+        expect(connectionState.peer?.deviceId, 'peer-device');
+        expect(connectionState.isRemoteDirectoryReady, isTrue);
+        expect(connectionState.remoteSnapshot, isNull);
+      },
+    );
 
-      final ConnectionState connectionState =
-          container.read(connectionControllerProvider);
-      expect(connectionState.status, ConnectionStatus.connected);
-      expect(connectionState.peer?.deviceId, 'peer-device');
-      expect(connectionState.isRemoteDirectoryReady, isTrue);
-      expect(connectionState.remoteSnapshot?.rootDisplayName, 'Remote Passive');
-    });
+    test(
+      'passive incoming session applies remoteDirectoryChanged after hello',
+      () async {
+        final _FakeListenerService listener = _FakeListenerService();
+        final ProviderContainer container = ProviderContainer(
+          overrides: [
+            listenerServiceProvider.overrideWithValue(listener),
+            recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+            fileAccessGatewayProvider.overrideWithValue(
+              _FakeFileAccessGateway(),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await container
+            .read(connectionControllerProvider.notifier)
+            .startListening(port: 44888);
+
+        final _PeerPair pair = await _PeerPair.open((PeerSession session) {
+          listener.onClient?.call(session);
+        });
+        addTearDown(pair.close);
+
+        pair.client.onMessage = (ProtocolMessage message) {
+          if (message.type != 'scanRequest') {
+            return null;
+          }
+          return ProtocolMessage(
+            type: 'scanResponse',
+            requestId: message.requestId,
+            payload: <String, Object?>{
+              'snapshot': _remoteSnapshot('Remote Passive').toJson(),
+            },
+          );
+        };
+
+        await pair.client.sendRequest(
+          type: 'hello',
+          requestId: 'hello-passive-1',
+          payload: <String, Object?>{
+            'device': const DeviceInfo(
+              deviceId: 'peer-device',
+              deviceName: 'Peer Device',
+              platform: 'android',
+              address: '192.168.1.10',
+              port: 44888,
+            ).toJson(),
+            'directoryReady': false,
+          },
+        );
+
+        await pair.client.sendMessage(
+          type: 'remoteDirectoryChanged',
+          requestId: 'rdc-1',
+          payload: const <String, Object?>{
+            'isReady': true,
+            'displayName': 'Peer Music',
+          },
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 30));
+
+        final ConnectionState connectionState = container.read(
+          connectionControllerProvider,
+        );
+        expect(connectionState.status, ConnectionStatus.connected);
+        expect(connectionState.peer?.deviceId, 'peer-device');
+        expect(connectionState.isRemoteDirectoryReady, isTrue);
+        expect(
+          connectionState.remoteSnapshot?.rootDisplayName,
+          'Remote Passive',
+        );
+      },
+    );
   });
 }
 
@@ -886,8 +957,9 @@ class _FakeConnectionService extends ConnectionService {
       _index++;
       throw SocketException(scanErrorMessage!);
     }
-    final int current =
-        _index < snapshots.length ? _index : snapshots.length - 1;
+    final int current = _index < snapshots.length
+        ? _index
+        : snapshots.length - 1;
     _index++;
     return snapshots[current];
   }
@@ -975,9 +1047,7 @@ class _FakeFileAccessGateway implements FileAccessGateway {
 
 class _TransferTrackingGateway implements FileAccessGateway {
   final Map<String, List<FileAccessEntry>> _childrenById =
-      <String, List<FileAccessEntry>>{
-    'root': const <FileAccessEntry>[],
-  };
+      <String, List<FileAccessEntry>>{'root': const <FileAccessEntry>[]};
   final Set<String> deletedEntries = <String>{};
   int renameCalls = 0;
 
@@ -1018,7 +1088,8 @@ class _TransferTrackingGateway implements FileAccessGateway {
   @override
   Future<List<FileAccessEntry>> listChildren(String directoryId) async =>
       List<FileAccessEntry>.from(
-          _childrenById[directoryId] ?? const <FileAccessEntry>[]);
+        _childrenById[directoryId] ?? const <FileAccessEntry>[],
+      );
 
   @override
   Stream<List<int>> openRead(String entryId) async* {}
@@ -1046,10 +1117,12 @@ class _TransferTrackingGateway implements FileAccessGateway {
   Future<String> renameEntry(String entryId, String newName) async {
     renameCalls++;
     final int slashIndex = entryId.lastIndexOf('/');
-    final String parentId =
-        slashIndex >= 0 ? entryId.substring(0, slashIndex) : '';
-    final String nextEntryId =
-        parentId.isEmpty ? newName : '$parentId/$newName';
+    final String parentId = slashIndex >= 0
+        ? entryId.substring(0, slashIndex)
+        : '';
+    final String nextEntryId = parentId.isEmpty
+        ? newName
+        : '$parentId/$newName';
     for (final String key in _childrenById.keys.toList()) {
       _childrenById[key] = _childrenById[key]!.map((FileAccessEntry entry) {
         if (entry.entryId != entryId) {
@@ -1160,11 +1233,15 @@ class _PeerPair {
   static Future<_PeerPair> open(
     FutureOr<void> Function(PeerSession session) onServerSession,
   ) async {
-    final ServerSocket server =
-        await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    final ServerSocket server = await ServerSocket.bind(
+      InternetAddress.loopbackIPv4,
+      0,
+    );
     final Future<Socket> accepted = server.first;
-    final Socket clientSocket =
-        await Socket.connect(InternetAddress.loopbackIPv4, server.port);
+    final Socket clientSocket = await Socket.connect(
+      InternetAddress.loopbackIPv4,
+      server.port,
+    );
     final Socket serverSocket = await accepted;
     final PeerSession serverSession = PeerSession(serverSocket);
     await onServerSession(serverSession);

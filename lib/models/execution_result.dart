@@ -20,11 +20,11 @@ class ExecutionResult {
 
 class _EmptyExecutionResult extends ExecutionResult {
   const _EmptyExecutionResult()
-      : super(
-          copiedCount: 0,
-          deletedCount: 0,
-          failedCount: 0,
-          totalBytes: 0,
-          targetRoot: '',
-        );
+    : super(
+        copiedCount: 0,
+        deletedCount: 0,
+        failedCount: 0,
+        totalBytes: 0,
+        targetRoot: '',
+      );
 }

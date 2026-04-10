@@ -1,11 +1,6 @@
 import 'package:music_sync/models/file_entry.dart';
 
-enum DiffType {
-  copy,
-  delete,
-  conflict,
-  skip,
-}
+enum DiffType { copy, delete, conflict, skip }
 
 class DiffItem {
   const DiffItem({

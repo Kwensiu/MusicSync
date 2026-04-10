@@ -5,19 +5,13 @@ abstract final class AppTheme {
   static ThemeData light({
     DynamicSchemeVariant variant = DynamicSchemeVariant.neutral,
   }) {
-    return _buildTheme(
-      brightness: Brightness.light,
-      variant: variant,
-    );
+    return _buildTheme(brightness: Brightness.light, variant: variant);
   }
 
   static ThemeData dark({
     DynamicSchemeVariant variant = DynamicSchemeVariant.neutral,
   }) {
-    return _buildTheme(
-      brightness: Brightness.dark,
-      variant: variant,
-    );
+    return _buildTheme(brightness: Brightness.dark, variant: variant);
   }
 
   static ThemeData _buildTheme({
@@ -74,8 +68,9 @@ abstract final class AppTheme {
           }
           return colorScheme.surfaceContainerHighest;
         }),
-        trackOutlineColor:
-            WidgetStateProperty.resolveWith((Set<WidgetState> states) {
+        trackOutlineColor: WidgetStateProperty.resolveWith((
+          Set<WidgetState> states,
+        ) {
           if (states.contains(WidgetState.selected)) {
             return colorScheme.primaryContainer;
           }

@@ -36,9 +36,8 @@ class FileEntry {
       sourceId: json['sourceId'] as String? ?? '',
       isDirectory: json['isDirectory'] as bool? ?? false,
       size: (json['size'] as num?)?.toInt() ?? 0,
-      modifiedTime: DateTime.tryParse(
-            json['modifiedTime'] as String? ?? '',
-          ) ??
+      modifiedTime:
+          DateTime.tryParse(json['modifiedTime'] as String? ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
       fingerprint: json['fingerprint'] as String?,
     );

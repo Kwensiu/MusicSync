@@ -31,11 +31,7 @@ class PlanItemList extends StatefulWidget {
 }
 
 class PlanItemEmptyState extends StatelessWidget {
-  const PlanItemEmptyState({
-    required this.message,
-    super.key,
-    this.header,
-  });
+  const PlanItemEmptyState({required this.message, super.key, this.header});
 
   final String message;
   final Widget? header;
@@ -57,10 +53,7 @@ class PlanItemEmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            if (header != null) ...<Widget>[
-              header!,
-              const SizedBox(height: 6),
-            ],
+            if (header != null) ...<Widget>[header!, const SizedBox(height: 6)],
             Padding(
               padding: EdgeInsets.zero,
               child: DecoratedBox(
@@ -74,8 +67,10 @@ class PlanItemEmptyState extends StatelessWidget {
                   ),
                 ),
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 18,
+                  ),
                   child: Center(
                     child: Text(
                       message,
@@ -116,16 +111,19 @@ class _PlanItemListState extends State<PlanItemList> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
-    final BorderRadius innerListBorderRadius =
-        widget.header == null ? widget.borderRadius : BorderRadius.circular(16);
+    final BorderRadius innerListBorderRadius = widget.header == null
+        ? widget.borderRadius
+        : BorderRadius.circular(16);
     final double containerTopPadding = widget.header == null ? 0 : 8;
     final double verticalPadding = widget.contentPadding.vertical;
-    final double separatorsHeight =
-        widget.items.isEmpty ? 0 : (widget.items.length - 1) * _separatorHeight;
+    final double separatorsHeight = widget.items.isEmpty
+        ? 0
+        : (widget.items.length - 1) * _separatorHeight;
     final double desiredListHeight =
         (widget.items.length * _rowHeight) + separatorsHeight + verticalPadding;
-    final double resolvedListHeight =
-        desiredListHeight.clamp(0, widget.maxHeight).toDouble();
+    final double resolvedListHeight = desiredListHeight
+        .clamp(0, widget.maxHeight)
+        .toDouble();
 
     return Container(
       clipBehavior: Clip.antiAlias,
@@ -134,15 +132,15 @@ class _PlanItemListState extends State<PlanItemList> {
         borderRadius: widget.borderRadius,
         border: Border(
           top: widget.showTopBorder
-              ? BorderSide(
-                  color: scheme.outlineVariant.withValues(alpha: 1.0),
-                )
+              ? BorderSide(color: scheme.outlineVariant.withValues(alpha: 1.0))
               : BorderSide.none,
           left: BorderSide(color: scheme.outlineVariant.withValues(alpha: 1.0)),
-          right:
-              BorderSide(color: scheme.outlineVariant.withValues(alpha: 1.0)),
-          bottom:
-              BorderSide(color: scheme.outlineVariant.withValues(alpha: 1.0)),
+          right: BorderSide(
+            color: scheme.outlineVariant.withValues(alpha: 1.0),
+          ),
+          bottom: BorderSide(
+            color: scheme.outlineVariant.withValues(alpha: 1.0),
+          ),
         ),
       ),
       child: Padding(
@@ -176,8 +174,9 @@ class _PlanItemListState extends State<PlanItemList> {
                           return Divider(
                             height: _separatorHeight,
                             thickness: _separatorHeight,
-                            color:
-                                scheme.outlineVariant.withValues(alpha: 0.32),
+                            color: scheme.outlineVariant.withValues(
+                              alpha: 0.32,
+                            ),
                           );
                         },
                         itemBuilder: (BuildContext context, int index) {
@@ -235,10 +234,7 @@ class _PlanItemListState extends State<PlanItemList> {
 }
 
 class _TypeBadge extends StatelessWidget {
-  const _TypeBadge({
-    required this.type,
-    this.reason,
-  });
+  const _TypeBadge({required this.type, this.reason});
 
   final DiffType type;
   final String? reason;
@@ -246,22 +242,10 @@ class _TypeBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (Color background, Color foreground) = switch (type) {
-      DiffType.copy => (
-          const Color(0xFFD9F2E3),
-          const Color(0xFF0B5D2A),
-        ),
-      DiffType.delete => (
-          const Color(0xFFFBE2D8),
-          const Color(0xFFA33D12),
-        ),
-      DiffType.conflict => (
-          const Color(0xFFF9E1CF),
-          const Color(0xFF8A4100),
-        ),
-      DiffType.skip => (
-          const Color(0xFFE7EAF0),
-          const Color(0xFF425466),
-        ),
+      DiffType.copy => (const Color(0xFFD9F2E3), const Color(0xFF0B5D2A)),
+      DiffType.delete => (const Color(0xFFFBE2D8), const Color(0xFFA33D12)),
+      DiffType.conflict => (const Color(0xFFF9E1CF), const Color(0xFF8A4100)),
+      DiffType.skip => (const Color(0xFFE7EAF0), const Color(0xFF425466)),
     };
 
     return Container(
@@ -273,10 +257,10 @@ class _TypeBadge extends StatelessWidget {
       child: Text(
         _label(context),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: foreground,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
-            ),
+          color: foreground,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.2,
+        ),
       ),
     );
   }

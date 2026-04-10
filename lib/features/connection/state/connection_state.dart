@@ -2,13 +2,7 @@ import 'package:music_sync/core/errors/app_error_localizer.dart';
 import 'package:music_sync/models/device_info.dart';
 import 'package:music_sync/models/scan_snapshot.dart';
 
-enum ConnectionStatus {
-  idle,
-  connecting,
-  connected,
-  disconnected,
-  failed,
-}
+enum ConnectionStatus { idle, connecting, connected, disconnected, failed }
 
 class ConnectionState {
   const ConnectionState({

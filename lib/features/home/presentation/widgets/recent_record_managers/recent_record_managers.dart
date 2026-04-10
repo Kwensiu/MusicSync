@@ -19,13 +19,16 @@ class RecentDirectoryManagerDialog extends StatefulWidget {
   final Future<void> Function(RecentDirectoryRecord record) onUse;
   final Future<List<RecentDirectoryRecord>> Function(
     List<RecentDirectoryRecord> records,
-  ) onReorder;
+  )
+  onReorder;
   final Future<List<RecentDirectoryRecord>> Function(
     RecentDirectoryRecord record,
-  ) onEdit;
+  )
+  onEdit;
   final Future<List<RecentDirectoryRecord>> Function(
     RecentDirectoryRecord record,
-  ) onDelete;
+  )
+  onDelete;
 
   @override
   State<RecentDirectoryManagerDialog> createState() =>
@@ -52,13 +55,10 @@ class _RecentDirectoryManagerDialogState
             ? Center(child: Text(context.l10n.homeRecentEmpty))
             : ReorderableListView.builder(
                 buildDefaultDragHandles: false,
-                proxyDecorator: (
-                  Widget child,
-                  int index,
-                  Animation<double> animation,
-                ) {
-                  return child;
-                },
+                proxyDecorator:
+                    (Widget child, int index, Animation<double> animation) {
+                      return child;
+                    },
                 itemCount: _records.length,
                 onReorder: (int oldIndex, int newIndex) async {
                   if (newIndex > oldIndex) {
@@ -71,8 +71,8 @@ class _RecentDirectoryManagerDialogState
                   setState(() {
                     _records = next;
                   });
-                  final List<RecentDirectoryRecord> refreshed =
-                      await widget.onReorder(next);
+                  final List<RecentDirectoryRecord> refreshed = await widget
+                      .onReorder(next);
                   if (!mounted) {
                     return;
                   }
@@ -89,12 +89,12 @@ class _RecentDirectoryManagerDialogState
                     ),
                     child: RecentRecordCard(
                       title: record.label,
-                      subtitle: record.note == null ||
-                              record.note!.trim().isEmpty
+                      subtitle:
+                          record.note == null || record.note!.trim().isEmpty
                           ? null
                           : record.handle.displayName == record.label
-                              ? formatDisplayPath(record.handle.entryId)
-                              : formatDisplayPath(record.handle.displayName),
+                          ? formatDisplayPath(record.handle.entryId)
+                          : formatDisplayPath(record.handle.displayName),
                       dragHandle: ReorderableDragStartListener(
                         index: index,
                         child: Icon(
@@ -150,13 +150,12 @@ class RecentAddressManagerDialog extends StatefulWidget {
   final Future<void> Function(RecentAddressRecord record) onUse;
   final Future<List<RecentAddressRecord>> Function(
     List<RecentAddressRecord> records,
-  ) onReorder;
-  final Future<List<RecentAddressRecord>> Function(
-    RecentAddressRecord record,
-  ) onEdit;
-  final Future<List<RecentAddressRecord>> Function(
-    RecentAddressRecord record,
-  ) onDelete;
+  )
+  onReorder;
+  final Future<List<RecentAddressRecord>> Function(RecentAddressRecord record)
+  onEdit;
+  final Future<List<RecentAddressRecord>> Function(RecentAddressRecord record)
+  onDelete;
 
   @override
   State<RecentAddressManagerDialog> createState() =>
@@ -183,13 +182,10 @@ class _RecentAddressManagerDialogState
             ? Center(child: Text(context.l10n.homeRecentEmpty))
             : ReorderableListView.builder(
                 buildDefaultDragHandles: false,
-                proxyDecorator: (
-                  Widget child,
-                  int index,
-                  Animation<double> animation,
-                ) {
-                  return child;
-                },
+                proxyDecorator:
+                    (Widget child, int index, Animation<double> animation) {
+                      return child;
+                    },
                 itemCount: _records.length,
                 onReorder: (int oldIndex, int newIndex) async {
                   if (newIndex > oldIndex) {
@@ -202,8 +198,8 @@ class _RecentAddressManagerDialogState
                   setState(() {
                     _records = next;
                   });
-                  final List<RecentAddressRecord> refreshed =
-                      await widget.onReorder(next);
+                  final List<RecentAddressRecord> refreshed = await widget
+                      .onReorder(next);
                   if (!mounted) {
                     return;
                   }
@@ -235,8 +231,8 @@ class _RecentAddressManagerDialogState
                         await widget.onUse(record);
                       },
                       onEditRecord: () async {
-                        final List<RecentAddressRecord> refreshed =
-                            await widget.onEdit(record);
+                        final List<RecentAddressRecord> refreshed = await widget
+                            .onEdit(record);
                         if (!mounted) {
                           return;
                         }
@@ -245,8 +241,8 @@ class _RecentAddressManagerDialogState
                         });
                       },
                       onDelete: () async {
-                        final List<RecentAddressRecord> refreshed =
-                            await widget.onDelete(record);
+                        final List<RecentAddressRecord> refreshed = await widget
+                            .onDelete(record);
                         if (!mounted) {
                           return;
                         }

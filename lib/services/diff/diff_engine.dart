@@ -14,8 +14,7 @@ class DiffEngine {
     final List<String> allPaths = <String>{
       ...sourceEntries.keys,
       ...targetEntries.keys,
-    }.toList()
-      ..sort();
+    }.toList()..sort();
 
     final List<DiffItem> copyItems = <DiffItem>[];
     final List<DiffItem> deleteItems = <DiffItem>[];
@@ -28,7 +27,10 @@ class DiffEngine {
       if (sourceEntry != null && targetEntry == null) {
         copyItems.add(
           DiffItem(
-              type: DiffType.copy, relativePath: path, source: sourceEntry),
+            type: DiffType.copy,
+            relativePath: path,
+            source: sourceEntry,
+          ),
         );
         continue;
       }
@@ -37,7 +39,10 @@ class DiffEngine {
         if (deleteEnabled) {
           deleteItems.add(
             DiffItem(
-                type: DiffType.delete, relativePath: path, target: targetEntry),
+              type: DiffType.delete,
+              relativePath: path,
+              target: targetEntry,
+            ),
           );
         }
         continue;
@@ -47,7 +52,8 @@ class DiffEngine {
         continue;
       }
 
-      final bool isSame = sourceEntry.size == targetEntry.size &&
+      final bool isSame =
+          sourceEntry.size == targetEntry.size &&
           sourceEntry.modifiedTime == targetEntry.modifiedTime;
 
       if (!isSame) {

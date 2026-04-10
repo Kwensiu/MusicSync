@@ -14,19 +14,20 @@ final Provider<LocalSyncExecutor> localSyncExecutorProvider =
     Provider<LocalSyncExecutor>((Ref ref) => LocalSyncExecutor());
 final Provider<RemoteSyncExecutor> remoteSyncExecutorProvider =
     Provider<RemoteSyncExecutor>(
-  (Ref ref) => RemoteSyncExecutor(
-    ref.watch(connectionServiceProvider),
-    ref.watch(fileAccessGatewayProvider),
-  ),
-);
+      (Ref ref) => RemoteSyncExecutor(
+        ref.watch(connectionServiceProvider),
+        ref.watch(fileAccessGatewayProvider),
+      ),
+    );
 
-class ExecutionController extends StateNotifier<ExecutionState> {
-  ExecutionController(this._executor, this._remoteExecutor)
-      : super(ExecutionState.initial());
-
-  final LocalSyncExecutor _executor;
-  final RemoteSyncExecutor _remoteExecutor;
+class ExecutionController extends Notifier<ExecutionState> {
+  LocalSyncExecutor get _executor => ref.read(localSyncExecutorProvider);
+  RemoteSyncExecutor get _remoteExecutor =>
+      ref.read(remoteSyncExecutorProvider);
   SyncCancelToken? _cancelToken;
+
+  @override
+  ExecutionState build() => ExecutionState.initial();
 
   void _cancelActiveExecution() {
     _cancelToken?.cancel();
@@ -311,11 +312,8 @@ class ExecutionController extends StateNotifier<ExecutionState> {
   }
 }
 
-final StateNotifierProvider<ExecutionController, ExecutionState>
-    executionControllerProvider =
-    StateNotifierProvider<ExecutionController, ExecutionState>(
-  (Ref ref) => ExecutionController(
-    ref.watch(localSyncExecutorProvider),
-    ref.watch(remoteSyncExecutorProvider),
-  ),
-);
+final NotifierProvider<ExecutionController, ExecutionState>
+executionControllerProvider =
+    NotifierProvider<ExecutionController, ExecutionState>(
+      ExecutionController.new,
+    );

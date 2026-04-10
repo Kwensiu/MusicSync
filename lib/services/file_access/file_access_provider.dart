@@ -6,12 +6,12 @@ import 'package:music_sync/services/file_access/windows_file_access_gateway.dart
 
 final Provider<FileAccessGateway> fileAccessGatewayProvider =
     Provider<FileAccessGateway>((Ref ref) {
-  switch (defaultTargetPlatform) {
-    case TargetPlatform.android:
-      return AndroidFileAccessGateway();
-    case TargetPlatform.windows:
-      return WindowsFileAccessGateway();
-    default:
-      return WindowsFileAccessGateway();
-  }
-});
+      switch (defaultTargetPlatform) {
+        case TargetPlatform.android:
+          return AndroidFileAccessGateway();
+        case TargetPlatform.windows:
+          return WindowsFileAccessGateway();
+        default:
+          return WindowsFileAccessGateway();
+      }
+    });

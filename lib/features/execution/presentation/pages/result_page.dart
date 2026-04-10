@@ -34,15 +34,27 @@ class ResultPage extends ConsumerWidget {
                   _localizedExecutionStatus(context, executionState.status),
                 ),
               ),
-              Text(context.l10n
-                  .resultCopiedCount(executionState.result.copiedCount)),
-              Text(context.l10n
-                  .resultDeletedCount(executionState.result.deletedCount)),
-              Text(context.l10n
-                  .resultFailedCount(executionState.result.failedCount)),
+              Text(
+                context.l10n.resultCopiedCount(
+                  executionState.result.copiedCount,
+                ),
+              ),
+              Text(
+                context.l10n.resultDeletedCount(
+                  executionState.result.deletedCount,
+                ),
+              ),
+              Text(
+                context.l10n.resultFailedCount(
+                  executionState.result.failedCount,
+                ),
+              ),
               if (executionState.result.targetRoot.isNotEmpty)
-                Text(context.l10n
-                    .resultTargetRoot(executionState.result.targetRoot)),
+                Text(
+                  context.l10n.resultTargetRoot(
+                    executionState.result.targetRoot,
+                  ),
+                ),
               if (executionState.result.totalBytes > 0)
                 Text(formatBytes(executionState.result.totalBytes)),
               if (executionState.errorMessage != null) ...<Widget>[
@@ -52,8 +64,12 @@ class ResultPage extends ConsumerWidget {
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(height: 4),
-                Text(AppErrorLocalizer.localize(
-                    context, executionState.errorMessage!)),
+                Text(
+                  AppErrorLocalizer.localize(
+                    context,
+                    executionState.errorMessage!,
+                  ),
+                ),
                 const SizedBox(height: 8),
                 Text(
                   context.l10n.resultAdviceTitle,

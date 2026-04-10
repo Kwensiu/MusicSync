@@ -40,10 +40,7 @@ class RecentRecordCard extends StatelessWidget {
               if (dragHandle != null)
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
-                  child: SizedBox(
-                    width: 24,
-                    child: Center(child: dragHandle!),
-                  ),
+                  child: SizedBox(width: 24, child: Center(child: dragHandle!)),
                 ),
               Expanded(
                 child: Row(
@@ -66,9 +63,7 @@ class RecentRecordCard extends StatelessWidget {
                                   subtitle!,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
+                                  style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
                                         color: scheme.onSurfaceVariant,
                                         height: 1.15,

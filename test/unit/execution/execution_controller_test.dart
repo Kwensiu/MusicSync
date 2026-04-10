@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:music_sync/core/errors/app_error_localizer.dart';
 import 'package:music_sync/features/execution/state/execution_controller.dart';
@@ -16,78 +17,88 @@ import 'package:music_sync/services/sync/sync_cancel_token.dart';
 
 void main() {
   group('ExecutionController', () {
-    test('clearTransient keeps target root and clears transient result state',
-        () {
-      final controller = ExecutionController(
-        _FakeLocalSyncExecutor(
+    test(
+      'clearTransient keeps target root and clears transient result state',
+      () {
+        final bundle = _createController(
+          localExecutor: _FakeLocalSyncExecutor(
+            result: const ExecutionResult(
+              copiedCount: 1,
+              deletedCount: 0,
+              failedCount: 0,
+              totalBytes: 12,
+              targetRoot: 'target',
+            ),
+          ),
+          remoteExecutor: _FakeRemoteSyncExecutor(),
+        );
+        addTearDown(bundle.container.dispose);
+        final controller = bundle.controller;
+
+        controller.setTargetRoot('local-target');
+        controller.state = ExecutionState(
+          status: ExecutionStatus.completed,
+          progress: controller.state.progress,
           result: const ExecutionResult(
-            copiedCount: 1,
-            deletedCount: 0,
+            copiedCount: 2,
+            deletedCount: 1,
             failedCount: 0,
-            totalBytes: 12,
-            targetRoot: 'target',
-          ),
-        ),
-        _FakeRemoteSyncExecutor(),
-      );
-
-      controller.setTargetRoot('local-target');
-      controller.state = ExecutionState(
-        status: ExecutionStatus.completed,
-        progress: controller.state.progress,
-        result: const ExecutionResult(
-          copiedCount: 2,
-          deletedCount: 1,
-          failedCount: 0,
-          totalBytes: 128,
-          targetRoot: 'local-target',
-        ),
-        mode: ExecutionMode.local,
-        targetRoot: 'local-target',
-      );
-
-      controller.clearTransient();
-
-      expect(controller.state.status, ExecutionStatus.idle);
-      expect(controller.state.targetRoot, 'local-target');
-      expect(controller.state.result.copiedCount, 0);
-      expect(controller.state.mode, ExecutionMode.none);
-    });
-
-    test('completed execution with failures keeps localized error message',
-        () async {
-      final controller = ExecutionController(
-        _FakeLocalSyncExecutor(
-          result: const ExecutionResult(
-            copiedCount: 0,
-            deletedCount: 0,
-            failedCount: 1,
-            totalBytes: 0,
+            totalBytes: 128,
             targetRoot: 'local-target',
-            lastError:
-                'SocketException: Remote device disconnected. Keep the target device in foreground and try again.',
           ),
-        ),
-        _FakeRemoteSyncExecutor(),
-      );
+          mode: ExecutionMode.local,
+          targetRoot: 'local-target',
+        );
 
-      await controller.execute(
-        plan: SyncPlan.empty(),
-        targetRoot: 'local-target',
-      );
+        controller.clearTransient();
 
-      expect(controller.state.status, ExecutionStatus.completed);
-      expect(
-        controller.state.errorMessage,
-        AppErrorCode.remoteDeviceDisconnected,
-      );
-    });
+        expect(controller.state.status, ExecutionStatus.idle);
+        expect(controller.state.targetRoot, 'local-target');
+        expect(controller.state.result.copiedCount, 0);
+        expect(controller.state.mode, ExecutionMode.none);
+      },
+    );
+
+    test(
+      'completed execution with failures keeps localized error message',
+      () async {
+        final bundle = _createController(
+          localExecutor: _FakeLocalSyncExecutor(
+            result: const ExecutionResult(
+              copiedCount: 0,
+              deletedCount: 0,
+              failedCount: 1,
+              totalBytes: 0,
+              targetRoot: 'local-target',
+              lastError:
+                  'SocketException: Remote device disconnected. Keep the target device in foreground and try again.',
+            ),
+          ),
+          remoteExecutor: _FakeRemoteSyncExecutor(),
+        );
+        addTearDown(bundle.container.dispose);
+        final controller = bundle.controller;
+
+        await controller.execute(
+          plan: SyncPlan.empty(),
+          targetRoot: 'local-target',
+        );
+
+        expect(controller.state.status, ExecutionStatus.completed);
+        expect(
+          controller.state.errorMessage,
+          AppErrorCode.remoteDeviceDisconnected,
+        );
+      },
+    );
 
     test('cancel marks execution as cancelled', () async {
-      final controller = ExecutionController(
-        _BlockingLocalSyncExecutor(),
-        _FakeRemoteSyncExecutor(),
+      final bundle = _createController(
+        localExecutor: _BlockingLocalSyncExecutor(),
+        remoteExecutor: _FakeRemoteSyncExecutor(),
       );
+      addTearDown(bundle.container.dispose);
+      final controller = bundle.controller;
 
       final Future<void> run = controller.execute(
         plan: SyncPlan.empty(),
@@ -102,10 +113,12 @@ void main() {
     });
 
     test('cancelled local execution can run again', () async {
-      final controller = ExecutionController(
-        _BlockingLocalSyncExecutor(),
-        _FakeRemoteSyncExecutor(),
+      final bundle = _createController(
+        localExecutor: _BlockingLocalSyncExecutor(),
+        remoteExecutor: _FakeRemoteSyncExecutor(),
       );
+      addTearDown(bundle.container.dispose);
+      final controller = bundle.controller;
 
       final Future<void> firstRun = controller.execute(
         plan: SyncPlan.empty(),
@@ -126,58 +139,72 @@ void main() {
       expect(controller.state.targetRoot, 'local-target');
     });
 
-    test('cancel marks remote execution as cancelled and allows retry',
-        () async {
-      final controller = ExecutionController(
-        _FakeLocalSyncExecutor(result: const ExecutionResult.empty()),
-        _BlockingRemoteSyncExecutor(),
-      );
+    test(
+      'cancel marks remote execution as cancelled and allows retry',
+      () async {
+        final bundle = _createController(
+          localExecutor: _FakeLocalSyncExecutor(
+            result: const ExecutionResult.empty(),
+          ),
+          remoteExecutor: _BlockingRemoteSyncExecutor(),
+        );
+        addTearDown(bundle.container.dispose);
+        final controller = bundle.controller;
 
-      final Future<void> firstRun = controller.executeRemote(
-        plan: SyncPlan.empty(),
-        remoteRootId: 'remote-root',
-      );
-      controller.cancel();
-      await firstRun;
+        final Future<void> firstRun = controller.executeRemote(
+          plan: SyncPlan.empty(),
+          remoteRootId: 'remote-root',
+        );
+        controller.cancel();
+        await firstRun;
 
-      expect(controller.state.status, ExecutionStatus.cancelled);
-      expect(controller.state.mode, ExecutionMode.remote);
-      expect(controller.state.errorMessage, AppErrorCode.syncCancelled);
+        expect(controller.state.status, ExecutionStatus.cancelled);
+        expect(controller.state.mode, ExecutionMode.remote);
+        expect(controller.state.errorMessage, AppErrorCode.syncCancelled);
 
-      await controller.executeRemote(
-        plan: SyncPlan.empty(),
-        remoteRootId: 'remote-root',
-      );
+        await controller.executeRemote(
+          plan: SyncPlan.empty(),
+          remoteRootId: 'remote-root',
+        );
 
-      expect(controller.state.status, ExecutionStatus.completed);
-      expect(controller.state.mode, ExecutionMode.remote);
-      expect(controller.state.targetRoot, 'remote-root');
-    });
+        expect(controller.state.status, ExecutionStatus.completed);
+        expect(controller.state.mode, ExecutionMode.remote);
+        expect(controller.state.targetRoot, 'remote-root');
+      },
+    );
 
-    test('clearTransient cancels in-flight execution and preserves idle state',
-        () async {
-      final controller = ExecutionController(
-        _BlockingLocalSyncExecutor(),
-        _FakeRemoteSyncExecutor(),
-      );
+    test(
+      'clearTransient cancels in-flight execution and preserves idle state',
+      () async {
+        final bundle = _createController(
+          localExecutor: _BlockingLocalSyncExecutor(),
+          remoteExecutor: _FakeRemoteSyncExecutor(),
+        );
+        addTearDown(bundle.container.dispose);
+        final controller = bundle.controller;
 
-      final Future<void> run = controller.execute(
-        plan: SyncPlan.empty(),
-        targetRoot: 'local-target',
-      );
-      controller.clearTransient();
-      await run;
+        final Future<void> run = controller.execute(
+          plan: SyncPlan.empty(),
+          targetRoot: 'local-target',
+        );
+        controller.clearTransient();
+        await run;
 
-      expect(controller.state.status, ExecutionStatus.idle);
-      expect(controller.state.mode, ExecutionMode.none);
-      expect(controller.state.targetRoot, 'local-target');
-    });
+        expect(controller.state.status, ExecutionStatus.idle);
+        expect(controller.state.mode, ExecutionMode.none);
+        expect(controller.state.targetRoot, 'local-target');
+      },
+    );
 
     test('failActiveExecution marks running remote execution as failed', () {
-      final controller = ExecutionController(
-        _FakeLocalSyncExecutor(result: const ExecutionResult.empty()),
-        _FakeRemoteSyncExecutor(),
+      final bundle = _createController(
+        localExecutor: _FakeLocalSyncExecutor(
+          result: const ExecutionResult.empty(),
+        ),
+        remoteExecutor: _FakeRemoteSyncExecutor(),
       );
+      addTearDown(bundle.container.dispose);
+      final controller = bundle.controller;
 
       controller.state = const ExecutionState(
         status: ExecutionStatus.running,
@@ -205,43 +232,51 @@ void main() {
     });
 
     test(
-        'stale remote progress does not overwrite failed state after active execution is failed',
-        () async {
-      final _ProgressControlledRemoteSyncExecutor remoteExecutor =
-          _ProgressControlledRemoteSyncExecutor();
-      final controller = ExecutionController(
-        _FakeLocalSyncExecutor(result: const ExecutionResult.empty()),
-        remoteExecutor,
-      );
+      'stale remote progress does not overwrite failed state after active execution is failed',
+      () async {
+        final _ProgressControlledRemoteSyncExecutor remoteExecutor =
+            _ProgressControlledRemoteSyncExecutor();
+        final bundle = _createController(
+          localExecutor: _FakeLocalSyncExecutor(
+            result: const ExecutionResult.empty(),
+          ),
+          remoteExecutor: remoteExecutor,
+        );
+        addTearDown(bundle.container.dispose);
+        final controller = bundle.controller;
 
-      final Future<void> run = controller.executeRemote(
-        plan: SyncPlan.empty(),
-        remoteRootId: 'remote-root',
-      );
+        final Future<void> run = controller.executeRemote(
+          plan: SyncPlan.empty(),
+          remoteRootId: 'remote-root',
+        );
 
-      await remoteExecutor.started.future;
-      controller.failActiveExecution(
-        'The selected directory is not accessible anymore.',
-      );
+        await remoteExecutor.started.future;
+        controller.failActiveExecution(
+          'The selected directory is not accessible anymore.',
+        );
 
-      remoteExecutor.emitProgress(
-        const TransferProgress(
-          stage: SyncStage.copying,
-          processedFiles: 1,
-          totalFiles: 4,
-          processedBytes: 64,
-          totalBytes: 256,
-          currentPath: 'Album/song.mp3',
-        ),
-      );
-      remoteExecutor.complete();
-      await run;
+        remoteExecutor.emitProgress(
+          const TransferProgress(
+            stage: SyncStage.copying,
+            processedFiles: 1,
+            totalFiles: 4,
+            processedBytes: 64,
+            totalBytes: 256,
+            currentPath: 'Album/song.mp3',
+          ),
+        );
+        remoteExecutor.complete();
+        await run;
 
-      expect(controller.state.status, ExecutionStatus.failed);
-      expect(controller.state.mode, ExecutionMode.remote);
-      expect(controller.state.progress.stage, SyncStage.failed);
-      expect(controller.state.errorMessage, AppErrorCode.directoryUnavailable);
-    });
+        expect(controller.state.status, ExecutionStatus.failed);
+        expect(controller.state.mode, ExecutionMode.remote);
+        expect(controller.state.progress.stage, SyncStage.failed);
+        expect(
+          controller.state.errorMessage,
+          AppErrorCode.directoryUnavailable,
+        );
+      },
+    );
   });
 }
 
@@ -261,6 +296,23 @@ class _FakeLocalSyncExecutor extends LocalSyncExecutor {
   }
 }
 
+({ProviderContainer container, ExecutionController controller})
+_createController({
+  required LocalSyncExecutor localExecutor,
+  required RemoteSyncExecutor remoteExecutor,
+}) {
+  final ProviderContainer container = ProviderContainer(
+    overrides: [
+      localSyncExecutorProvider.overrideWithValue(localExecutor),
+      remoteSyncExecutorProvider.overrideWithValue(remoteExecutor),
+    ],
+  );
+  return (
+    container: container,
+    controller: container.read(executionControllerProvider.notifier),
+  );
+}
+
 class _BlockingLocalSyncExecutor extends LocalSyncExecutor {
   @override
   Future<ExecutionResult> execute({
@@ -277,12 +329,12 @@ class _BlockingLocalSyncExecutor extends LocalSyncExecutor {
 
 class _FakeRemoteSyncExecutor extends RemoteSyncExecutor {
   _FakeRemoteSyncExecutor()
-      : super(_NoopConnectionService(), _NoopFileAccessGateway());
+    : super(_NoopConnectionService(), _NoopFileAccessGateway());
 }
 
 class _BlockingRemoteSyncExecutor extends RemoteSyncExecutor {
   _BlockingRemoteSyncExecutor()
-      : super(_NoopConnectionService(), _NoopFileAccessGateway());
+    : super(_NoopConnectionService(), _NoopFileAccessGateway());
 
   @override
   Future<ExecutionResult> execute({
@@ -305,7 +357,7 @@ class _BlockingRemoteSyncExecutor extends RemoteSyncExecutor {
 
 class _ProgressControlledRemoteSyncExecutor extends RemoteSyncExecutor {
   _ProgressControlledRemoteSyncExecutor()
-      : super(_NoopConnectionService(), _NoopFileAccessGateway());
+    : super(_NoopConnectionService(), _NoopFileAccessGateway());
 
   final Completer<void> started = Completer<void>();
   final Completer<void> _finish = Completer<void>();

@@ -23,17 +23,19 @@ void main() {
       );
       final TempFileCleanupService service = TempFileCleanupService(gateway);
 
-      final TempFileCleanupResult result =
-          await service.cleanup(rootId: 'root');
+      final TempFileCleanupResult result = await service.cleanup(
+        rootId: 'root',
+      );
 
       expect(result.deletedCount, 2);
       expect(result.failedPaths, isEmpty);
       expect(
-          gateway.deletedEntryIds,
-          containsAll(<String>[
-            'root/song.mp3.music_sync_tmp',
-            'root/album/track.flac.music_sync_tmp',
-          ]));
+        gateway.deletedEntryIds,
+        containsAll(<String>[
+          'root/song.mp3.music_sync_tmp',
+          'root/album/track.flac.music_sync_tmp',
+        ]),
+      );
     });
 
     test('collects failed paths without aborting the whole cleanup', () async {
@@ -48,8 +50,9 @@ void main() {
       );
       final TempFileCleanupService service = TempFileCleanupService(gateway);
 
-      final TempFileCleanupResult result =
-          await service.cleanup(rootId: 'root');
+      final TempFileCleanupResult result = await service.cleanup(
+        rootId: 'root',
+      );
 
       expect(result.deletedCount, 1);
       expect(result.failedPaths, <String>['b.music_sync_tmp']);

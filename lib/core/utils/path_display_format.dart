@@ -34,12 +34,12 @@ String _normalizeCompositeValue(String value) {
   }
 
   final String? documentPart = parts.reversed.cast<String?>().firstWhere(
-        (String? part) =>
-            part != null &&
-            _looksLikeAndroidDocumentPath(part) &&
-            !part.startsWith('content://'),
-        orElse: () => null,
-      );
+    (String? part) =>
+        part != null &&
+        _looksLikeAndroidDocumentPath(part) &&
+        !part.startsWith('content://'),
+    orElse: () => null,
+  );
   if (documentPart != null) {
     return documentPart;
   }

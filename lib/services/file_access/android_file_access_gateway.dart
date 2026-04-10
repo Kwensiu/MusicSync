@@ -16,14 +16,10 @@ class AndroidFileWriteSession implements FileWriteSession {
     try {
       await AndroidFileAccessGateway._channel.invokeMethod<void>(
         'closeWriteSession',
-        <String, Object?>{
-          'sessionId': _sessionId,
-        },
+        <String, Object?>{'sessionId': _sessionId},
       );
     } on PlatformException catch (error) {
-      throw FileAccessException(
-        error.message ?? 'Android file close failed.',
-      );
+      throw FileAccessException(error.message ?? 'Android file close failed.');
     }
   }
 
@@ -32,15 +28,10 @@ class AndroidFileWriteSession implements FileWriteSession {
     try {
       await AndroidFileAccessGateway._channel.invokeMethod<void>(
         'writeChunk',
-        <String, Object?>{
-          'sessionId': _sessionId,
-          'data': base64Encode(chunk),
-        },
+        <String, Object?>{'sessionId': _sessionId, 'data': base64Encode(chunk)},
       );
     } on PlatformException catch (error) {
-      throw FileAccessException(
-        error.message ?? 'Android file write failed.',
-      );
+      throw FileAccessException(error.message ?? 'Android file write failed.');
     }
   }
 }
@@ -55,40 +46,31 @@ class _AndroidReadStreamController {
     try {
       _sessionId = await AndroidFileAccessGateway._channel.invokeMethod<String>(
         'openRead',
-        <String, Object?>{
-          'entryId': _entryId,
-        },
+        <String, Object?>{'entryId': _entryId},
       );
       if (_sessionId == null || _sessionId!.isEmpty) {
         throw FileAccessException('Android read session create failed.');
       }
 
       while (true) {
-        final String? encoded =
-            await AndroidFileAccessGateway._channel.invokeMethod<String>(
-          'readChunk',
-          <String, Object?>{
-            'sessionId': _sessionId,
-          },
-        );
+        final String? encoded = await AndroidFileAccessGateway._channel
+            .invokeMethod<String>('readChunk', <String, Object?>{
+              'sessionId': _sessionId,
+            });
         if (encoded == null || encoded.isEmpty) {
           break;
         }
         yield base64Decode(encoded);
       }
     } on PlatformException catch (error) {
-      throw FileAccessException(
-        error.message ?? 'Android file read failed.',
-      );
+      throw FileAccessException(error.message ?? 'Android file read failed.');
     } finally {
       final String? sessionId = _sessionId;
       if (sessionId != null && sessionId.isNotEmpty) {
         try {
           await AndroidFileAccessGateway._channel.invokeMethod<void>(
             'closeReadSession',
-            <String, Object?>{
-              'sessionId': sessionId,
-            },
+            <String, Object?>{'sessionId': sessionId},
           );
         } on PlatformException {
           // Ignore close failures during stream teardown.
@@ -99,18 +81,16 @@ class _AndroidReadStreamController {
 }
 
 class AndroidFileAccessGateway implements FileAccessGateway {
-  static const MethodChannel _channel =
-      MethodChannel('music_sync/android_file_access');
+  static const MethodChannel _channel = MethodChannel(
+    'music_sync/android_file_access',
+  );
 
   @override
   Future<String> createDirectory(String parentId, String name) async {
     try {
       final String? entryId = await _channel.invokeMethod<String>(
         'createDirectory',
-        <String, Object?>{
-          'parentId': parentId,
-          'name': name,
-        },
+        <String, Object?>{'parentId': parentId, 'name': name},
       );
       if (entryId == null || entryId.isEmpty) {
         throw FileAccessException('Android directory create failed.');
@@ -126,12 +106,9 @@ class AndroidFileAccessGateway implements FileAccessGateway {
   @override
   Future<void> deleteEntry(String entryId) async {
     try {
-      await _channel.invokeMethod<void>(
-        'deleteEntry',
-        <String, Object?>{
-          'entryId': entryId,
-        },
-      );
+      await _channel.invokeMethod<void>('deleteEntry', <String, Object?>{
+        'entryId': entryId,
+      });
     } on PlatformException catch (error) {
       throw FileAccessException(
         error.message ?? 'Android entry delete failed.',
@@ -142,13 +119,10 @@ class AndroidFileAccessGateway implements FileAccessGateway {
   @override
   Future<List<FileAccessEntry>> listChildren(String directoryId) async {
     try {
-      final List<Object?>? rawEntries =
-          await _channel.invokeMethod<List<Object?>>(
-        'listChildren',
-        <String, Object?>{
-          'directoryId': directoryId,
-        },
-      );
+      final List<Object?>? rawEntries = await _channel
+          .invokeMethod<List<Object?>>('listChildren', <String, Object?>{
+            'directoryId': directoryId,
+          });
       if (rawEntries == null) {
         return const <FileAccessEntry>[];
       }
@@ -173,10 +147,7 @@ class AndroidFileAccessGateway implements FileAccessGateway {
     try {
       final String? sessionId = await _channel.invokeMethod<String>(
         'openWrite',
-        <String, Object?>{
-          'parentId': parentId,
-          'name': name,
-        },
+        <String, Object?>{'parentId': parentId, 'name': name},
       );
       if (sessionId == null || sessionId.isEmpty) {
         throw FileAccessException('Android write session create failed.');
@@ -194,10 +165,7 @@ class AndroidFileAccessGateway implements FileAccessGateway {
     try {
       final String? renamedEntryId = await _channel.invokeMethod<String>(
         'renameEntry',
-        <String, Object?>{
-          'entryId': entryId,
-          'newName': newName,
-        },
+        <String, Object?>{'entryId': entryId, 'newName': newName},
       );
       if (renamedEntryId == null || renamedEntryId.isEmpty) {
         throw FileAccessException('Android entry rename failed.');
@@ -213,8 +181,8 @@ class AndroidFileAccessGateway implements FileAccessGateway {
   @override
   Future<DirectoryHandle?> pickDirectory() async {
     try {
-      final Map<Object?, Object?>? rawHandle =
-          await _channel.invokeMethod<Map<Object?, Object?>>('pickDirectory');
+      final Map<Object?, Object?>? rawHandle = await _channel
+          .invokeMethod<Map<Object?, Object?>>('pickDirectory');
       if (rawHandle == null) {
         return null;
       }
@@ -236,13 +204,10 @@ class AndroidFileAccessGateway implements FileAccessGateway {
   @override
   Future<FileAccessEntry> stat(String entryId) async {
     try {
-      final Map<Object?, Object?>? rawEntry =
-          await _channel.invokeMethod<Map<Object?, Object?>>(
-        'stat',
-        <String, Object?>{
-          'entryId': entryId,
-        },
-      );
+      final Map<Object?, Object?>? rawEntry = await _channel
+          .invokeMethod<Map<Object?, Object?>>('stat', <String, Object?>{
+            'entryId': entryId,
+          });
       if (rawEntry == null) {
         throw FileAccessException('Android entry not found.');
       }

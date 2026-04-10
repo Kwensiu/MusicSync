@@ -8,26 +8,27 @@ import 'package:music_sync/services/diff/diff_engine.dart';
 import 'package:music_sync/services/scanning/directory_scanner.dart';
 import 'package:music_sync/services/scanning/scan_cache_service.dart';
 
-final Provider<DiffEngine> diffEngineProvider =
-    Provider<DiffEngine>((Ref ref) => DiffEngine());
+final Provider<DiffEngine> diffEngineProvider = Provider<DiffEngine>(
+  (Ref ref) => DiffEngine(),
+);
 
 final Provider<ScanCacheService> scanCacheServiceProvider =
     Provider<ScanCacheService>((Ref ref) => ScanCacheService());
 
 final Provider<DirectoryScanner> directoryScannerProvider =
     Provider<DirectoryScanner>((Ref ref) {
-  return DirectoryScanner(
-    gateway: ref.watch(fileAccessGatewayProvider),
-    cacheService: ref.watch(scanCacheServiceProvider),
-  );
-});
+      return DirectoryScanner(
+        gateway: ref.watch(fileAccessGatewayProvider),
+        cacheService: ref.watch(scanCacheServiceProvider),
+      );
+    });
 
-class PreviewController extends StateNotifier<PreviewState> {
-  PreviewController(this._diffEngine, this._scanner)
-      : super(PreviewState.initial());
+class PreviewController extends Notifier<PreviewState> {
+  DiffEngine get _diffEngine => ref.read(diffEngineProvider);
+  DirectoryScanner get _scanner => ref.read(directoryScannerProvider);
 
-  final DiffEngine _diffEngine;
-  final DirectoryScanner _scanner;
+  @override
+  PreviewState build() => PreviewState.initial();
 
   void loadPlan({
     required ScanSnapshot source,
@@ -93,10 +94,14 @@ class PreviewController extends StateNotifier<PreviewState> {
         root: targetRoot,
         deviceId: 'local-target',
       );
-      final ScanSnapshot baseSource =
-          _filterIgnored(rawSource, ignoredExtensions);
-      final ScanSnapshot baseTarget =
-          _filterIgnored(rawTarget, ignoredExtensions);
+      final ScanSnapshot baseSource = _filterIgnored(
+        rawSource,
+        ignoredExtensions,
+      );
+      final ScanSnapshot baseTarget = _filterIgnored(
+        rawTarget,
+        ignoredExtensions,
+      );
       final List<String> availableExtensions = _collectExtensions(
         baseSource,
         baseTarget,
@@ -151,12 +156,18 @@ class PreviewController extends StateNotifier<PreviewState> {
     try {
       final ScanSnapshot baseSource = _filterIgnored(source, ignoredExtensions);
       final ScanSnapshot baseTarget = _filterIgnored(target, ignoredExtensions);
-      final List<String> availableExtensions =
-          _collectExtensions(baseSource, baseTarget);
-      final ScanSnapshot filteredSource =
-          _filterSnapshot(baseSource, extensionFilter);
-      final ScanSnapshot filteredTarget =
-          _filterSnapshot(baseTarget, extensionFilter);
+      final List<String> availableExtensions = _collectExtensions(
+        baseSource,
+        baseTarget,
+      );
+      final ScanSnapshot filteredSource = _filterSnapshot(
+        baseSource,
+        extensionFilter,
+      );
+      final ScanSnapshot filteredTarget = _filterSnapshot(
+        baseTarget,
+        extensionFilter,
+      );
       final plan = _diffEngine.buildPlan(
         source: filteredSource,
         target: filteredTarget,
@@ -286,7 +297,9 @@ class PreviewController extends StateNotifier<PreviewState> {
   }
 
   ScanSnapshot _filterIgnored(
-      ScanSnapshot snapshot, List<String> ignoredExtensions) {
+    ScanSnapshot snapshot,
+    List<String> ignoredExtensions,
+  ) {
     if (ignoredExtensions.isEmpty) {
       return snapshot;
     }
@@ -319,11 +332,7 @@ class PreviewController extends StateNotifier<PreviewState> {
   }
 }
 
-final StateNotifierProvider<PreviewController, PreviewState>
-    previewControllerProvider =
-    StateNotifierProvider<PreviewController, PreviewState>(
-  (Ref ref) => PreviewController(
-    ref.watch(diffEngineProvider),
-    ref.watch(directoryScannerProvider),
-  ),
+final NotifierProvider<PreviewController, PreviewState>
+previewControllerProvider = NotifierProvider<PreviewController, PreviewState>(
+  PreviewController.new,
 );

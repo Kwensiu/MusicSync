@@ -9,7 +9,8 @@ void main() {
   test('error localization normalizes common user-facing errors', () {
     expect(
       ConnectionState.localizeErrorMessage(
-          'SocketException: Connection refused'),
+        'SocketException: Connection refused',
+      ),
       AppErrorCode.connectionRefused,
     );
     expect(

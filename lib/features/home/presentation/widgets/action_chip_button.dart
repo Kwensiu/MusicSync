@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum ActionChipTone {
-  neutral,
-  active,
-  success,
-}
+enum ActionChipTone { neutral, active, success }
 
 class ActionChipButton extends StatelessWidget {
   const ActionChipButton({
@@ -26,26 +22,27 @@ class ActionChipButton extends StatelessWidget {
     final bool isEnabled = onPressed != null;
     final (Color background, Color foreground, Color border) = switch (tone) {
       ActionChipTone.neutral => (
-          scheme.surfaceContainerHighest,
-          scheme.onSurfaceVariant,
-          scheme.outlineVariant,
-        ),
+        scheme.surfaceContainerHighest,
+        scheme.onSurfaceVariant,
+        scheme.outlineVariant,
+      ),
       ActionChipTone.active => (
-          scheme.secondaryContainer,
-          scheme.onSecondaryContainer,
-          scheme.secondary,
-        ),
+        scheme.secondaryContainer,
+        scheme.onSecondaryContainer,
+        scheme.secondary,
+      ),
       ActionChipTone.success => (
-          scheme.tertiaryContainer,
-          scheme.onTertiaryContainer,
-          scheme.tertiary,
-        ),
+        scheme.tertiaryContainer,
+        scheme.onTertiaryContainer,
+        scheme.tertiary,
+      ),
     };
     final Color resolvedBackground = isEnabled
         ? background
         : scheme.surfaceContainerHighest.withValues(alpha: 0.5);
-    final Color resolvedForeground =
-        isEnabled ? foreground : scheme.onSurface.withValues(alpha: 0.38);
+    final Color resolvedForeground = isEnabled
+        ? foreground
+        : scheme.onSurface.withValues(alpha: 0.38);
     final Color resolvedBorder = isEnabled
         ? border.withValues(alpha: 0.5)
         : scheme.outlineVariant.withValues(alpha: 0.35);
@@ -68,13 +65,14 @@ class ActionChipButton extends StatelessWidget {
             ),
             child: Text(
               label,
-              style: (compact
-                      ? Theme.of(context).textTheme.labelMedium
-                      : Theme.of(context).textTheme.labelLarge)
-                  ?.copyWith(
-                color: resolvedForeground,
-                fontWeight: FontWeight.w700,
-              ),
+              style:
+                  (compact
+                          ? Theme.of(context).textTheme.labelMedium
+                          : Theme.of(context).textTheme.labelLarge)
+                      ?.copyWith(
+                        color: resolvedForeground,
+                        fontWeight: FontWeight.w700,
+                      ),
             ),
           ),
         ),

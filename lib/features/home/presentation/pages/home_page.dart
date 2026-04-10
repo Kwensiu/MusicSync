@@ -47,10 +47,7 @@ class _HomePageState extends ConsumerState<HomePage>
   final TextEditingController _addressController = TextEditingController();
   Set<String> _selectedExtensions = <String>{'*'};
   bool _selectAllSections = true;
-  Set<DiffType> _selectedSections = <DiffType>{
-    DiffType.copy,
-    DiffType.delete,
-  };
+  Set<DiffType> _selectedSections = <DiffType>{DiffType.copy, DiffType.delete};
   bool _isCleaningSourceTemp = false;
   bool _isCleaningTargetTemp = false;
   AppLifecycleState? _appLifecycleState;
@@ -78,8 +75,9 @@ class _HomePageState extends ConsumerState<HomePage>
     if (state != AppLifecycleState.resumed || !mounted) {
       return;
     }
-    final peer_connection.ConnectionState connectionState =
-        ref.read(connectionControllerProvider);
+    final peer_connection.ConnectionState connectionState = ref.read(
+      connectionControllerProvider,
+    );
     final ExecutionState executionState = ref.read(executionControllerProvider);
     if (connectionState.peer == null ||
         connectionState.status != peer_connection.ConnectionStatus.connected ||
@@ -98,52 +96,57 @@ class _HomePageState extends ConsumerState<HomePage>
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<peer_connection.ConnectionState>(
+    ref.listen<peer_connection.ConnectionState>(connectionControllerProvider, (
+      _,
+      peer_connection.ConnectionState next,
+    ) {
+      _syncAndroidKeepAlive(
+        connectionState: next,
+        executionState: ref.read(executionControllerProvider),
+      );
+    });
+    ref.listen<ExecutionState>(executionControllerProvider, (
+      _,
+      ExecutionState next,
+    ) {
+      _syncAndroidKeepAlive(
+        connectionState: ref.read(connectionControllerProvider),
+        executionState: next,
+      );
+    });
+    final DirectoryState directoryState = ref.watch(
+      directoryControllerProvider,
+    );
+    final peer_connection.ConnectionState connectionState = ref.watch(
       connectionControllerProvider,
-      (_, peer_connection.ConnectionState next) {
-        _syncAndroidKeepAlive(
-          connectionState: next,
-          executionState: ref.read(executionControllerProvider),
-        );
-      },
     );
-    ref.listen<ExecutionState>(
-      executionControllerProvider,
-      (_, ExecutionState next) {
-        _syncAndroidKeepAlive(
-          connectionState: ref.read(connectionControllerProvider),
-          executionState: next,
-        );
-      },
-    );
-    final DirectoryState directoryState =
-        ref.watch(directoryControllerProvider);
-    final peer_connection.ConnectionState connectionState =
-        ref.watch(connectionControllerProvider);
     final PreviewState previewState = ref.watch(previewControllerProvider);
-    final ExecutionState executionState =
-        ref.watch(executionControllerProvider);
-    final List<String> ignoredExtensions =
-        ref.watch(settingsControllerProvider).ignoredExtensions;
+    final ExecutionState executionState = ref.watch(
+      executionControllerProvider,
+    );
+    final List<String> ignoredExtensions = ref
+        .watch(settingsControllerProvider)
+        .ignoredExtensions;
 
-    final bool isStalePlan = previewState.sourceRootId != null &&
+    final bool isStalePlan =
+        previewState.sourceRootId != null &&
         previewState.sourceRootId != directoryState.handle?.entryId;
     final List<String> extensionOptions = previewState.availableExtensions;
     final List<DiffItem> filteredCopyItems =
         PreviewWorkbenchActions.filterItemsByExtensions(
-      previewState.plan.copyItems,
-      _selectedExtensions,
-    );
+          previewState.plan.copyItems,
+          _selectedExtensions,
+        );
     final List<DiffItem> filteredDeleteItems =
         PreviewWorkbenchActions.filterItemsByExtensions(
-      previewState.plan.deleteItems,
-      _selectedExtensions,
-    );
+          previewState.plan.deleteItems,
+          _selectedExtensions,
+        );
     final List<DiffItem> filteredConflictItems =
         PreviewWorkbenchActions.filterItemsByExtensions(
-      previewState.plan.conflictItems,
-      _selectedExtensions,
-    );
+          previewState.plan.conflictItems,
+          _selectedExtensions,
+        );
     final bool isAllExtensionsSelected =
         _selectedExtensions.length == 1 && _selectedExtensions.contains('*');
     final List<DiffItem> activeItems = <DiffItem>[
@@ -152,11 +155,13 @@ class _HomePageState extends ConsumerState<HomePage>
       if (_selectAllSections || _selectedSections.contains(DiffType.delete))
         ...filteredDeleteItems,
     ];
-    final bool hasExecutableItems = previewState.plan.copyItems.isNotEmpty ||
+    final bool hasExecutableItems =
+        previewState.plan.copyItems.isNotEmpty ||
         previewState.plan.deleteItems.isNotEmpty;
     final bool isRemotePreview = previewState.mode == PreviewMode.remote;
     final bool isLocalPreview = previewState.mode == PreviewMode.local;
-    final bool canRunRemote = connectionState.remoteSnapshot != null &&
+    final bool canRunRemote =
+        connectionState.remoteSnapshot != null &&
         isRemotePreview &&
         previewState.targetSnapshot?.rootId ==
             connectionState.remoteSnapshot!.rootId;
@@ -166,24 +171,27 @@ class _HomePageState extends ConsumerState<HomePage>
     final bool isExecuting = executionState.status == ExecutionStatus.running;
     final bool isRemoteSyncRunning =
         executionState.status == ExecutionStatus.running &&
-            executionState.mode == ExecutionMode.remote;
+        executionState.mode == ExecutionMode.remote;
     final bool hasFinishedExecution =
         executionState.status == ExecutionStatus.completed ||
-            executionState.status == ExecutionStatus.cancelled ||
-            executionState.status == ExecutionStatus.failed;
+        executionState.status == ExecutionStatus.cancelled ||
+        executionState.status == ExecutionStatus.failed;
     final bool isBusy = isConnecting || isPreviewLoading || isExecuting;
     final bool isConnectUiBusy = isPreviewLoading || isExecuting;
-    final bool hasConnectedPeer = connectionState.peer != null &&
+    final bool hasConnectedPeer =
+        connectionState.peer != null &&
         connectionState.status == peer_connection.ConnectionStatus.connected;
     final bool hasRemoteSnapshot = connectionState.remoteSnapshot != null;
     final bool hasRemoteDirectoryReady =
         connectionState.isRemoteDirectoryReady || hasRemoteSnapshot;
     final bool canStartRemoteSync =
         canRunRemote && hasExecutableItems && !isBusy;
-    final bool canOpenResult = hasFinishedExecution &&
+    final bool canOpenResult =
+        hasFinishedExecution &&
         executionState.targetRoot != null &&
         executionState.targetRoot!.isNotEmpty;
-    final bool showExecutionPanel = isExecuting ||
+    final bool showExecutionPanel =
+        isExecuting ||
         executionState.errorMessage != null ||
         executionState.status != ExecutionStatus.idle ||
         executionState.progress.totalFiles > 0 ||
@@ -192,7 +200,8 @@ class _HomePageState extends ConsumerState<HomePage>
       ...?previewState.sourceSnapshot?.warnings,
       ...?previewState.targetSnapshot?.warnings,
     }.toList();
-    final bool showKeepAliveBadge = Platform.isAndroid &&
+    final bool showKeepAliveBadge =
+        Platform.isAndroid &&
         connectionState.peer != null &&
         connectionState.status == peer_connection.ConnectionStatus.connected &&
         isRemoteSyncRunning;
@@ -217,10 +226,10 @@ class _HomePageState extends ConsumerState<HomePage>
             onPressed: isConnectUiBusy
                 ? null
                 : () => ConnectionSectionActions.showConnectionStateChipDialog(
-                      context: context,
-                      ref: ref,
-                      connectionState: connectionState,
-                    ),
+                    context: context,
+                    ref: ref,
+                    connectionState: connectionState,
+                  ),
           ),
         ),
         IconButton(
@@ -320,23 +329,24 @@ class _HomePageState extends ConsumerState<HomePage>
                     connectionState: connectionState,
                     previewState: previewState,
                   ),
-                  isTransferConnected: connectionState.peer != null &&
+                  isTransferConnected:
+                      connectionState.peer != null &&
                       connectionState.status ==
                           peer_connection.ConnectionStatus.connected,
                   onBuildRemotePreview: () =>
                       PreviewWorkbenchActions.buildRemotePreview(
-                    ref: ref,
-                    sourceRoot: directoryState.handle!,
-                    ignoredExtensions: ignoredExtensions,
-                  ),
+                        ref: ref,
+                        sourceRoot: directoryState.handle!,
+                        ignoredExtensions: ignoredExtensions,
+                      ),
                   onStartRemoteSync: () =>
                       PreviewWorkbenchActions.executeRemoteSyncFlow(
-                    context: context,
-                    ref: ref,
-                    previewState: previewState,
-                    directoryState: directoryState,
-                    connectionState: connectionState,
-                  ),
+                        context: context,
+                        ref: ref,
+                        previewState: previewState,
+                        directoryState: directoryState,
+                        connectionState: connectionState,
+                      ),
                   onCancelSync: () {
                     ref.read(executionControllerProvider.notifier).cancel();
                   },
@@ -372,10 +382,10 @@ class _HomePageState extends ConsumerState<HomePage>
                           : _selectedExtensions.contains(extension);
                       _selectedExtensions =
                           PreviewWorkbenchActions.toggleExtensionSelection(
-                        current: _selectedExtensions,
-                        extension: extension,
-                        selected: !selected,
-                      );
+                            current: _selectedExtensions,
+                            extension: extension,
+                            selected: !selected,
+                          );
                     });
                   },
                   localizeUiError: _localizeUiError,
@@ -396,8 +406,10 @@ class _HomePageState extends ConsumerState<HomePage>
                         children: <Widget>[
                           Text(context.l10n.executionTargetHint),
                           const SizedBox(height: 8),
-                          Text(executionState.targetRoot ??
-                              context.l10n.executionNoTarget),
+                          Text(
+                            executionState.targetRoot ??
+                                context.l10n.executionNoTarget,
+                          ),
                           const SizedBox(height: 12),
                           FilledButton.tonal(
                             onPressed: isBusy
@@ -407,46 +419,54 @@ class _HomePageState extends ConsumerState<HomePage>
                                         .read(fileAccessGatewayProvider)
                                         .pickDirectory();
                                     ref
-                                        .read(executionControllerProvider
-                                            .notifier)
+                                        .read(
+                                          executionControllerProvider.notifier,
+                                        )
                                         .setTargetRoot(handle?.entryId);
                                   },
                             child: Text(context.l10n.executionPickTarget),
                           ),
                           const SizedBox(height: 8),
                           OutlinedButton(
-                            onPressed: isBusy ||
+                            onPressed:
+                                isBusy ||
                                     executionState.targetRoot == null ||
                                     _isCleaningTargetTemp
                                 ? null
                                 : () => _cleanupTempFiles(
-                                      rootId: executionState.targetRoot!,
-                                      isSource: false,
-                                    ),
+                                    rootId: executionState.targetRoot!,
+                                    isSource: false,
+                                  ),
                             child: Text(context.l10n.homeCleanupTempFiles),
                           ),
                           const SizedBox(height: 8),
                           FilledButton.tonal(
-                            onPressed: isBusy ||
+                            onPressed:
+                                isBusy ||
                                     executionState.targetRoot == null ||
                                     !hasExecutableItems ||
                                     !isLocalPreview
                                 ? null
                                 : () async {
                                     if (previewState
-                                        .plan.deleteItems.isNotEmpty) {
-                                      final bool? confirmed =
-                                          await showDialog<bool>(
+                                        .plan
+                                        .deleteItems
+                                        .isNotEmpty) {
+                                      final bool?
+                                      confirmed = await showDialog<bool>(
                                         context: context,
                                         builder: (BuildContext context) {
                                           return AppConfirmDialog(
-                                            title: context.l10n
+                                            title: context
+                                                .l10n
                                                 .executionConfirmDeleteTitle,
                                             message: context.l10n
                                                 .executionConfirmDeleteBody(
-                                              previewState
-                                                  .plan.deleteItems.length,
-                                            ),
+                                                  previewState
+                                                      .plan
+                                                      .deleteItems
+                                                      .length,
+                                                ),
                                           );
                                         },
                                       );
@@ -456,20 +476,21 @@ class _HomePageState extends ConsumerState<HomePage>
                                       }
                                     }
                                     await ref
-                                        .read(executionControllerProvider
-                                            .notifier)
+                                        .read(
+                                          executionControllerProvider.notifier,
+                                        )
                                         .execute(
                                           plan: previewState.plan,
                                           targetRoot:
                                               executionState.targetRoot!,
                                         );
-                                    await PreviewWorkbenchActions
-                                        .refreshPreviewAfterExecution(
+                                    await PreviewWorkbenchActions.refreshPreviewAfterExecution(
                                       ref: ref,
                                       previewState: previewState,
                                       directoryState: directoryState,
-                                      executionState:
-                                          ref.read(executionControllerProvider),
+                                      executionState: ref.read(
+                                        executionControllerProvider,
+                                      ),
                                     );
                                   },
                             child: Text(context.l10n.executionRunLocalDebug),
@@ -496,16 +517,18 @@ class _HomePageState extends ConsumerState<HomePage>
                     ),
                   ),
                   child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     child: Text(
                       '🏷 后台保活已就绪',
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onTertiaryContainer,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onTertiaryContainer,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
@@ -531,16 +554,17 @@ class _HomePageState extends ConsumerState<HomePage>
                                 children: <Widget>[
                                   Icon(
                                     Icons.sync_lock_rounded,
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                   ),
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
                                       context.l10n.homeIncomingSyncTitle,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleMedium,
                                     ),
                                   ),
                                 ],
@@ -555,13 +579,11 @@ class _HomePageState extends ConsumerState<HomePage>
                               const SizedBox(height: 12),
                               Text(
                                 context.l10n.homeIncomingSyncHint,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
+                                style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                     ),
                               ),
                               const SizedBox(height: 14),
@@ -622,13 +644,14 @@ class _HomePageState extends ConsumerState<HomePage>
 
   String _localDeviceDisplayName() {
     final String hostName = Platform.localHostname.trim();
-    final String fallbackName = Platform.environment['COMPUTERNAME'] ??
+    final String fallbackName =
+        Platform.environment['COMPUTERNAME'] ??
         Platform.environment['HOSTNAME'] ??
         (Platform.isAndroid
             ? 'Android'
             : Platform.isWindows
-                ? 'Windows'
-                : Platform.operatingSystem);
+            ? 'Windows'
+            : Platform.operatingSystem);
     if (hostName.isEmpty || hostName.toLowerCase() == 'localhost') {
       return fallbackName;
     }
@@ -641,8 +664,9 @@ class _HomePageState extends ConsumerState<HomePage>
   }) {
     final bool isRemoteSyncRunning =
         executionState.status == ExecutionStatus.running &&
-            executionState.mode == ExecutionMode.remote;
-    final bool shouldEnable = Platform.isAndroid &&
+        executionState.mode == ExecutionMode.remote;
+    final bool shouldEnable =
+        Platform.isAndroid &&
         _appLifecycleState != null &&
         _appLifecycleState != AppLifecycleState.resumed &&
         connectionState.peer != null &&
@@ -678,9 +702,9 @@ class _HomePageState extends ConsumerState<HomePage>
       }
     });
     try {
-      final result = await ref.read(tempFileCleanupServiceProvider).cleanup(
-            rootId: rootId,
-          );
+      final result = await ref
+          .read(tempFileCleanupServiceProvider)
+          .cleanup(rootId: rootId);
       if (!mounted) {
         return;
       }
@@ -690,9 +714,9 @@ class _HomePageState extends ConsumerState<HomePage>
               result.deletedCount,
               result.failedPaths.length,
             );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
       if (isSource && result.deletedCount > 0 && result.failedPaths.isEmpty) {
         ref.read(directoryControllerProvider.notifier).setHasTempFiles(false);
       }
@@ -718,8 +742,8 @@ class _HomePageState extends ConsumerState<HomePage>
 
   Future<void> _showRecentDirectoryManager() async {
     final RecentItemsStore store = ref.read(recentItemsStoreProvider);
-    List<RecentDirectoryRecord> records =
-        await store.loadRecentDirectoryRecords();
+    List<RecentDirectoryRecord> records = await store
+        .loadRecentDirectoryRecords();
     if (!mounted) {
       return;
     }
@@ -793,19 +817,17 @@ class _HomePageState extends ConsumerState<HomePage>
             await _showRecentAddressDialog(
               initialAddress: record.address,
               initialAlias: record.note,
-              onSave: ({
-                required String address,
-                required String? alias,
-              }) async {
-                await store.updateRecentAddress(
-                  oldAddress: record.address,
-                  newAddress: address,
-                  note: alias,
-                );
-                await ref
-                    .read(connectionControllerProvider.notifier)
-                    .reloadRecent();
-              },
+              onSave:
+                  ({required String address, required String? alias}) async {
+                    await store.updateRecentAddress(
+                      oldAddress: record.address,
+                      newAddress: address,
+                      note: alias,
+                    );
+                    await ref
+                        .read(connectionControllerProvider.notifier)
+                        .reloadRecent();
+                  },
             );
             return store.loadRecentAddressRecords();
           },
@@ -829,10 +851,7 @@ class _HomePageState extends ConsumerState<HomePage>
     final String? value = await showDialog<String>(
       context: context,
       builder: (BuildContext context) {
-        return RecentAliasDialog(
-          title: title,
-          initialValue: initialValue,
-        );
+        return RecentAliasDialog(title: title, initialValue: initialValue);
       },
     );
     if (value != null) {
@@ -846,23 +865,21 @@ class _HomePageState extends ConsumerState<HomePage>
     required Future<void> Function({
       required String address,
       required String? alias,
-    }) onSave,
+    })
+    onSave,
   }) async {
     final ({String address, String alias})? result =
         await showDialog<({String address, String alias})>(
-      context: context,
-      builder: (BuildContext context) {
-        return RecentAddressDialog(
-          initialAddress: initialAddress,
-          initialAlias: initialAlias,
+          context: context,
+          builder: (BuildContext context) {
+            return RecentAddressDialog(
+              initialAddress: initialAddress,
+              initialAlias: initialAlias,
+            );
+          },
         );
-      },
-    );
     if (result != null) {
-      await onSave(
-        address: result.address.trim(),
-        alias: result.alias,
-      );
+      await onSave(address: result.address.trim(), alias: result.alias);
     }
   }
 

@@ -50,12 +50,7 @@ class DiffItemDetailViewData {
   final bool targetIsRemote;
 }
 
-enum DiffItemDetailSide {
-  sourceOnly,
-  targetOnly,
-  both,
-  unknown,
-}
+enum DiffItemDetailSide { sourceOnly, targetOnly, both, unknown }
 
 class DiffEntryDetailViewData {
   const DiffEntryDetailViewData({

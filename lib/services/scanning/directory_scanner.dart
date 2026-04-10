@@ -8,10 +8,7 @@ import 'package:music_sync/services/file_access/file_access_gateway.dart';
 import 'package:music_sync/services/scanning/scan_cache_service.dart';
 
 class DirectoryScanner {
-  DirectoryScanner({
-    required this.gateway,
-    required this.cacheService,
-  });
+  DirectoryScanner({required this.gateway, required this.cacheService});
 
   final FileAccessGateway gateway;
   final ScanCacheService cacheService;

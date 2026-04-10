@@ -2,18 +2,9 @@ import 'package:music_sync/core/errors/app_error_localizer.dart';
 import 'package:music_sync/models/sync_plan.dart';
 import 'package:music_sync/models/scan_snapshot.dart';
 
-enum PreviewStatus {
-  idle,
-  loading,
-  loaded,
-  failed,
-}
+enum PreviewStatus { idle, loading, loaded, failed }
 
-enum PreviewMode {
-  none,
-  local,
-  remote,
-}
+enum PreviewMode { none, local, remote }
 
 class PreviewState {
   const PreviewState({
@@ -47,9 +38,6 @@ class PreviewState {
   }
 
   factory PreviewState.initial() {
-    return PreviewState(
-      status: PreviewStatus.idle,
-      plan: SyncPlan.empty(),
-    );
+    return PreviewState(status: PreviewStatus.idle, plan: SyncPlan.empty());
   }
 }

@@ -82,27 +82,30 @@ class PreviewWorkbenchSection extends StatelessWidget {
   final ValueChanged<String> onToggleExtension;
   final String Function(BuildContext context, String value) localizeUiError;
   final String Function(BuildContext context, ExecutionStatus status)
-      localizedExecutionStatus;
+  localizedExecutionStatus;
   final bool Function(String value) isScanTimeoutError;
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
-    final bool hasPlanItems = previewState.plan.copyItems.isNotEmpty ||
+    final bool hasPlanItems =
+        previewState.plan.copyItems.isNotEmpty ||
         previewState.plan.deleteItems.isNotEmpty ||
         previewState.plan.conflictItems.isNotEmpty;
     final bool hasPreviewReady =
         previewState.status == PreviewStatus.loaded && hasPlanItems;
     final bool hasLocalDirectory = directoryState.handle != null;
-    final bool hasRemoteDirectory = connectionState.isRemoteDirectoryReady ||
+    final bool hasRemoteDirectory =
+        connectionState.isRemoteDirectoryReady ||
         connectionState.remoteSnapshot != null;
     final _PrimaryStatus? primaryStatus = _buildPrimaryStatus(context);
     final String? executionErrorMessage = executionState.errorMessage;
     final String? resolvedExecutionError = executionErrorMessage == null
         ? null
         : AppErrorLocalizer.resolve(executionErrorMessage);
-    final bool showExecutionInlineError = executionErrorMessage != null &&
+    final bool showExecutionInlineError =
+        executionErrorMessage != null &&
         resolvedExecutionError != AppErrorCode.remoteDirectoryNotSelected &&
         resolvedExecutionError != AppErrorCode.remoteDeviceDisconnected;
 
@@ -169,7 +172,8 @@ class PreviewWorkbenchSection extends StatelessWidget {
                 runSpacing: 8,
                 children: <Widget>[
                   FilledButton.tonalIcon(
-                    onPressed: isBusy ||
+                    onPressed:
+                        isBusy ||
                             directoryState.handle == null ||
                             !hasRemoteDirectoryReady
                         ? null
@@ -212,7 +216,7 @@ class PreviewWorkbenchSection extends StatelessWidget {
                       LinearProgressIndicator(
                         value: executionState.progress.totalBytes > 0
                             ? executionState.progress.processedBytes /
-                                executionState.progress.totalBytes
+                                  executionState.progress.totalBytes
                             : null,
                         minHeight: 8,
                         borderRadius: BorderRadius.circular(999),
@@ -242,10 +246,7 @@ class PreviewWorkbenchSection extends StatelessWidget {
                         const SizedBox(height: 10),
                         _InlineMessage(
                           tone: _InlineMessageTone.error,
-                          text: localizeUiError(
-                            context,
-                            executionErrorMessage,
-                          ),
+                          text: localizeUiError(context, executionErrorMessage),
                         ),
                       ],
                       if (canOpenResult) ...<Widget>[
@@ -275,45 +276,46 @@ class PreviewWorkbenchSection extends StatelessWidget {
               sectionChild: Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: <_SectionOption>[
-                  _SectionOption(
-                    type: null,
-                    label:
-                        '${context.l10n.previewSectionAll} ${filteredCopyItems.length + filteredDeleteItems.length}',
-                  ),
-                  _SectionOption(
-                    type: DiffType.copy,
-                    label:
-                        '${context.l10n.previewSectionCopy} ${filteredCopyItems.length}',
-                  ),
-                  _SectionOption(
-                    type: DiffType.delete,
-                    label:
-                        '${context.l10n.previewSectionDelete} ${filteredDeleteItems.length}',
-                  ),
-                ].map((option) {
-                  final bool selected = option.type == null
-                      ? selectAllSections
-                      : (!selectAllSections &&
-                          selectedSections.contains(option.type));
-                  return _CompactFilterChip(
-                    label: option.label,
-                    selected: selected,
-                    onSelected: (_) => onToggleSection(option.type),
-                  );
-                }).toList(),
+                children:
+                    <_SectionOption>[
+                      _SectionOption(
+                        type: null,
+                        label:
+                            '${context.l10n.previewSectionAll} ${filteredCopyItems.length + filteredDeleteItems.length}',
+                      ),
+                      _SectionOption(
+                        type: DiffType.copy,
+                        label:
+                            '${context.l10n.previewSectionCopy} ${filteredCopyItems.length}',
+                      ),
+                      _SectionOption(
+                        type: DiffType.delete,
+                        label:
+                            '${context.l10n.previewSectionDelete} ${filteredDeleteItems.length}',
+                      ),
+                    ].map((option) {
+                      final bool selected = option.type == null
+                          ? selectAllSections
+                          : (!selectAllSections &&
+                                selectedSections.contains(option.type));
+                      return _CompactFilterChip(
+                        label: option.label,
+                        selected: selected,
+                        onSelected: (_) => onToggleSection(option.type),
+                      );
+                    }).toList(),
               ),
               filterTitle: extensionOptions.length > 1
                   ? context.l10n.previewFilterTitle
                   : null,
               filterSummary:
                   extensionOptions.length > 1 && ignoredExtensions.isNotEmpty
-                      ? context.l10n.previewIgnoredExtensions(
-                          ignoredExtensions
-                              .map((String value) => '.$value')
-                              .join(', '),
-                        )
-                      : null,
+                  ? context.l10n.previewIgnoredExtensions(
+                      ignoredExtensions
+                          .map((String value) => '.$value')
+                          .join(', '),
+                    )
+                  : null,
               filterChild: extensionOptions.length > 1
                   ? Wrap(
                       spacing: 8,
@@ -344,9 +346,7 @@ class PreviewWorkbenchSection extends StatelessWidget {
     );
   }
 
-  _PrimaryStatus? _buildPrimaryStatus(
-    BuildContext context,
-  ) {
+  _PrimaryStatus? _buildPrimaryStatus(BuildContext context) {
     final String? errorMessage = previewState.errorMessage;
     if (errorMessage != null) {
       final String resolvedError = AppErrorLocalizer.resolve(errorMessage);
@@ -367,32 +367,19 @@ class PreviewWorkbenchSection extends StatelessWidget {
 }
 
 class _PrimaryStatus {
-  const _PrimaryStatus({
-    required this.tone,
-    required this.text,
-    this.detail,
-  });
+  const _PrimaryStatus({required this.tone, required this.text, this.detail});
 
   final _InlineMessageTone tone;
   final String text;
   final String? detail;
 }
 
-enum _InlineMessageTone {
-  neutral,
-  success,
-  warning,
-  error,
-}
+enum _InlineMessageTone { neutral, success, warning, error }
 
-enum _NoticeTone {
-  warning,
-}
+enum _NoticeTone { warning }
 
 class _InfoPanel extends StatelessWidget {
-  const _InfoPanel({
-    required this.child,
-  });
+  const _InfoPanel({required this.child});
 
   final Widget child;
 
@@ -407,19 +394,14 @@ class _InfoPanel extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: scheme.outlineVariant),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: child,
-        ),
+        child: Padding(padding: const EdgeInsets.all(14), child: child),
       ),
     );
   }
 }
 
 class _ExecutionPanel extends StatelessWidget {
-  const _ExecutionPanel({
-    required this.child,
-  });
+  const _ExecutionPanel({required this.child});
 
   final Widget child;
 
@@ -436,10 +418,7 @@ class _ExecutionPanel extends StatelessWidget {
             color: scheme.outlineVariant.withValues(alpha: 0.72),
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: child,
-        ),
+        child: Padding(padding: const EdgeInsets.all(12), child: child),
       ),
     );
   }
@@ -459,10 +438,12 @@ class _TransferStatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    final Color iconColor =
-        connected ? scheme.primary : scheme.onSurfaceVariant;
-    final IconData icon =
-        connected ? Icons.arrow_forward_rounded : Icons.link_off_rounded;
+    final Color iconColor = connected
+        ? scheme.primary
+        : scheme.onSurfaceVariant;
+    final IconData icon = connected
+        ? Icons.arrow_forward_rounded
+        : Icons.link_off_rounded;
     final Widget content = Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
@@ -471,9 +452,9 @@ class _TransferStatusChip extends StatelessWidget {
             sourceLabel,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
           ),
         ),
         Padding(
@@ -485,9 +466,9 @@ class _TransferStatusChip extends StatelessWidget {
             targetLabel,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
           ),
         ),
       ],
@@ -506,10 +487,7 @@ class _TransferStatusChip extends StatelessWidget {
 }
 
 class _MetaChipGroup extends StatelessWidget {
-  const _MetaChipGroup({
-    required this.label,
-    required this.chip,
-  });
+  const _MetaChipGroup({required this.label, required this.chip});
 
   final String label;
   final Widget chip;
@@ -522,8 +500,8 @@ class _MetaChipGroup extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(width: 8),
         chip,
@@ -562,9 +540,9 @@ class _DirectoryStatusChip extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
               '|',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ),
           _DirectoryStatusItem(
@@ -578,10 +556,7 @@ class _DirectoryStatusChip extends StatelessWidget {
 }
 
 class _DirectoryStatusItem extends StatelessWidget {
-  const _DirectoryStatusItem({
-    required this.active,
-    required this.label,
-  });
+  const _DirectoryStatusItem({required this.active, required this.label});
 
   final bool active;
   final String label;
@@ -601,9 +576,9 @@ class _DirectoryStatusItem extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: color,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.labelMedium?.copyWith(color: color),
         ),
       ],
     );
@@ -611,11 +586,7 @@ class _DirectoryStatusItem extends StatelessWidget {
 }
 
 class _InlineMessage extends StatelessWidget {
-  const _InlineMessage({
-    required this.tone,
-    required this.text,
-    this.detail,
-  });
+  const _InlineMessage({required this.tone, required this.text, this.detail});
 
   final _InlineMessageTone tone;
   final String text;
@@ -626,25 +597,25 @@ class _InlineMessage extends StatelessWidget {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final (Color background, Color foreground, IconData icon) = switch (tone) {
       _InlineMessageTone.success => (
-          scheme.tertiaryContainer.withValues(alpha: 0.8),
-          scheme.onTertiaryContainer,
-          Icons.check_circle_outline_rounded,
-        ),
+        scheme.tertiaryContainer.withValues(alpha: 0.8),
+        scheme.onTertiaryContainer,
+        Icons.check_circle_outline_rounded,
+      ),
       _InlineMessageTone.warning => (
-          scheme.secondaryContainer.withValues(alpha: 0.72),
-          scheme.onSecondaryContainer,
-          Icons.warning_amber_rounded,
-        ),
+        scheme.secondaryContainer.withValues(alpha: 0.72),
+        scheme.onSecondaryContainer,
+        Icons.warning_amber_rounded,
+      ),
       _InlineMessageTone.error => (
-          scheme.errorContainer.withValues(alpha: 0.82),
-          scheme.onErrorContainer,
-          Icons.error_outline_rounded,
-        ),
+        scheme.errorContainer.withValues(alpha: 0.82),
+        scheme.onErrorContainer,
+        Icons.error_outline_rounded,
+      ),
       _InlineMessageTone.neutral => (
-          scheme.surfaceContainerHighest,
-          scheme.onSurfaceVariant,
-          Icons.info_outline_rounded,
-        ),
+        scheme.surfaceContainerHighest,
+        scheme.onSurfaceVariant,
+        Icons.info_outline_rounded,
+      ),
     };
 
     return Container(
@@ -665,17 +636,17 @@ class _InlineMessage extends StatelessWidget {
               children: <Widget>[
                 Text(
                   text,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: foreground,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: foreground),
                 ),
                 if (detail != null) ...<Widget>[
                   const SizedBox(height: 4),
                   Text(
                     detail!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: foreground.withValues(alpha: 0.88),
-                        ),
+                      color: foreground.withValues(alpha: 0.88),
+                    ),
                   ),
                 ],
               ],
@@ -706,9 +677,9 @@ class _CompactNotice extends StatelessWidget {
     final ColorScheme scheme = theme.colorScheme;
     final (Color foreground, IconData icon) = switch (tone) {
       _NoticeTone.warning => (
-          scheme.onSurfaceVariant,
-          Icons.info_outline_rounded,
-        ),
+        scheme.onSurfaceVariant,
+        Icons.info_outline_rounded,
+      ),
     };
 
     return Container(
@@ -717,8 +688,9 @@ class _CompactNotice extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(12),
-        border:
-            Border.all(color: scheme.outlineVariant.withValues(alpha: 0.72)),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.72),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -731,9 +703,7 @@ class _CompactNotice extends StatelessWidget {
               children: <Widget>[
                 Text(
                   text,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: foreground,
-                  ),
+                  style: theme.textTheme.bodySmall?.copyWith(color: foreground),
                 ),
                 if (detail != null) ...<Widget>[
                   const SizedBox(height: 2),
@@ -768,10 +738,7 @@ class _CompactNotice extends StatelessWidget {
 }
 
 class _SectionOption {
-  const _SectionOption({
-    required this.type,
-    required this.label,
-  });
+  const _SectionOption({required this.type, required this.label});
 
   final DiffType? type;
   final String label;
@@ -830,10 +797,7 @@ class _FilterPanel extends StatelessWidget {
 }
 
 class _FilterHeader extends StatelessWidget {
-  const _FilterHeader({
-    required this.title,
-    this.trailing,
-  });
+  const _FilterHeader({required this.title, this.trailing});
 
   final String title;
   final Widget? trailing;
@@ -883,12 +847,11 @@ class _CompactFilterChip extends StatelessWidget {
       labelPadding: const EdgeInsets.symmetric(horizontal: 2),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
       side: BorderSide(
-        color:
-            Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.7),
+        color: Theme.of(
+          context,
+        ).colorScheme.outlineVariant.withValues(alpha: 0.7),
       ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     );
   }
 }

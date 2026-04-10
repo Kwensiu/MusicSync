@@ -109,12 +109,13 @@ class RecentItemsStore {
   Future<void> saveRecentDirectory(DirectoryHandle handle) async {
     final List<RecentDirectoryRecord> existing =
         await loadRecentDirectoryRecords();
-    final RecentDirectoryRecord? previous =
-        existing.cast<RecentDirectoryRecord?>().firstWhere(
-              (RecentDirectoryRecord? item) =>
-                  item?.handle.entryId == handle.entryId,
-              orElse: () => null,
-            );
+    final RecentDirectoryRecord? previous = existing
+        .cast<RecentDirectoryRecord?>()
+        .firstWhere(
+          (RecentDirectoryRecord? item) =>
+              item?.handle.entryId == handle.entryId,
+          orElse: () => null,
+        );
     final RecentDirectoryRecord nextRecord = RecentDirectoryRecord(
       handle: handle,
       note: previous?.note,
@@ -122,8 +123,9 @@ class RecentItemsStore {
     );
     final List<RecentDirectoryRecord> next = <RecentDirectoryRecord>[
       nextRecord,
-      ...existing.where((RecentDirectoryRecord item) =>
-          item.handle.entryId != handle.entryId),
+      ...existing.where(
+        (RecentDirectoryRecord item) => item.handle.entryId != handle.entryId,
+      ),
     ];
     await _saveDirectoryRecords(next);
   }
@@ -157,7 +159,8 @@ class RecentItemsStore {
   }
 
   Future<void> reorderRecentDirectories(
-      List<RecentDirectoryRecord> records) async {
+    List<RecentDirectoryRecord> records,
+  ) async {
     await _saveDirectoryRecords(records);
   }
 
@@ -191,11 +194,12 @@ class RecentItemsStore {
 
   Future<void> saveRecentAddress(String address) async {
     final List<RecentAddressRecord> existing = await loadRecentAddressRecords();
-    final RecentAddressRecord? previous =
-        existing.cast<RecentAddressRecord?>().firstWhere(
-              (RecentAddressRecord? item) => item?.address == address,
-              orElse: () => null,
-            );
+    final RecentAddressRecord? previous = existing
+        .cast<RecentAddressRecord?>()
+        .firstWhere(
+          (RecentAddressRecord? item) => item?.address == address,
+          orElse: () => null,
+        );
     final RecentAddressRecord nextRecord = RecentAddressRecord(
       address: address,
       note: previous?.note,
@@ -224,11 +228,12 @@ class RecentItemsStore {
   }) async {
     final String normalizedAddress = newAddress.trim();
     final List<RecentAddressRecord> existing = await loadRecentAddressRecords();
-    final RecentAddressRecord? current =
-        existing.cast<RecentAddressRecord?>().firstWhere(
-              (RecentAddressRecord? item) => item?.address == oldAddress,
-              orElse: () => null,
-            );
+    final RecentAddressRecord? current = existing
+        .cast<RecentAddressRecord?>()
+        .firstWhere(
+          (RecentAddressRecord? item) => item?.address == oldAddress,
+          orElse: () => null,
+        );
     if (current == null || normalizedAddress.isEmpty) {
       return;
     }
@@ -253,7 +258,8 @@ class RecentItemsStore {
   }
 
   Future<void> _saveDirectoryRecords(
-      List<RecentDirectoryRecord> records) async {
+    List<RecentDirectoryRecord> records,
+  ) async {
     final SharedPreferences preferences = await SharedPreferences.getInstance();
     await preferences.setStringList(
       _recentDirectoriesKey,

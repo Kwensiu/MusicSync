@@ -24,8 +24,10 @@ Future<void> showSettingsChoiceDialog<T>({
   double maxHeight = 360,
   double minHorizontalInset = 20,
   double minVerticalInset = 24,
-  EdgeInsets itemPadding =
-      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+  EdgeInsets itemPadding = const EdgeInsets.symmetric(
+    horizontal: 8,
+    vertical: 2,
+  ),
   bool showConfirmButton = true,
   bool saveOnSelect = false,
 }) async {
@@ -73,17 +75,19 @@ Future<void> showSettingsChoiceDialog<T>({
                           : null,
                       child: ListTile(
                         dense: true,
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                        ),
                         title: Text(
                           option.label,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: option.enabled
                                 ? (isSelected
-                                    ? scheme.onSecondaryContainer
-                                    : scheme.onSurface)
-                                : scheme.onSurfaceVariant
-                                    .withValues(alpha: 0.6),
+                                      ? scheme.onSecondaryContainer
+                                      : scheme.onSurface)
+                                : scheme.onSurfaceVariant.withValues(
+                                    alpha: 0.6,
+                                  ),
                           ),
                         ),
                         trailing: isSelected
@@ -92,8 +96,9 @@ Future<void> showSettingsChoiceDialog<T>({
                                 size: 18,
                                 color: option.enabled
                                     ? scheme.primary
-                                    : scheme.onSurfaceVariant
-                                        .withValues(alpha: 0.5),
+                                    : scheme.onSurfaceVariant.withValues(
+                                        alpha: 0.5,
+                                      ),
                               )
                             : null,
                       ),

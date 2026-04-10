@@ -117,8 +117,8 @@ class _ConnectionStatusDialogState extends State<ConnectionStatusDialog> {
             onTap: _isSubmitting
                 ? null
                 : () => setState(() {
-                      _isEditingPort = true;
-                    }),
+                    _isEditingPort = true;
+                  }),
             borderRadius: BorderRadius.circular(_statusCardRadius),
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -157,11 +157,11 @@ class _ConnectionStatusDialogState extends State<ConnectionStatusDialog> {
                               child: !_isEditingPort
                                   ? Text(
                                       '${widget.listenPort}',
-                                      style:
-                                          theme.textTheme.titleLarge?.copyWith(
-                                        color: scheme.onSurface,
-                                        fontWeight: FontWeight.w800,
-                                      ),
+                                      style: theme.textTheme.titleLarge
+                                          ?.copyWith(
+                                            color: scheme.onSurface,
+                                            fontWeight: FontWeight.w800,
+                                          ),
                                     )
                                   : Transform.translate(
                                       offset: const Offset(0, 0),
@@ -172,9 +172,9 @@ class _ConnectionStatusDialogState extends State<ConnectionStatusDialog> {
                                         keyboardType: TextInputType.number,
                                         style: theme.textTheme.titleLarge
                                             ?.copyWith(
-                                          color: scheme.onSurface,
-                                          fontWeight: FontWeight.w800,
-                                        ),
+                                              color: scheme.onSurface,
+                                              fontWeight: FontWeight.w800,
+                                            ),
                                         decoration: InputDecoration(
                                           isDense: true,
                                           hintText:
@@ -199,8 +199,9 @@ class _ConnectionStatusDialogState extends State<ConnectionStatusDialog> {
                                     width: _portActionSlotSize,
                                     height: _portActionSlotSize,
                                     child: FilledButton(
-                                      onPressed:
-                                          _isSubmitting ? null : _savePort,
+                                      onPressed: _isSubmitting
+                                          ? null
+                                          : _savePort,
                                       style: FilledButton.styleFrom(
                                         shape: const CircleBorder(),
                                         padding: EdgeInsets.zero,

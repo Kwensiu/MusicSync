@@ -49,10 +49,7 @@ Future<void> showDiffItemDetailSheet(
     showDragHandle: false,
     backgroundColor: Colors.transparent,
     builder: (BuildContext context) {
-      return _DiffItemDetailSheetBody(
-        initialData: data,
-        loader: loader,
-      );
+      return _DiffItemDetailSheetBody(initialData: data, loader: loader);
     },
   );
 }
@@ -89,8 +86,9 @@ class _DiffItemDetailSheetBodyState extends State<_DiffItemDetailSheetBody> {
       _refreshFailed = false;
     });
     try {
-      final DiffItemDetailViewData refreshed =
-          await widget.loader.refresh(_data);
+      final DiffItemDetailViewData refreshed = await widget.loader.refresh(
+        _data,
+      );
       if (!mounted) {
         return;
       }
@@ -154,9 +152,9 @@ class _DiffItemDetailSheetBodyState extends State<_DiffItemDetailSheetBody> {
                 Text(
                   _data.path,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: scheme.onSurface,
-                      ),
+                    fontWeight: FontWeight.w800,
+                    color: scheme.onSurface,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Wrap(
@@ -249,9 +247,7 @@ String _sideLabel(BuildContext context, DiffItemDetailSide side) {
 }
 
 class _DetailChip extends StatelessWidget {
-  const _DetailChip({
-    required this.label,
-  });
+  const _DetailChip({required this.label});
 
   final String label;
 
@@ -266,9 +262,9 @@ class _DetailChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
       ),
     );
   }
@@ -289,8 +285,9 @@ class _DetailRefreshBanner extends StatelessWidget {
     final Color background = refreshFailed
         ? scheme.errorContainer.withValues(alpha: 0.85)
         : scheme.surfaceContainerHigh;
-    final Color foreground =
-        refreshFailed ? scheme.onErrorContainer : scheme.onSurfaceVariant;
+    final Color foreground = refreshFailed
+        ? scheme.onErrorContainer
+        : scheme.onSurfaceVariant;
 
     return Container(
       width: double.infinity,
@@ -311,20 +308,16 @@ class _DetailRefreshBanner extends StatelessWidget {
               ),
             )
           else
-            Icon(
-              Icons.error_outline_rounded,
-              size: 16,
-              color: foreground,
-            ),
+            Icon(Icons.error_outline_rounded, size: 16, color: foreground),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               refreshFailed
                   ? context.l10n.previewDetailRefreshFailed
                   : context.l10n.previewDetailRefreshing,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: foreground,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: foreground),
             ),
           ),
         ],
@@ -334,10 +327,7 @@ class _DetailRefreshBanner extends StatelessWidget {
 }
 
 class _DetailSection extends StatelessWidget {
-  const _DetailSection({
-    required this.title,
-    required this.child,
-  });
+  const _DetailSection({required this.title, required this.child});
 
   final String title;
   final Widget child;
@@ -353,9 +343,9 @@ class _DetailSection extends StatelessWidget {
           ),
           child: Text(
             title,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
         const SizedBox(height: _DetailSheetScale.itemGap),
@@ -366,9 +356,7 @@ class _DetailSection extends StatelessWidget {
 }
 
 class _DetailCard extends StatelessWidget {
-  const _DetailCard({
-    required this.children,
-  });
+  const _DetailCard({required this.children});
 
   final List<Widget> children;
 
@@ -383,19 +371,14 @@ class _DetailCard extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
-        child: Column(
-          children: children,
-        ),
+        child: Column(children: children),
       ),
     );
   }
 }
 
 class _EntryCard extends StatelessWidget {
-  const _EntryCard({
-    required this.entry,
-    required this.isRemote,
-  });
+  const _EntryCard({required this.entry, required this.isRemote});
 
   final DiffEntryDetailViewData entry;
   final bool isRemote;
@@ -476,10 +459,7 @@ class _EntryCard extends StatelessWidget {
 }
 
 class _DetailValueRow extends StatelessWidget {
-  const _DetailValueRow({
-    required this.label,
-    required this.value,
-  });
+  const _DetailValueRow({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -498,9 +478,9 @@ class _DetailValueRow extends StatelessWidget {
             ),
             child: Text(
               label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ),
           const SizedBox(height: _DetailSheetScale.fieldLabelGap),
@@ -509,14 +489,15 @@ class _DetailValueRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: scheme.surface,
-              borderRadius:
-                  BorderRadius.circular(_DetailSheetScale.valueRadius),
+              borderRadius: BorderRadius.circular(
+                _DetailSheetScale.valueRadius,
+              ),
             ),
             child: SelectableText(
               value,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurface,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: scheme.onSurface),
             ),
           ),
         ],
@@ -526,10 +507,7 @@ class _DetailValueRow extends StatelessWidget {
 }
 
 class _LyricsValueRow extends StatefulWidget {
-  const _LyricsValueRow({
-    required this.label,
-    required this.value,
-  });
+  const _LyricsValueRow({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -544,9 +522,10 @@ class _LyricsValueRowState extends State<_LyricsValueRow> {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    final TextStyle style = Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurface,
-            ) ??
+    final TextStyle style =
+        Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(color: scheme.onSurface) ??
         const TextStyle();
 
     return Padding(
@@ -560,9 +539,9 @@ class _LyricsValueRowState extends State<_LyricsValueRow> {
             ),
             child: Text(
               widget.label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
           ),
           const SizedBox(height: _DetailSheetScale.fieldLabelGap),
@@ -571,8 +550,9 @@ class _LyricsValueRowState extends State<_LyricsValueRow> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: scheme.surface,
-              borderRadius:
-                  BorderRadius.circular(_DetailSheetScale.valueRadius),
+              borderRadius: BorderRadius.circular(
+                _DetailSheetScale.valueRadius,
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

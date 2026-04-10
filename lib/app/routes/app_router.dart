@@ -12,17 +12,17 @@ final Provider<GoRouter> appRouterProvider = Provider<GoRouter>((Ref ref) {
       GoRoute(
         path: '/',
         name: RouteNames.home,
-        builder: (_, __) => const HomePage(),
+        builder: (_, _) => const HomePage(),
       ),
       GoRoute(
         path: '/result',
         name: RouteNames.result,
-        builder: (_, __) => const ResultPage(),
+        builder: (_, _) => const ResultPage(),
       ),
       GoRoute(
         path: '/settings',
         name: RouteNames.settings,
-        builder: (_, __) => const SettingsPage(),
+        builder: (_, _) => const SettingsPage(),
       ),
     ],
   );

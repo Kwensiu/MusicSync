@@ -19,14 +19,12 @@ class TempFileCleanupService {
 
   final FileAccessGateway _gateway;
 
-  Future<bool> hasTempFiles({
-    required String rootId,
-  }) async {
+  Future<bool> hasTempFiles({required String rootId}) async {
     bool found = false;
     await _walk(
       directoryId: rootId,
       relativeBase: '',
-      onTempFile: (FileAccessEntry _, String __) async {
+      onTempFile: (FileAccessEntry _, String _) async {
         found = true;
       },
       onDirectoryError: (_) {},
@@ -35,9 +33,7 @@ class TempFileCleanupService {
     return found;
   }
 
-  Future<TempFileCleanupResult> cleanup({
-    required String rootId,
-  }) async {
+  Future<TempFileCleanupResult> cleanup({required String rootId}) async {
     int deletedCount = 0;
     final List<String> failedPaths = <String>[];
     await _walk(
@@ -66,7 +62,7 @@ class TempFileCleanupService {
     required String directoryId,
     required String relativeBase,
     required Future<void> Function(FileAccessEntry entry, String relativePath)
-        onTempFile,
+    onTempFile,
     required void Function(String relativePath) onDirectoryError,
     required bool Function() shouldStop,
   }) async {
@@ -85,8 +81,9 @@ class TempFileCleanupService {
       if (shouldStop()) {
         return;
       }
-      final String relativePath =
-          relativeBase.isEmpty ? child.name : '$relativeBase/${child.name}';
+      final String relativePath = relativeBase.isEmpty
+          ? child.name
+          : '$relativeBase/${child.name}';
       if (child.isDirectory) {
         await _walk(
           directoryId: child.entryId,
@@ -106,7 +103,5 @@ class TempFileCleanupService {
 
 final Provider<TempFileCleanupService> tempFileCleanupServiceProvider =
     Provider<TempFileCleanupService>(
-  (Ref ref) => TempFileCleanupService(
-    ref.watch(fileAccessGatewayProvider),
-  ),
-);
+      (Ref ref) => TempFileCleanupService(ref.watch(fileAccessGatewayProvider)),
+    );

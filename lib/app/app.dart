@@ -47,8 +47,9 @@ class _MusicSyncAppState extends ConsumerState<MusicSyncApp> {
   Widget build(BuildContext context) {
     final GoRouter router = ref.watch(appRouterProvider);
     final settingsState = ref.watch(settingsControllerProvider);
-    final DynamicSchemeVariant schemeVariant =
-        _schemeVariant(settingsState.palette);
+    final DynamicSchemeVariant schemeVariant = _schemeVariant(
+      settingsState.palette,
+    );
     final ThemeMode themeMode = _themeMode(settingsState.themeMode);
 
     if (!_startupListenerApplied &&

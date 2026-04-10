@@ -15,10 +15,7 @@ abstract final class SettingsUiScale {
 }
 
 class SettingsJoinedGroup extends StatelessWidget {
-  const SettingsJoinedGroup({
-    required this.children,
-    super.key,
-  });
+  const SettingsJoinedGroup({required this.children, super.key});
 
   final List<Widget> children;
 
@@ -29,15 +26,11 @@ class SettingsJoinedGroup extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(SettingsUiScale.radiusGroup),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.5),
-        ),
+        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(SettingsUiScale.radiusGroup),
-        child: Column(
-          children: children,
-        ),
+        child: Column(children: children),
       ),
     );
   }
@@ -136,10 +129,7 @@ class SettingsActionRow extends StatelessWidget {
 }
 
 class SettingsGroupDivider extends StatelessWidget {
-  const SettingsGroupDivider({
-    required this.color,
-    super.key,
-  });
+  const SettingsGroupDivider({required this.color, super.key});
 
   final Color color;
 

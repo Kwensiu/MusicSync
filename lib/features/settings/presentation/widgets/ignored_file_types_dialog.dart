@@ -102,7 +102,7 @@ class _IgnoredFileTypesDialogState extends State<_IgnoredFileTypesDialog> {
                   )
                 : ListView.separated(
                     itemCount: _values.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: _gapS),
+                    separatorBuilder: (_, _) => const SizedBox(height: _gapS),
                     itemBuilder: (BuildContext context, int index) {
                       final String value = _values[index];
                       return DecoratedBox(

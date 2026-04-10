@@ -8,58 +8,60 @@ import 'package:music_sync/services/file_access/file_access_gateway.dart';
 import 'package:music_sync/services/media/audio_metadata_reader.dart';
 
 void main() {
-  test('prefers ID3v2 metadata when ID3v1 and ID3v2 are both present',
-      () async {
-    final Tag id3v1 = Tag()
-      ..type = 'ID3'
-      ..version = '1.1'
-      ..tags = <String, dynamic>{
-        'title': 'ÖÐÎÄ±êÌâ',
-        'artist': 'ÒÕÊõ¼Ò',
-        'album': '×¨¼\xad',
-        'year': '2026',
-        'comment': '',
-        'track': '0',
-        'genre': 'Blues',
-      };
-    final Tag id3v2 = Tag()
-      ..type = 'ID3'
-      ..version = '2.4'
-      ..tags = <String, dynamic>{
-        'title': '中文标题',
-        'artist': '艺术家',
-        'album': '专辑',
-      };
+  test(
+    'prefers ID3v2 metadata when ID3v1 and ID3v2 are both present',
+    () async {
+      final Tag id3v1 = Tag()
+        ..type = 'ID3'
+        ..version = '1.1'
+        ..tags = <String, dynamic>{
+          'title': 'ÖÐÎÄ±êÌâ',
+          'artist': 'ÒÕÊõ¼Ò',
+          'album': '×¨¼\xad',
+          'year': '2026',
+          'comment': '',
+          'track': '0',
+          'genre': 'Blues',
+        };
+      final Tag id3v2 = Tag()
+        ..type = 'ID3'
+        ..version = '2.4'
+        ..tags = <String, dynamic>{
+          'title': '中文标题',
+          'artist': '艺术家',
+          'album': '专辑',
+        };
 
-    final List<int> bytes = await TagProcessor().putTagsToByteArray(
-      Future<List<int>?>.value(List<int>.filled(32, 0)),
-      <Tag>[id3v1, id3v2],
-    );
+      final List<int> bytes = await TagProcessor().putTagsToByteArray(
+        Future<List<int>?>.value(List<int>.filled(32, 0)),
+        <Tag>[id3v1, id3v2],
+      );
 
-    final AudioMetadataReader reader = AudioMetadataReader(
-      _FakeGateway(Uint8List.fromList(bytes)),
-    );
+      final AudioMetadataReader reader = AudioMetadataReader(
+        _FakeGateway(Uint8List.fromList(bytes)),
+      );
 
-    final metadata = await reader.read('entry');
+      final metadata = await reader.read('entry');
 
-    expect(metadata?.title, '中文标题');
-    expect(metadata?.artist, '艺术家');
-    expect(metadata?.album, '专辑');
-  });
+      expect(metadata?.title, '中文标题');
+      expect(metadata?.artist, '艺术家');
+      expect(metadata?.album, '专辑');
+    },
+  );
 
-  test('returns null when prefix read stalls instead of hanging forever',
-      () async {
-    final AudioMetadataReader reader = AudioMetadataReader(
-      _StalledGateway(),
-    );
+  test(
+    'returns null when prefix read stalls instead of hanging forever',
+    () async {
+      final AudioMetadataReader reader = AudioMetadataReader(_StalledGateway());
 
-    final DateTime startedAt = DateTime.now();
-    final metadata = await reader.read('entry');
-    final Duration elapsed = DateTime.now().difference(startedAt);
+      final DateTime startedAt = DateTime.now();
+      final metadata = await reader.read('entry');
+      final Duration elapsed = DateTime.now().difference(startedAt);
 
-    expect(metadata, isNull);
-    expect(elapsed, lessThan(const Duration(seconds: 4)));
-  });
+      expect(metadata, isNull);
+      expect(elapsed, lessThan(const Duration(seconds: 4)));
+    },
+  );
 
   test('falls back to ID3v1 metadata when ID3v2 is missing', () async {
     final Tag id3v1 = Tag()
@@ -94,14 +96,12 @@ void main() {
   test('reads FLAC vorbis comment metadata', () async {
     final AudioMetadataReader reader = AudioMetadataReader(
       _FakeGateway(
-        _buildFlacBytes(
-          <String, String>{
-            'TITLE': 'FLAC Song',
-            'ARTIST': 'FLAC Artist',
-            'ALBUM': 'FLAC Album',
-            'LYRICS': 'FLAC Lyrics',
-          },
-        ),
+        _buildFlacBytes(<String, String>{
+          'TITLE': 'FLAC Song',
+          'ARTIST': 'FLAC Artist',
+          'ALBUM': 'FLAC Album',
+          'LYRICS': 'FLAC Lyrics',
+        }),
       ),
     );
 
@@ -116,13 +116,11 @@ void main() {
   test('decodes UTF-8 vorbis comment text correctly', () async {
     final AudioMetadataReader reader = AudioMetadataReader(
       _FakeGateway(
-        _buildFlacBytes(
-          <String, String>{
-            'TITLE': '限りなく灰色へ',
-            'ARTIST': '25時、ナイトコードで。',
-            'ALBUM': 'プロセカ',
-          },
-        ),
+        _buildFlacBytes(<String, String>{
+          'TITLE': '限りなく灰色へ',
+          'ARTIST': '25時、ナイトコードで。',
+          'ALBUM': 'プロセカ',
+        }),
       ),
     );
 
@@ -134,13 +132,11 @@ void main() {
   });
 
   test('reads FLAC metadata even when an ID3v2 header is prepended', () async {
-    final Uint8List flacBytes = _buildFlacBytes(
-      <String, String>{
-        'TITLE': '限りなく灰色へ',
-        'ARTIST': '25時、ナイトコードで。/KAITO',
-        'ALBUM': 'プロセカ',
-      },
-    );
+    final Uint8List flacBytes = _buildFlacBytes(<String, String>{
+      'TITLE': '限りなく灰色へ',
+      'ARTIST': '25時、ナイトコードで。/KAITO',
+      'ALBUM': 'プロセカ',
+    });
     final Uint8List bytes = Uint8List.fromList(<int>[
       ...ascii.encode('ID3'),
       4,
@@ -153,9 +149,7 @@ void main() {
       ...flacBytes,
     ]);
 
-    final AudioMetadataReader reader = AudioMetadataReader(
-      _FakeGateway(bytes),
-    );
+    final AudioMetadataReader reader = AudioMetadataReader(_FakeGateway(bytes));
 
     final metadata = await reader.read('entry');
 
@@ -186,13 +180,11 @@ void main() {
   test('reads Ogg Vorbis comment metadata', () async {
     final AudioMetadataReader reader = AudioMetadataReader(
       _FakeGateway(
-        _buildOggVorbisBytes(
-          <String, String>{
-            'TITLE': 'Ogg Song',
-            'ARTIST': 'Ogg Artist',
-            'ALBUM': 'Ogg Album',
-          },
-        ),
+        _buildOggVorbisBytes(<String, String>{
+          'TITLE': 'Ogg Song',
+          'ARTIST': 'Ogg Artist',
+          'ALBUM': 'Ogg Album',
+        }),
       ),
     );
 
@@ -206,13 +198,11 @@ void main() {
   test('reads OpusTags metadata', () async {
     final AudioMetadataReader reader = AudioMetadataReader(
       _FakeGateway(
-        _buildOpusBytes(
-          <String, String>{
-            'TITLE': 'Opus Song',
-            'ARTIST': 'Opus Artist',
-            'ALBUM': 'Opus Album',
-          },
-        ),
+        _buildOpusBytes(<String, String>{
+          'TITLE': 'Opus Song',
+          'ARTIST': 'Opus Artist',
+          'ALBUM': 'Opus Album',
+        }),
       ),
     );
 
@@ -226,17 +216,15 @@ void main() {
   test('reads MP4 ilst metadata', () async {
     final AudioMetadataReader reader = AudioMetadataReader(
       _FakeGateway(
-        _buildMp4Bytes(
-          <String, String>{
-            '\u00A9nam': 'M4A Song',
-            '\u00A9ART': 'M4A Artist',
-            '\u00A9alb': 'M4A Album',
-            '\u00A9wrt': 'M4A Composer',
-            'trkn': '3/12',
-            'disk': '1/2',
-            '\u00A9lyr': 'M4A Lyrics',
-          },
-        ),
+        _buildMp4Bytes(<String, String>{
+          '\u00A9nam': 'M4A Song',
+          '\u00A9ART': 'M4A Artist',
+          '\u00A9alb': 'M4A Album',
+          '\u00A9wrt': 'M4A Composer',
+          'trkn': '3/12',
+          'disk': '1/2',
+          '\u00A9lyr': 'M4A Lyrics',
+        }),
       ),
     );
 
@@ -254,17 +242,15 @@ void main() {
   test('reads APEv2 footer metadata', () async {
     final AudioMetadataReader reader = AudioMetadataReader(
       _FakeGateway(
-        _buildApeBytes(
-          <String, String>{
-            'TITLE': 'APE Song',
-            'ARTIST': 'APE Artist',
-            'ALBUM': 'APE Album',
-            'COMPOSER': 'APE Composer',
-            'TRACK': '4',
-            'DISC': '1',
-            'LYRICS': 'APE Lyrics',
-          },
-        ),
+        _buildApeBytes(<String, String>{
+          'TITLE': 'APE Song',
+          'ARTIST': 'APE Artist',
+          'ALBUM': 'APE Album',
+          'COMPOSER': 'APE Composer',
+          'TRACK': '4',
+          'DISC': '1',
+          'LYRICS': 'APE Lyrics',
+        }),
       ),
     );
 
@@ -318,37 +304,29 @@ List<int> _uint32Le(int value) {
 }
 
 Uint8List _buildOggVorbisBytes(Map<String, String> comments) {
-  final Uint8List identificationPacket = Uint8List.fromList(
-    <int>[
-      0x01,
-      ...'vorbis'.codeUnits,
-      0x00,
-    ],
-  );
-  final Uint8List commentPacket = Uint8List.fromList(
-    <int>[
-      0x03,
-      ...'vorbis'.codeUnits,
-      ..._buildVorbisCommentPayload(comments),
-    ],
-  );
+  final Uint8List identificationPacket = Uint8List.fromList(<int>[
+    0x01,
+    ...'vorbis'.codeUnits,
+    0x00,
+  ]);
+  final Uint8List commentPacket = Uint8List.fromList(<int>[
+    0x03,
+    ...'vorbis'.codeUnits,
+    ..._buildVorbisCommentPayload(comments),
+  ]);
   return _buildOggContainer(<Uint8List>[identificationPacket, commentPacket]);
 }
 
 Uint8List _buildOpusBytes(Map<String, String> comments) {
-  final Uint8List identificationPacket = Uint8List.fromList(
-    <int>[
-      ...'OpusHead'.codeUnits,
-      0x01,
-      0x02,
-    ],
-  );
-  final Uint8List commentPacket = Uint8List.fromList(
-    <int>[
-      ...'OpusTags'.codeUnits,
-      ..._buildVorbisCommentPayload(comments),
-    ],
-  );
+  final Uint8List identificationPacket = Uint8List.fromList(<int>[
+    ...'OpusHead'.codeUnits,
+    0x01,
+    0x02,
+  ]);
+  final Uint8List commentPacket = Uint8List.fromList(<int>[
+    ...'OpusTags'.codeUnits,
+    ..._buildVorbisCommentPayload(comments),
+  ]);
   return _buildOggContainer(<Uint8List>[identificationPacket, commentPacket]);
 }
 
@@ -398,8 +376,9 @@ Uint8List _buildOggContainer(List<Uint8List> packets) {
 }
 
 Uint8List _buildMp4Bytes(Map<String, String> metadata) {
-  final List<Uint8List> items =
-      metadata.entries.map((MapEntry<String, String> entry) {
+  final List<Uint8List> items = metadata.entries.map((
+    MapEntry<String, String> entry,
+  ) {
     final Uint8List data = switch (entry.key) {
       'trkn' || 'disk' => _mp4NumberPairDataAtom(entry.value),
       _ => _mp4DataAtom(entry.value),
@@ -407,19 +386,10 @@ Uint8List _buildMp4Bytes(Map<String, String> metadata) {
     return _mp4Atom(entry.key, data);
   }).toList();
 
-  final Uint8List ilst = _mp4Atom(
-    'ilst',
-    _concatBytes(items),
-  );
+  final Uint8List ilst = _mp4Atom('ilst', _concatBytes(items));
   final Uint8List meta = _mp4Atom(
     'meta',
-    Uint8List.fromList(<int>[
-      0,
-      0,
-      0,
-      0,
-      ...ilst,
-    ]),
+    Uint8List.fromList(<int>[0, 0, 0, 0, ...ilst]),
   );
   final Uint8List udta = _mp4Atom('udta', meta);
   final Uint8List moov = _mp4Atom('moov', udta);
@@ -436,10 +406,7 @@ Uint8List _buildMp4Bytes(Map<String, String> metadata) {
     ]),
   );
 
-  return Uint8List.fromList(<int>[
-    ...ftyp,
-    ...moov,
-  ]);
+  return Uint8List.fromList(<int>[...ftyp, ...moov]);
 }
 
 Uint8List _buildApeBytes(Map<String, String> metadata) {
@@ -484,17 +451,7 @@ Uint8List _mp4DataAtom(String value) {
   final List<int> payload = utf8.encode(value);
   return _mp4Atom(
     'data',
-    Uint8List.fromList(<int>[
-      0,
-      0,
-      0,
-      1,
-      0,
-      0,
-      0,
-      0,
-      ...payload,
-    ]),
+    Uint8List.fromList(<int>[0, 0, 0, 1, 0, 0, 0, 0, ...payload]),
   );
 }
 

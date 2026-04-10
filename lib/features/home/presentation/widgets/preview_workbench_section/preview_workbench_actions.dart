@@ -79,18 +79,17 @@ class PreviewWorkbenchActions {
     ScanSnapshot? remoteSnapshot,
     List<String> ignoredExtensions = const <String>[],
   }) async {
-    final ScanSnapshot? targetSnapshot = remoteSnapshot ??
+    final ScanSnapshot? targetSnapshot =
+        remoteSnapshot ??
         await ref
             .read(connectionControllerProvider.notifier)
             .refreshRemoteSnapshot();
     if (targetSnapshot == null) {
       return;
     }
-    final ScanSnapshot localSnapshot =
-        await ref.read(directoryScannerProvider).scan(
-              root: sourceRoot,
-              deviceId: 'local-device',
-            );
+    final ScanSnapshot localSnapshot = await ref
+        .read(directoryScannerProvider)
+        .scan(root: sourceRoot, deviceId: 'local-device');
     await ref
         .read(previewControllerProvider.notifier)
         .buildPreviewFromSnapshots(
@@ -127,7 +126,9 @@ class PreviewWorkbenchActions {
       }
     }
 
-    await ref.read(executionControllerProvider.notifier).executeRemote(
+    await ref
+        .read(executionControllerProvider.notifier)
+        .executeRemote(
           plan: previewState.plan,
           remoteRootId: connectionState.remoteSnapshot!.rootId,
         );
@@ -163,7 +164,9 @@ class PreviewWorkbenchActions {
         ref.read(previewControllerProvider.notifier).clear();
         return;
       }
-      await ref.read(previewControllerProvider.notifier).buildLocalPreview(
+      await ref
+          .read(previewControllerProvider.notifier)
+          .buildLocalPreview(
             sourceRoot: sourceRoot,
             targetRoot: DirectoryHandle(
               entryId: targetRootId,
@@ -171,8 +174,9 @@ class PreviewWorkbenchActions {
             ),
             deleteEnabled: previewState.deleteEnabled,
             extensionFilter: previewState.activeExtension,
-            ignoredExtensions:
-                ref.read(settingsControllerProvider).ignoredExtensions,
+            ignoredExtensions: ref
+                .read(settingsControllerProvider)
+                .ignoredExtensions,
           );
       return;
     }
@@ -180,18 +184,14 @@ class PreviewWorkbenchActions {
     if (previewState.mode == PreviewMode.remote) {
       final ScanSnapshot? remoteSnapshot = await ref
           .read(connectionControllerProvider.notifier)
-          .refreshRemoteSnapshot(
-            clearTransientState: false,
-          );
+          .refreshRemoteSnapshot(clearTransientState: false);
       if (remoteSnapshot == null) {
         ref.read(previewControllerProvider.notifier).clear();
         return;
       }
-      final ScanSnapshot localSnapshot =
-          await ref.read(directoryScannerProvider).scan(
-                root: sourceRoot,
-                deviceId: 'local-device',
-              );
+      final ScanSnapshot localSnapshot = await ref
+          .read(directoryScannerProvider)
+          .scan(root: sourceRoot, deviceId: 'local-device');
       await ref
           .read(previewControllerProvider.notifier)
           .buildPreviewFromSnapshots(
@@ -199,8 +199,9 @@ class PreviewWorkbenchActions {
             target: remoteSnapshot,
             deleteEnabled: previewState.deleteEnabled,
             extensionFilter: previewState.activeExtension,
-            ignoredExtensions:
-                ref.read(settingsControllerProvider).ignoredExtensions,
+            ignoredExtensions: ref
+                .read(settingsControllerProvider)
+                .ignoredExtensions,
             sourceRootId: sourceRoot.entryId,
           );
       return;

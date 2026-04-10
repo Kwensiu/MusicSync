@@ -123,8 +123,9 @@ class LocalSyncExecutor {
       final String destinationPath = p.join(targetRoot, item.relativePath);
 
       try {
-        final FileSystemEntityType type =
-            FileSystemEntity.typeSync(destinationPath);
+        final FileSystemEntityType type = FileSystemEntity.typeSync(
+          destinationPath,
+        );
         switch (type) {
           case FileSystemEntityType.directory:
             await Directory(destinationPath).delete(recursive: true);

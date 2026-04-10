@@ -5,10 +5,7 @@ import 'package:music_sync/models/device_info.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class PortDialog extends StatefulWidget {
-  const PortDialog({
-    required this.initialPort,
-    super.key,
-  });
+  const PortDialog({required this.initialPort, super.key});
 
   final int initialPort;
 
@@ -85,8 +82,9 @@ class RecentAliasDialog extends StatefulWidget {
 }
 
 class _RecentAliasDialogState extends State<RecentAliasDialog> {
-  late final TextEditingController _controller =
-      TextEditingController(text: widget.initialValue ?? '');
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialValue ?? '',
+  );
 
   @override
   void dispose() {
@@ -146,10 +144,12 @@ class RecentAddressDialog extends StatefulWidget {
 }
 
 class _RecentAddressDialogState extends State<RecentAddressDialog> {
-  late final TextEditingController _addressController =
-      TextEditingController(text: widget.initialAddress);
-  late final TextEditingController _aliasController =
-      TextEditingController(text: widget.initialAlias ?? '');
+  late final TextEditingController _addressController = TextEditingController(
+    text: widget.initialAddress,
+  );
+  late final TextEditingController _aliasController = TextEditingController(
+    text: widget.initialAlias ?? '',
+  );
   String? _addressError;
 
   @override
@@ -253,10 +253,7 @@ class ShareAddressDialog extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          QrImageView(
-            data: address,
-            size: 180,
-          ),
+          QrImageView(data: address, size: 180),
           const SizedBox(height: 10),
           SizedBox(
             width: 180,

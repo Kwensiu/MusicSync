@@ -1,23 +1,34 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:music_sync/features/settings/state/settings_controller.dart';
 import 'package:music_sync/features/settings/state/settings_state.dart';
 import 'package:music_sync/services/storage/settings_store.dart';
 
 void main() {
-  test('SettingsController saves and reloads normalized ignored extensions',
-      () async {
-    final _FakeSettingsStore store = _FakeSettingsStore();
-    final SettingsController controller = SettingsController(store);
-    addTearDown(controller.dispose);
+  test(
+    'SettingsController saves and reloads normalized ignored extensions',
+    () async {
+      final _FakeSettingsStore store = _FakeSettingsStore();
+      final ProviderContainer container = ProviderContainer(
+        overrides: [settingsStoreProvider.overrideWithValue(store)],
+      );
+      addTearDown(container.dispose);
+      final SettingsController controller = container.read(
+        settingsControllerProvider.notifier,
+      );
 
-    await controller.load();
-    await controller.saveIgnoredExtensions(
-      const <String>['.lrc', 'jpg', '..JPG', '  .LRC  '],
-    );
+      await controller.load();
+      await controller.saveIgnoredExtensions(const <String>[
+        '.lrc',
+        'jpg',
+        '..JPG',
+        '  .LRC  ',
+      ]);
 
-    expect(controller.state.ignoredExtensions, <String>['jpg', 'lrc']);
-    expect(store.savedIgnoredExtensions, <String>['jpg', 'lrc']);
-  });
+      expect(controller.state.ignoredExtensions, <String>['jpg', 'lrc']);
+      expect(store.savedIgnoredExtensions, <String>['jpg', 'lrc']);
+    },
+  );
 }
 
 class _FakeSettingsStore extends SettingsStore {
@@ -39,13 +50,16 @@ class _FakeSettingsStore extends SettingsStore {
 
   @override
   Future<void> saveIgnoredExtensions(List<String> values) async {
-    savedIgnoredExtensions = values
-        .map((String value) =>
-            value.trim().toLowerCase().replaceFirst(RegExp(r'^\.+'), ''))
-        .where((String value) => value.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort();
+    savedIgnoredExtensions =
+        values
+            .map(
+              (String value) =>
+                  value.trim().toLowerCase().replaceFirst(RegExp(r'^\.+'), ''),
+            )
+            .where((String value) => value.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
   }
 
   @override

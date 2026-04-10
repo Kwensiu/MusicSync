@@ -102,7 +102,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String directoryPreflightSampleSummary(
-      int children, int directories, int files) {
+    int children,
+    int directories,
+    int files,
+  ) {
     return 'Preflight sample: $children top-level items, $directories directories, $files files.';
   }
 

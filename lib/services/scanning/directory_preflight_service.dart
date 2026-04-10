@@ -26,15 +26,17 @@ class DirectoryPreflightService {
   static const int _maxNestedDirectoriesSample = 24;
 
   Future<DirectoryPreflightResult> inspect(DirectoryHandle handle) async {
-    final List<FileAccessEntry> rootChildren =
-        await _gateway.listChildren(handle.entryId);
+    final List<FileAccessEntry> rootChildren = await _gateway.listChildren(
+      handle.entryId,
+    );
     final int sampledChildren = rootChildren.length;
     int sampledDirectories = 0;
     int sampledFiles = 0;
     final List<String> reasons = <String>[];
 
-    final Iterable<FileAccessEntry> limitedRootChildren =
-        rootChildren.take(_maxRootChildrenSample);
+    final Iterable<FileAccessEntry> limitedRootChildren = rootChildren.take(
+      _maxRootChildrenSample,
+    );
 
     for (final FileAccessEntry child in limitedRootChildren) {
       if (child.isDirectory) {
@@ -56,8 +58,8 @@ class DirectoryPreflightService {
       }
       nestedDirectoryChecks++;
       try {
-        final List<FileAccessEntry> nestedChildren =
-            await _gateway.listChildren(child.entryId);
+        final List<FileAccessEntry> nestedChildren = await _gateway
+            .listChildren(child.entryId);
         if (nestedChildren.length > _maxRootChildrenSample) {
           reasons.add('dense_nested_directory');
           break;

@@ -1,14 +1,6 @@
-enum AppThemeModeSetting {
-  system,
-  light,
-  dark,
-}
+enum AppThemeModeSetting { system, light, dark }
 
-enum AppPaletteSetting {
-  neutral,
-  expressive,
-  tonalSpot,
-}
+enum AppPaletteSetting { neutral, expressive, tonalSpot }
 
 class SettingsState {
   const SettingsState({

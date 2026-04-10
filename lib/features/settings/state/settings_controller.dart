@@ -1,22 +1,25 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:music_sync/features/settings/state/settings_state.dart';
 import 'package:music_sync/services/storage/settings_store.dart';
 
-final Provider<SettingsStore> settingsStoreProvider =
-    Provider<SettingsStore>((Ref ref) => SettingsStore());
-
-final StateNotifierProvider<SettingsController, SettingsState>
-    settingsControllerProvider =
-    StateNotifierProvider<SettingsController, SettingsState>(
-  (Ref ref) => SettingsController(ref.watch(settingsStoreProvider)),
+final Provider<SettingsStore> settingsStoreProvider = Provider<SettingsStore>(
+  (Ref ref) => SettingsStore(),
 );
 
-class SettingsController extends StateNotifier<SettingsState> {
-  SettingsController(this._store) : super(const SettingsState()) {
-    load();
-  }
+final NotifierProvider<SettingsController, SettingsState>
+settingsControllerProvider =
+    NotifierProvider<SettingsController, SettingsState>(SettingsController.new);
 
-  final SettingsStore _store;
+class SettingsController extends Notifier<SettingsState> {
+  SettingsStore get _store => ref.read(settingsStoreProvider);
+
+  @override
+  SettingsState build() {
+    Future<void>.microtask(load);
+    return const SettingsState();
+  }
 
   Future<void> load() async {
     state = state.copyWith(isLoading: true);
@@ -34,51 +37,27 @@ class SettingsController extends StateNotifier<SettingsState> {
   }
 
   Future<void> setAutoStartListening(bool value) async {
-    state = state.copyWith(
-      isLoading: true,
-      autoStartListening: value,
-    );
+    state = state.copyWith(isLoading: true, autoStartListening: value);
     await _store.saveAutoStartListening(value);
-    state = state.copyWith(
-      isLoading: false,
-      autoStartListening: value,
-    );
+    state = state.copyWith(isLoading: false, autoStartListening: value);
   }
 
   Future<void> saveIgnoredExtensions(List<String> values) async {
-    state = state.copyWith(
-      isLoading: true,
-      ignoredExtensions: values,
-    );
+    state = state.copyWith(isLoading: true, ignoredExtensions: values);
     await _store.saveIgnoredExtensions(values);
     final List<String> reloaded = await _store.loadIgnoredExtensions();
-    state = state.copyWith(
-      isLoading: false,
-      ignoredExtensions: reloaded,
-    );
+    state = state.copyWith(isLoading: false, ignoredExtensions: reloaded);
   }
 
   Future<void> setThemeMode(AppThemeModeSetting mode) async {
-    state = state.copyWith(
-      isLoading: true,
-      themeMode: mode,
-    );
+    state = state.copyWith(isLoading: true, themeMode: mode);
     await _store.saveThemeMode(mode);
-    state = state.copyWith(
-      isLoading: false,
-      themeMode: mode,
-    );
+    state = state.copyWith(isLoading: false, themeMode: mode);
   }
 
   Future<void> setPalette(AppPaletteSetting palette) async {
-    state = state.copyWith(
-      isLoading: true,
-      palette: palette,
-    );
+    state = state.copyWith(isLoading: true, palette: palette);
     await _store.savePalette(palette);
-    state = state.copyWith(
-      isLoading: false,
-      palette: palette,
-    );
+    state = state.copyWith(isLoading: false, palette: palette);
   }
 }

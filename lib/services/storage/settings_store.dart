@@ -32,12 +32,13 @@ class SettingsStore {
 
   Future<void> saveIgnoredExtensions(List<String> values) async {
     final SharedPreferences preferences = await SharedPreferences.getInstance();
-    final List<String> normalized = values
-        .map(normalizeExtensionRule)
-        .where((String value) => value.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort();
+    final List<String> normalized =
+        values
+            .map(normalizeExtensionRule)
+            .where((String value) => value.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
     await preferences.setStringList(_ignoredExtensionsKey, normalized);
   }
 

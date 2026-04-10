@@ -2,19 +2,9 @@ import 'package:music_sync/core/errors/app_error_localizer.dart';
 import 'package:music_sync/models/execution_result.dart';
 import 'package:music_sync/models/transfer_progress.dart';
 
-enum ExecutionStatus {
-  idle,
-  running,
-  cancelled,
-  completed,
-  failed,
-}
+enum ExecutionStatus { idle, running, cancelled, completed, failed }
 
-enum ExecutionMode {
-  none,
-  local,
-  remote,
-}
+enum ExecutionMode { none, local, remote }
 
 class ExecutionState {
   const ExecutionState({

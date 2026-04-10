@@ -29,7 +29,7 @@ class SourceDirectorySection extends StatelessWidget {
   final VoidCallback onManageRecentDirectories;
   final ValueChanged<DirectoryHandle> onUseRecentDirectory;
   final String Function(BuildContext context, String value)
-      localizePreflightReason;
+  localizePreflightReason;
 
   @override
   Widget build(BuildContext context) {
@@ -42,8 +42,8 @@ class SourceDirectorySection extends StatelessWidget {
     final String? sourceDetail = selectedHandle == null
         ? null
         : selectedHandle.entryId == selectedHandle.displayName
-            ? null
-            : formatDisplayPath(selectedHandle.entryId);
+        ? null
+        : formatDisplayPath(selectedHandle.entryId);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,12 +97,8 @@ class SourceDirectorySection extends StatelessWidget {
                               sourceDetail,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: scheme.onSurfaceVariant,
-                                  ),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: scheme.onSurfaceVariant),
                             ),
                           ],
                         ],
@@ -117,10 +113,7 @@ class SourceDirectorySection extends StatelessWidget {
                               tooltip: context.l10n.homeClearSelection,
                               visualDensity: VisualDensity.compact,
                               onPressed: isBusy ? null : onClearDirectory,
-                              icon: const Icon(
-                                Icons.close_rounded,
-                                size: 18,
-                              ),
+                              icon: const Icon(Icons.close_rounded, size: 18),
                             )
                           : null,
                     ),
@@ -130,9 +123,9 @@ class SourceDirectorySection extends StatelessWidget {
                   const SizedBox(height: 12),
                   Text(
                     directoryState.errorMessage!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.error,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: scheme.error),
                   ),
                 ],
                 if (hasRisk) ...<Widget>[
@@ -152,20 +145,18 @@ class SourceDirectorySection extends StatelessWidget {
                       children: <Widget>[
                         Text(
                           context.l10n.directoryPreflightWarningTitle,
-                          style:
-                              Theme.of(context).textTheme.labelLarge?.copyWith(
-                                    color: scheme.onErrorContainer,
-                                  ),
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(color: scheme.onErrorContainer),
                         ),
                         const SizedBox(height: 6),
-                        ...directoryState.preflight!.reasons.take(2).map(
+                        ...directoryState.preflight!.reasons
+                            .take(2)
+                            .map(
                               (String reason) => Padding(
                                 padding: const EdgeInsets.only(bottom: 2),
                                 child: Text(
                                   localizePreflightReason(context, reason),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
+                                  style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
                                         color: scheme.onErrorContainer,
                                       ),
@@ -189,7 +180,8 @@ class SourceDirectorySection extends StatelessWidget {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: OutlinedButton(
-                      onPressed: isBusy ||
+                      onPressed:
+                          isBusy ||
                               selectedHandle == null ||
                               isCleaningSourceTemp
                           ? null

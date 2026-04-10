@@ -15,10 +15,7 @@ class FileAccessEntry {
 }
 
 class DirectoryHandle {
-  const DirectoryHandle({
-    required this.entryId,
-    required this.displayName,
-  });
+  const DirectoryHandle({required this.entryId, required this.displayName});
 
   final String entryId;
   final String displayName;

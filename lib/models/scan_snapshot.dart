@@ -38,20 +38,21 @@ class ScanSnapshot {
       rootId: json['rootId'] as String? ?? '',
       rootDisplayName: json['rootDisplayName'] as String? ?? '',
       deviceId: json['deviceId'] as String? ?? '',
-      scannedAt: DateTime.tryParse(json['scannedAt'] as String? ?? '') ??
+      scannedAt:
+          DateTime.tryParse(json['scannedAt'] as String? ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
       entries: rawEntries is List<Object?>
           ? rawEntries
-              .whereType<Map<Object?, Object?>>()
-              .map((Map<Object?, Object?> entry) => FileEntry.fromJson(
+                .whereType<Map<Object?, Object?>>()
+                .map(
+                  (Map<Object?, Object?> entry) => FileEntry.fromJson(
                     entry.map(
-                      (Object? key, Object? value) => MapEntry(
-                        key.toString(),
-                        value,
-                      ),
+                      (Object? key, Object? value) =>
+                          MapEntry(key.toString(), value),
                     ),
-                  ))
-              .toList()
+                  ),
+                )
+                .toList()
           : const <FileEntry>[],
       cacheVersion: (json['cacheVersion'] as num?)?.toInt() ?? 1,
       warnings: rawWarnings is List<Object?>

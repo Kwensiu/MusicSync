@@ -96,7 +96,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String directoryPreflightSampleSummary(
-      int children, int directories, int files) {
+    int children,
+    int directories,
+    int files,
+  ) {
     return '预检样本：顶层条目 $children 个，目录 $directories 个，文件 $files 个。';
   }
 
