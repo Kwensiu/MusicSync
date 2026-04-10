@@ -4,7 +4,6 @@ import 'package:music_sync/models/scan_snapshot.dart';
 
 enum ConnectionStatus {
   idle,
-  listening,
   connecting,
   connected,
   disconnected,
@@ -18,6 +17,7 @@ class ConnectionState {
     this.remoteSnapshot,
     this.isRemoteDirectoryReady = false,
     this.isIncomingSyncActive = false,
+    this.isListening = false,
     this.discoveredDevices = const <DeviceInfo>[],
     this.recentAddresses = const <String>[],
     this.recentLabels = const <String, String>{},
@@ -30,6 +30,7 @@ class ConnectionState {
   final ScanSnapshot? remoteSnapshot;
   final bool isRemoteDirectoryReady;
   final bool isIncomingSyncActive;
+  final bool isListening;
   final List<DeviceInfo> discoveredDevices;
   final List<String> recentAddresses;
   final Map<String, String> recentLabels;

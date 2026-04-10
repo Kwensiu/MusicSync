@@ -29,7 +29,6 @@ import 'package:music_sync/features/settings/state/settings_controller.dart';
 import 'package:music_sync/l10n/app_localizations_ext.dart';
 import 'package:music_sync/models/device_info.dart';
 import 'package:music_sync/models/diff_item.dart';
-import 'package:music_sync/models/scan_snapshot.dart';
 import 'package:music_sync/services/file_access/file_access_entry.dart';
 import 'package:music_sync/services/file_access/file_access_provider.dart';
 import 'package:music_sync/services/platform/android_background_runtime.dart';
@@ -54,8 +53,6 @@ class _HomePageState extends ConsumerState<HomePage>
   };
   bool _isCleaningSourceTemp = false;
   bool _isCleaningTargetTemp = false;
-  String? _lastAutoPreviewSignature;
-  bool _isAutoPreviewQueued = false;
   AppLifecycleState? _appLifecycleState;
 
   @override
@@ -101,31 +98,12 @@ class _HomePageState extends ConsumerState<HomePage>
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<DirectoryState>(directoryControllerProvider,
-        (_, DirectoryState next) {
-      _maybeScheduleAutoRemotePreview(
-        directoryState: next,
-        connectionState: ref.read(connectionControllerProvider),
-        previewState: ref.read(previewControllerProvider),
-        executionState: ref.read(executionControllerProvider),
-        ignoredExtensions:
-            ref.read(settingsControllerProvider).ignoredExtensions,
-      );
-    });
     ref.listen<peer_connection.ConnectionState>(
       connectionControllerProvider,
       (_, peer_connection.ConnectionState next) {
         _syncAndroidKeepAlive(
           connectionState: next,
           executionState: ref.read(executionControllerProvider),
-        );
-        _maybeScheduleAutoRemotePreview(
-          directoryState: ref.read(directoryControllerProvider),
-          connectionState: next,
-          previewState: ref.read(previewControllerProvider),
-          executionState: ref.read(executionControllerProvider),
-          ignoredExtensions:
-              ref.read(settingsControllerProvider).ignoredExtensions,
         );
       },
     );
@@ -671,63 +649,6 @@ class _HomePageState extends ConsumerState<HomePage>
         connectionState.status == peer_connection.ConnectionStatus.connected &&
         isRemoteSyncRunning;
     AndroidBackgroundRuntime.setKeepAliveEnabled(shouldEnable);
-  }
-
-  void _maybeScheduleAutoRemotePreview({
-    required DirectoryState directoryState,
-    required peer_connection.ConnectionState connectionState,
-    required PreviewState previewState,
-    required ExecutionState executionState,
-    required List<String> ignoredExtensions,
-  }) {
-    if (!mounted || _isAutoPreviewQueued) {
-      return;
-    }
-    final DirectoryHandle? sourceRoot = directoryState.handle;
-    final ScanSnapshot? remoteSnapshot = connectionState.remoteSnapshot;
-    final bool remoteReady =
-        connectionState.isRemoteDirectoryReady || remoteSnapshot != null;
-    if (sourceRoot == null || !remoteReady) {
-      return;
-    }
-    if (executionState.status == ExecutionStatus.running) {
-      return;
-    }
-    final String signature = remoteSnapshot == null
-        ? '${sourceRoot.entryId}|pending-remote|${ignoredExtensions.join(",")}'
-        : '${sourceRoot.entryId}|${remoteSnapshot.rootId}|${remoteSnapshot.scannedAt.microsecondsSinceEpoch}|${ignoredExtensions.join(",")}';
-    final bool alreadyCurrent = remoteSnapshot != null &&
-        previewState.mode == PreviewMode.remote &&
-        previewState.sourceRootId == sourceRoot.entryId &&
-        previewState.targetSnapshot?.rootId == remoteSnapshot.rootId &&
-        previewState.targetSnapshot?.scannedAt == remoteSnapshot.scannedAt &&
-        PreviewWorkbenchActions.listEquals(
-          previewState.ignoredExtensions,
-          ignoredExtensions,
-        );
-    if (alreadyCurrent || _lastAutoPreviewSignature == signature) {
-      return;
-    }
-    _isAutoPreviewQueued = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      try {
-        await PreviewWorkbenchActions.buildRemotePreview(
-          ref: ref,
-          sourceRoot: sourceRoot,
-          remoteSnapshot: remoteSnapshot,
-          ignoredExtensions: ignoredExtensions,
-        );
-        _lastAutoPreviewSignature = signature;
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isAutoPreviewQueued = false;
-          });
-        } else {
-          _isAutoPreviewQueued = false;
-        }
-      }
-    });
   }
 
   String _localizePreflightReason(BuildContext context, String reason) {

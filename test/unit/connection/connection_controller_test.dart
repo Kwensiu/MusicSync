@@ -25,6 +25,7 @@ import 'package:music_sync/services/file_access/file_access_provider.dart';
 import 'package:music_sync/services/network/connection_service.dart';
 import 'package:music_sync/services/network/listener_service.dart';
 import 'package:music_sync/services/network/peer_session.dart';
+import 'package:music_sync/services/network/protocol/protocol_message.dart';
 import 'package:music_sync/services/storage/recent_items_store.dart';
 
 void main() {
@@ -71,12 +72,51 @@ void main() {
       final previewState = container.read(previewControllerProvider);
       final executionState = container.read(executionControllerProvider);
 
-      expect(connectionState.status, ConnectionStatus.listening);
+      expect(connectionState.status, ConnectionStatus.idle);
+      expect(connectionState.isListening, isTrue);
       expect(connectionState.peer, isNull);
       expect(connectionState.remoteSnapshot, isNull);
       expect(previewState.status, PreviewStatus.idle);
       expect(executionState.status, ExecutionStatus.idle);
       expect(executionState.targetRoot, 'local-target');
+      expect(connectionService.disconnectCalls, 1);
+    });
+
+    test('stop listening disconnects peer session and resets connection state',
+        () async {
+      final _FakeConnectionService connectionService = _FakeConnectionService(
+        snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
+      );
+      final ProviderContainer container = ProviderContainer(
+        overrides: <Override>[
+          connectionServiceProvider.overrideWithValue(connectionService),
+          listenerServiceProvider.overrideWithValue(_FakeListenerService()),
+          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+          fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await container
+          .read(connectionControllerProvider.notifier)
+          .startListening(port: 44888);
+      await container.read(connectionControllerProvider.notifier).connect(
+            address: '192.168.1.2',
+            port: 44888,
+          );
+
+      await container
+          .read(connectionControllerProvider.notifier)
+          .stopListening();
+
+      final ConnectionState connectionState =
+          container.read(connectionControllerProvider);
+      expect(connectionState.status, ConnectionStatus.idle);
+      expect(connectionState.isListening, isFalse);
+      expect(connectionState.listenPort, isNull);
+      expect(connectionState.peer, isNull);
+      expect(connectionState.remoteSnapshot, isNull);
+      expect(connectionState.isRemoteDirectoryReady, isFalse);
       expect(connectionService.disconnectCalls, 1);
     });
 
@@ -164,6 +204,55 @@ void main() {
       expect(previewState.status, PreviewStatus.idle);
       expect(executionState.status, ExecutionStatus.idle);
       expect(executionState.targetRoot, 'local-target');
+    });
+
+    test(
+        'remoteDirectoryChanged ready message refreshes remote snapshot automatically',
+        () async {
+      final _FakeConnectionService connectionService = _FakeConnectionService(
+        snapshots: <ScanSnapshot>[_remoteSnapshot('Remote A')],
+        scanErrorMessage: 'No shared directory selected on peer.',
+      );
+      final ProviderContainer container = ProviderContainer(
+        overrides: <Override>[
+          connectionServiceProvider.overrideWithValue(connectionService),
+          listenerServiceProvider.overrideWithValue(_FakeListenerService()),
+          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+          fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(connectionControllerProvider.notifier).connect(
+            address: '192.168.1.2',
+            port: 44888,
+          );
+
+      expect(
+        container.read(connectionControllerProvider).remoteSnapshot,
+        isNull,
+      );
+      expect(
+        container.read(connectionControllerProvider).isRemoteDirectoryReady,
+        isFalse,
+      );
+
+      await connectionService.onMessage?.call(
+        const ProtocolMessage(
+          type: 'remoteDirectoryChanged',
+          requestId: 'dir-ready-1',
+          payload: <String, Object?>{
+            'isReady': true,
+            'displayName': 'Remote Music',
+          },
+        ),
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      final ConnectionState connectionState =
+          container.read(connectionControllerProvider);
+      expect(connectionState.isRemoteDirectoryReady, isTrue);
+      expect(connectionState.remoteSnapshot?.rootDisplayName, 'Remote A');
     });
 
     test(
@@ -639,6 +728,121 @@ void main() {
       expect(executionState.errorMessage, isNotEmpty);
       expect(previewState.status, PreviewStatus.idle);
     });
+
+    test('passive incoming hello initializes remote directory ready state',
+        () async {
+      final _FakeListenerService listener = _FakeListenerService();
+      final ProviderContainer container = ProviderContainer(
+        overrides: <Override>[
+          listenerServiceProvider.overrideWithValue(listener),
+          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+          fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await container
+          .read(connectionControllerProvider.notifier)
+          .startListening(port: 44888);
+
+      final _PeerPair pair = await _PeerPair.open((PeerSession session) {
+        listener.onClient?.call(session);
+      });
+      addTearDown(pair.close);
+
+      final ProtocolMessage response = await pair.client.sendRequest(
+        type: 'hello',
+        requestId: 'hello-1',
+        payload: <String, Object?>{
+          'device': const DeviceInfo(
+            deviceId: 'peer-device',
+            deviceName: 'Peer Device',
+            platform: 'android',
+            address: '192.168.1.10',
+            port: 44888,
+          ).toJson(),
+          'directoryReady': true,
+          'directoryDisplayName': 'Peer Music',
+        },
+      );
+
+      expect(response.type, 'helloAck');
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      final ConnectionState connectionState =
+          container.read(connectionControllerProvider);
+      expect(connectionState.status, ConnectionStatus.connected);
+      expect(connectionState.peer?.deviceId, 'peer-device');
+      expect(connectionState.isRemoteDirectoryReady, isTrue);
+      expect(connectionState.remoteSnapshot, isNull);
+    });
+
+    test('passive incoming session applies remoteDirectoryChanged after hello',
+        () async {
+      final _FakeListenerService listener = _FakeListenerService();
+      final ProviderContainer container = ProviderContainer(
+        overrides: <Override>[
+          listenerServiceProvider.overrideWithValue(listener),
+          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+          fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await container
+          .read(connectionControllerProvider.notifier)
+          .startListening(port: 44888);
+
+      final _PeerPair pair = await _PeerPair.open((PeerSession session) {
+        listener.onClient?.call(session);
+      });
+      addTearDown(pair.close);
+
+      pair.client.onMessage = (ProtocolMessage message) {
+        if (message.type != 'scanRequest') {
+          return null;
+        }
+        return ProtocolMessage(
+          type: 'scanResponse',
+          requestId: message.requestId,
+          payload: <String, Object?>{
+            'snapshot': _remoteSnapshot('Remote Passive').toJson(),
+          },
+        );
+      };
+
+      await pair.client.sendRequest(
+        type: 'hello',
+        requestId: 'hello-passive-1',
+        payload: <String, Object?>{
+          'device': const DeviceInfo(
+            deviceId: 'peer-device',
+            deviceName: 'Peer Device',
+            platform: 'android',
+            address: '192.168.1.10',
+            port: 44888,
+          ).toJson(),
+          'directoryReady': false,
+        },
+      );
+
+      await pair.client.sendMessage(
+        type: 'remoteDirectoryChanged',
+        requestId: 'rdc-1',
+        payload: const <String, Object?>{
+          'isReady': true,
+          'displayName': 'Peer Music',
+        },
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+
+      final ConnectionState connectionState =
+          container.read(connectionControllerProvider);
+      expect(connectionState.status, ConnectionStatus.connected);
+      expect(connectionState.peer?.deviceId, 'peer-device');
+      expect(connectionState.isRemoteDirectoryReady, isTrue);
+      expect(connectionState.remoteSnapshot?.rootDisplayName, 'Remote Passive');
+    });
   });
 }
 
@@ -660,6 +864,8 @@ class _FakeConnectionService extends ConnectionService {
     required String address,
     required int port,
     required DeviceInfo localDevice,
+    bool isDirectoryReady = false,
+    String? directoryDisplayName,
   }) async {
     return DeviceInfo(
       deviceId: 'peer',
@@ -677,6 +883,7 @@ class _FakeConnectionService extends ConnectionService {
       throw SocketException(refreshScanErrorMessage!);
     }
     if (!isRefreshRequest && scanErrorMessage != null) {
+      _index++;
       throw SocketException(scanErrorMessage!);
     }
     final int current =

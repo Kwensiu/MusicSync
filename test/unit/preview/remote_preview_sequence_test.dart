@@ -223,6 +223,8 @@ class _PreviewFakeConnectionService extends ConnectionService {
     required String address,
     required int port,
     required DeviceInfo localDevice,
+    bool isDirectoryReady = false,
+    String? directoryDisplayName,
   }) async {
     return DeviceInfo(
       deviceId: 'peer',

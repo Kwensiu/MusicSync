@@ -21,6 +21,8 @@ class ConnectionService {
     required String address,
     required int port,
     required DeviceInfo localDevice,
+    bool isDirectoryReady = false,
+    String? directoryDisplayName,
   }) async {
     await disconnect();
     final Socket socket = await Socket.connect(address, port);
@@ -31,6 +33,9 @@ class ConnectionService {
       requestId: requestId,
       payload: <String, Object?>{
         'device': localDevice.toJson(),
+        'directoryReady': isDirectoryReady,
+        if (directoryDisplayName != null)
+          'directoryDisplayName': directoryDisplayName,
       },
     );
     if (response.type != 'helloAck') {

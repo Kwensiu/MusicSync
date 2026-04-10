@@ -4,8 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:music_sync/app/routes/app_router.dart';
 import 'package:music_sync/app/theme/app_theme.dart';
 import 'package:music_sync/features/connection/state/connection_controller.dart';
-import 'package:music_sync/features/connection/state/connection_state.dart'
-    as peer_connection;
 import 'package:music_sync/features/settings/state/settings_controller.dart';
 import 'package:music_sync/features/settings/state/settings_state.dart';
 import 'package:music_sync/l10n/generated/app_localizations.dart';
@@ -29,7 +27,7 @@ class _MusicSyncAppState extends ConsumerState<MusicSyncApp> {
       return;
     }
     final connectionState = ref.read(connectionControllerProvider);
-    if (connectionState.status == peer_connection.ConnectionStatus.listening) {
+    if (connectionState.isListening) {
       _startupListenerApplied = true;
       return;
     }

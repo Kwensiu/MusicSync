@@ -25,7 +25,7 @@ class ConnectionSectionActions {
     if (connectionState.status == peer_connection.ConnectionStatus.connecting) {
       return context.l10n.homeConnectionStateConnecting;
     }
-    if (connectionState.status == peer_connection.ConnectionStatus.listening) {
+    if (connectionState.isListening) {
       return context.l10n.homeConnectionStateListening;
     }
     return context.l10n.homeConnectionStateIdle;
@@ -38,7 +38,7 @@ class ConnectionSectionActions {
         connectionState.status == peer_connection.ConnectionStatus.connected) {
       return ActionChipTone.success;
     }
-    if (connectionState.status == peer_connection.ConnectionStatus.listening ||
+    if (connectionState.isListening ||
         connectionState.status == peer_connection.ConnectionStatus.connecting) {
       return ActionChipTone.active;
     }
@@ -53,8 +53,7 @@ class ConnectionSectionActions {
     await showDialog<void>(
       context: context,
       builder: (BuildContext dialogContext) {
-        final bool isListening = connectionState.status ==
-            peer_connection.ConnectionStatus.listening;
+        final bool isListening = connectionState.isListening;
         return ConnectionStatusDialog(
           listenPort: connectionState.listenPort ?? 44888,
           isListening: isListening,
@@ -165,7 +164,7 @@ class ConnectionSectionActions {
   }) async {
     final peer_connection.ConnectionState connectionState =
         ref.read(connectionControllerProvider);
-    if (connectionState.status == peer_connection.ConnectionStatus.listening) {
+    if (connectionState.isListening) {
       await ref.read(connectionControllerProvider.notifier).stopListening();
       await ref
           .read(connectionControllerProvider.notifier)

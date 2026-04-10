@@ -9,17 +9,24 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
+import android.net.wifi.WifiManager
 
 class ConnectionKeepAliveService : Service() {
+    private var wakeLock: PowerManager.WakeLock? = null
+    private var wifiLock: WifiManager.WifiLock? = null
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         ensureNotificationChannel()
         startForeground(notificationId, buildNotification())
+        acquireLocks()
         return START_STICKY
     }
 
     override fun onDestroy() {
+        releaseLocks()
         stopForeground(STOP_FOREGROUND_REMOVE)
         super.onDestroy()
     }
@@ -66,6 +73,46 @@ class ConnectionKeepAliveService : Service() {
             description = getString(R.string.keep_alive_channel_description)
         }
         manager.createNotificationChannel(channel)
+    }
+
+    private fun acquireLocks() {
+        if (wakeLock?.isHeld != true) {
+            val manager = getSystemService(Context.POWER_SERVICE) as PowerManager
+            wakeLock = manager.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK,
+                "$packageName:connection_keep_alive"
+            ).apply {
+                setReferenceCounted(false)
+                acquire()
+            }
+        }
+
+        if (wifiLock?.isHeld != true) {
+            val manager = applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
+            wifiLock = manager?.createWifiLock(
+                WifiManager.WIFI_MODE_FULL_HIGH_PERF,
+                "$packageName:connection_keep_alive_wifi"
+            )?.apply {
+                setReferenceCounted(false)
+                acquire()
+            }
+        }
+    }
+
+    private fun releaseLocks() {
+        wifiLock?.let { lock ->
+            if (lock.isHeld) {
+                lock.release()
+            }
+        }
+        wifiLock = null
+
+        wakeLock?.let { lock ->
+            if (lock.isHeld) {
+                lock.release()
+            }
+        }
+        wakeLock = null
     }
 
     companion object {
