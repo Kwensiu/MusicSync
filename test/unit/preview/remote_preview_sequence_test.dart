@@ -208,10 +208,7 @@ class _NoopHttpServer extends HttpSyncServerService {
     required ScanHandler onScan,
     required EntryDetailHandler onEntryDetail,
     required SyncSessionStateHandler onSyncSessionState,
-    required BeginCopyHandler onBeginCopy,
-    required WriteChunkHandler onWriteChunk,
-    required FinishCopyHandler onFinishCopy,
-    required AbortCopyHandler onAbortCopy,
+    required CopyFileStreamHandler onCopyFileStream,
     required DeleteEntryHandler onDeleteEntry,
   }) async {}
 

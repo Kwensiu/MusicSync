@@ -7,17 +7,20 @@ class HelloRequestDto {
     required this.device,
     required this.directoryReady,
     this.directoryDisplayName,
+    this.transferProtocols = const <String>[],
   });
 
   final DeviceInfo device;
   final bool directoryReady;
   final String? directoryDisplayName;
+  final List<String> transferProtocols;
 
   Map<String, Object?> toJson() => <String, Object?>{
     'device': device.toJson(),
     'directoryReady': directoryReady,
     if (directoryDisplayName != null)
       'directoryDisplayName': directoryDisplayName,
+    if (transferProtocols.isNotEmpty) 'transferProtocols': transferProtocols,
   };
 
   factory HelloRequestDto.fromJson(Map<String, Object?> json) {
@@ -25,6 +28,11 @@ class HelloRequestDto {
       device: DeviceInfo.fromJson(_requireMap(json, 'device')),
       directoryReady: json['directoryReady'] as bool? ?? false,
       directoryDisplayName: json['directoryDisplayName'] as String?,
+      transferProtocols:
+          (json['transferProtocols'] as List<Object?>?)
+              ?.whereType<String>()
+              .toList() ??
+          const <String>[],
     );
   }
 }
@@ -34,17 +42,20 @@ class HelloResponseDto {
     required this.device,
     required this.directoryReady,
     this.directoryDisplayName,
+    this.transferProtocols = const <String>[],
   });
 
   final DeviceInfo device;
   final bool directoryReady;
   final String? directoryDisplayName;
+  final List<String> transferProtocols;
 
   Map<String, Object?> toJson() => <String, Object?>{
     'device': device.toJson(),
     'directoryReady': directoryReady,
     if (directoryDisplayName != null)
       'directoryDisplayName': directoryDisplayName,
+    if (transferProtocols.isNotEmpty) 'transferProtocols': transferProtocols,
   };
 
   factory HelloResponseDto.fromJson(Map<String, Object?> json) {
@@ -52,6 +63,11 @@ class HelloResponseDto {
       device: DeviceInfo.fromJson(_requireMap(json, 'device')),
       directoryReady: json['directoryReady'] as bool? ?? false,
       directoryDisplayName: json['directoryDisplayName'] as String?,
+      transferProtocols:
+          (json['transferProtocols'] as List<Object?>?)
+              ?.whereType<String>()
+              .toList() ??
+          const <String>[],
     );
   }
 }
@@ -100,77 +116,6 @@ class SyncSessionStateRequestDto {
 
   factory SyncSessionStateRequestDto.fromJson(Map<String, Object?> json) {
     return SyncSessionStateRequestDto(active: json['active'] as bool? ?? false);
-  }
-}
-
-class BeginCopyRequestDto {
-  const BeginCopyRequestDto({
-    required this.remoteRootId,
-    required this.relativePath,
-    required this.transferId,
-  });
-
-  final String remoteRootId;
-  final String relativePath;
-  final String transferId;
-
-  Map<String, Object?> toJson() => <String, Object?>{
-    'remoteRootId': remoteRootId,
-    'relativePath': relativePath,
-    'transferId': transferId,
-  };
-
-  factory BeginCopyRequestDto.fromJson(Map<String, Object?> json) {
-    return BeginCopyRequestDto(
-      remoteRootId: json['remoteRootId'] as String? ?? '',
-      relativePath: json['relativePath'] as String? ?? '',
-      transferId: json['transferId'] as String? ?? '',
-    );
-  }
-}
-
-class WriteChunkRequestDto {
-  const WriteChunkRequestDto({required this.transferId, required this.data});
-
-  final String transferId;
-  final String data;
-
-  Map<String, Object?> toJson() => <String, Object?>{
-    'transferId': transferId,
-    'data': data,
-  };
-
-  factory WriteChunkRequestDto.fromJson(Map<String, Object?> json) {
-    return WriteChunkRequestDto(
-      transferId: json['transferId'] as String? ?? '',
-      data: json['data'] as String? ?? '',
-    );
-  }
-}
-
-class FinishCopyRequestDto {
-  const FinishCopyRequestDto({required this.transferId});
-
-  final String transferId;
-
-  Map<String, Object?> toJson() => <String, Object?>{'transferId': transferId};
-
-  factory FinishCopyRequestDto.fromJson(Map<String, Object?> json) {
-    return FinishCopyRequestDto(
-      transferId: json['transferId'] as String? ?? '',
-    );
-  }
-}
-
-class AbortCopyRequestDto {
-  const AbortCopyRequestDto({required this.transferId});
-
-  final String transferId;
-
-  Map<String, Object?> toJson() => <String, Object?>{'transferId': transferId};
-
-  factory AbortCopyRequestDto.fromJson(Map<String, Object?> json) {
-    return AbortCopyRequestDto(transferId: json['transferId'] as String? ?? '');
   }
 }
 

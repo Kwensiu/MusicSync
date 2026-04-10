@@ -1,4 +1,4 @@
-import 'dart:math';
+import 'dart:developer' as developer;
 
 import 'package:music_sync/models/device_info.dart';
 import 'package:music_sync/models/diff_item.dart';
@@ -17,7 +17,6 @@ class RemoteSyncExecutor {
   final HttpSyncClient _httpClient;
   final FileAccessGateway _fileAccessGateway;
   final DeviceInfo? Function() _getPeer;
-  final Random _random = Random();
 
   Future<ExecutionResult> execute({
     required SyncPlan plan,
@@ -41,6 +40,13 @@ class RemoteSyncExecutor {
     String? lastError;
     final int totalFiles = plan.copyItems.length + plan.deleteItems.length;
     final int totalBytes = plan.summary.copyBytes;
+    const String protocolLabel = 'stream-v1';
+    // TODO(transfer-telemetry): surface lightweight throughput metrics from
+    // here so we can compare platforms and verify future transport changes.
+    developer.log(
+      'Remote sync protocol: $protocolLabel, target=$remoteRootId, peer=${peer.address}:${peer.port}',
+      name: 'RemoteSyncExecutor',
+    );
 
     try {
       for (final DiffItem item in plan.copyItems) {
@@ -51,46 +57,38 @@ class RemoteSyncExecutor {
           continue;
         }
 
-        final String transferId = _nextTransferId();
+        developer.log(
+          '[$protocolLabel] copy start: ${item.relativePath}',
+          name: 'RemoteSyncExecutor',
+        );
         try {
           cancelToken?.throwIfCancelled();
-          await _httpClient.beginCopy(
+          // TODO(transfer-cancel): actively tear down the in-flight HTTP upload
+          // when cancellation happens, instead of only stopping future reads.
+          final Stream<List<int>> source = _fileAccessGateway
+              .openRead(sourceEntryId)
+              .map((List<int> chunk) {
+                cancelToken?.throwIfCancelled();
+                processedBytes += chunk.length;
+                onProgress(
+                  TransferProgress(
+                    stage: SyncStage.copying,
+                    processedFiles: processedFiles,
+                    totalFiles: totalFiles,
+                    processedBytes: processedBytes,
+                    totalBytes: totalBytes,
+                    currentPath: item.relativePath,
+                  ),
+                );
+                return chunk;
+              });
+          await _httpClient.copyFileStream(
             address: peer.address,
             port: peer.port,
             remoteRootId: remoteRootId,
             relativePath: item.relativePath,
-            transferId: transferId,
-            httpEncryptionEnabled: peer.httpEncryptionEnabled,
-          );
-
-          await for (final List<int> chunk in _fileAccessGateway.openRead(
-            sourceEntryId,
-          )) {
-            cancelToken?.throwIfCancelled();
-            await _httpClient.writeChunk(
-              address: peer.address,
-              port: peer.port,
-              transferId: transferId,
-              chunk: chunk,
-              httpEncryptionEnabled: peer.httpEncryptionEnabled,
-            );
-            processedBytes += chunk.length;
-            onProgress(
-              TransferProgress(
-                stage: SyncStage.copying,
-                processedFiles: processedFiles,
-                totalFiles: totalFiles,
-                processedBytes: processedBytes,
-                totalBytes: totalBytes,
-                currentPath: item.relativePath,
-              ),
-            );
-          }
-
-          await _httpClient.finishCopy(
-            address: peer.address,
-            port: peer.port,
-            transferId: transferId,
+            expectedBytes: item.source?.size ?? 0,
+            source: source,
             httpEncryptionEnabled: peer.httpEncryptionEnabled,
           );
           copiedCount++;
@@ -105,33 +103,21 @@ class RemoteSyncExecutor {
               currentPath: item.relativePath,
             ),
           );
+          developer.log(
+            '[$protocolLabel] copy done: ${item.relativePath}',
+            name: 'RemoteSyncExecutor',
+          );
         } catch (error) {
           if (cancelToken?.isCancelled == true) {
-            try {
-              await _httpClient.abortCopy(
-                address: peer.address,
-                port: peer.port,
-                transferId: transferId,
-                httpEncryptionEnabled: peer.httpEncryptionEnabled,
-              );
-            } catch (_) {
-              // Ignore cleanup failures while cancelling.
-            }
             rethrow;
           }
           failedCount++;
           processedFiles++;
           lastError = error.toString();
-          try {
-            await _httpClient.abortCopy(
-              address: peer.address,
-              port: peer.port,
-              transferId: transferId,
-              httpEncryptionEnabled: peer.httpEncryptionEnabled,
-            );
-          } catch (_) {
-            // Ignore cleanup failures; preserve original transfer error.
-          }
+          developer.log(
+            '[$protocolLabel] copy failed: ${item.relativePath} (${error.toString()})',
+            name: 'RemoteSyncExecutor',
+          );
         }
       }
 
@@ -164,6 +150,10 @@ class RemoteSyncExecutor {
         }
       }
 
+      // TODO(transfer-concurrency): evaluate a small-file concurrency window
+      // here once Android write performance and cancellation semantics are
+      // stable, instead of widening scope inside the HTTP client.
+
       onProgress(
         TransferProgress(
           stage: SyncStage.completed,
@@ -194,9 +184,5 @@ class RemoteSyncExecutor {
         // Best effort only.
       }
     }
-  }
-
-  String _nextTransferId() {
-    return '${DateTime.now().microsecondsSinceEpoch}-${_random.nextInt(1 << 32)}';
   }
 }

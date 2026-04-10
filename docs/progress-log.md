@@ -1306,6 +1306,47 @@
 - 对齐 MD3 交互语义
 - 不改业务状态流，仅做承载边界调整
 
+## 37. 传输链路重构收口
+
+这一轮把远端文件内容传输正式收口到了新的 HTTP 流式协议，当前状态如下：
+
+- 控制面继续保留在 HTTP
+  - `hello`
+  - `directory status`
+  - `scan`
+  - `entry detail`
+  - `sync session state`
+  - `delete entry`
+- 文件内容传输主路径已切到：
+  - `copyFileStream`
+  - 单文件单请求
+  - 二进制 body
+  - 请求头携带：
+    - `x-remote-root-id`
+    - `x-relative-path`
+    - `x-file-size`
+- 服务端接收侧已收口为：
+  - 临时文件写入
+  - 接收字节数校验
+  - 成功后 rename
+  - 失败或中断即清理临时文件
+
+这轮同时完成了几项关键修正：
+
+- `hello` 请求与响应都会携带 `transferProtocols`
+- 被动连接建立后，也会同步更新对端能力状态
+- 因此不再需要“双方都主动点一次连接”才能让 `stream-v1` 生效
+- 同步日志中已补充协议标记，能直接看到当前是 `stream-v1`
+
+收口后的重要取舍也已明确：
+
+- 旧的 `begin / write / finish / abort` chunk RPC 复制链路已从运行时主流程删除
+- 当前不再兼容旧版 `chunk-rpc` 文件内容传输协议
+- 如果后续还要继续提升吞吐，优先方向不再是重做协议，而是：
+  - Android `MethodChannel` 写入去 base64
+  - 取消时主动中断正在进行的 HTTP 上传
+  - 小文件有限并发与吞吐埋点
+
 ## 37. 音乐领域参考项目清单落档
 
 为避免“讨论结论散落在对话中难回看”，新增了文档：

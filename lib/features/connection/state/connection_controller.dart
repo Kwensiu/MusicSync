@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,10 +41,14 @@ class ConnectionController extends Notifier<ConnectionState> {
       ref.read(settingsControllerProvider).httpEncryptionEnabled;
 
   bool _isDisposed = false;
+  bool _peerSupportsStreamUpload = false;
+
+  bool get peerSupportsStreamUpload => _peerSupportsStreamUpload;
 
   @override
   ConnectionState build() {
     _isDisposed = false;
+    _peerSupportsStreamUpload = false;
     final DiscoveryService discovery = _discovery;
     unawaited(_loadRecent());
     _discoveryCleanupTimer = Timer.periodic(
@@ -69,10 +72,6 @@ class ConnectionController extends Notifier<ConnectionState> {
   Timer? _discoveryCleanupTimer;
   Timer? _remoteDirectorySyncTimer;
   final Map<String, DateTime> _discoveredAt = <String, DateTime>{};
-  final Map<String, FileWriteSession> _incomingWriteSessions =
-      <String, FileWriteSession>{};
-  final Map<String, _IncomingWriteTarget> _incomingWriteTargets =
-      <String, _IncomingWriteTarget>{};
   int _connectAttemptId = 0;
 
   Future<void> startListening({int port = AppConstants.defaultPort}) async {
@@ -86,10 +85,7 @@ class ConnectionController extends Notifier<ConnectionState> {
         onScan: _handleHttpScan,
         onEntryDetail: _handleHttpEntryDetail,
         onSyncSessionState: _handleHttpSyncSessionState,
-        onBeginCopy: _handleHttpBeginCopy,
-        onWriteChunk: _handleHttpWriteChunk,
-        onFinishCopy: _handleHttpFinishCopy,
-        onAbortCopy: _handleHttpAbortCopy,
+        onCopyFileStream: _handleHttpCopyFileStream,
         onDeleteEntry: _handleHttpDeleteEntry,
       );
       await _discovery.startBroadcasting(_buildLocalDevice(port: port));
@@ -152,6 +148,7 @@ class ConnectionController extends Notifier<ConnectionState> {
     await _httpServer.stop();
     await _discovery.stopBroadcasting();
     _clearPlanAndExecution();
+    _peerSupportsStreamUpload = false;
     state = ConnectionState(
       status: ConnectionStatus.idle,
       isListening: false,
@@ -226,6 +223,9 @@ class ConnectionController extends Notifier<ConnectionState> {
         port: port,
         httpEncryptionEnabled: response.device.httpEncryptionEnabled,
       );
+      _peerSupportsStreamUpload = response.transferProtocols.contains(
+        'stream-v1',
+      );
       await _store.saveRecentAddress('$address:$port');
       final bool isRemoteDirectoryReady = response.directoryReady;
       state = ConnectionState(
@@ -268,6 +268,7 @@ class ConnectionController extends Notifier<ConnectionState> {
         recentLabels: await _store.loadRecentAddressLabels(),
       );
     } catch (error) {
+      _peerSupportsStreamUpload = false;
       if (attemptId != _connectAttemptId) {
         return;
       }
@@ -337,7 +338,8 @@ class ConnectionController extends Notifier<ConnectionState> {
   }
 
   void _handleDisconnected(Object? error) {
-    unawaited(_cleanupIncomingTransfers());
+    _setIncomingSyncActive(false);
+    _peerSupportsStreamUpload = false;
     final ExecutionState executionState = _ref.read(
       executionControllerProvider,
     );
@@ -459,6 +461,7 @@ class ConnectionController extends Notifier<ConnectionState> {
     HelloRequestDto request,
     String remoteAddress,
   ) async {
+    _peerSupportsStreamUpload = request.transferProtocols.contains('stream-v1');
     final DirectoryHandle? handle = _ref
         .read(directoryControllerProvider)
         .handle;
@@ -491,6 +494,7 @@ class ConnectionController extends Notifier<ConnectionState> {
       ),
       directoryReady: handle != null,
       directoryDisplayName: handle?.displayName,
+      transferProtocols: const <String>['chunk-rpc', 'stream-v1'],
     );
   }
 
@@ -499,6 +503,7 @@ class ConnectionController extends Notifier<ConnectionState> {
       return;
     }
     _clearPlanAndExecution();
+    _peerSupportsStreamUpload = false;
     state = ConnectionState(
       status: state.isListening
           ? ConnectionStatus.idle
@@ -565,24 +570,70 @@ class ConnectionController extends Notifier<ConnectionState> {
     _setIncomingSyncActive(request.active);
   }
 
-  Future<void> _handleHttpBeginCopy(BeginCopyRequestDto request) async {
-    await _beginCopy(
-      remoteRootId: request.remoteRootId,
-      relativePath: request.relativePath,
-      transferId: request.transferId,
+  Future<void> _handleHttpCopyFileStream(
+    HttpRequest request,
+    String remoteRootId,
+    String relativePath,
+    int expectedBytes,
+  ) async {
+    _validateRelativePath(relativePath);
+    final FileAccessGateway gateway = _ref.read(fileAccessGatewayProvider);
+    final String parentId = await _ensureRemoteParentDirectory(
+      gateway: gateway,
+      remoteRootId: remoteRootId,
+      relativePath: relativePath,
     );
-  }
+    final String fileName = _fileNameOf(relativePath);
+    final String tempFileName = _tempFileName(fileName);
+    final FileWriteSession session = await gateway.openWrite(
+      parentId,
+      tempFileName,
+    );
+    final String? tempEntryId = await _resolveRemoteEntryId(
+      gateway: gateway,
+      rootId: remoteRootId,
+      relativePath: _replaceFileName(relativePath, tempFileName),
+    );
+    if (tempEntryId == null) {
+      await session.close();
+      throw const FileSystemException(
+        'Temporary target file could not be resolved.',
+      );
+    }
 
-  Future<void> _handleHttpWriteChunk(WriteChunkRequestDto request) async {
-    await _writeChunk(transferId: request.transferId, data: request.data);
-  }
-
-  Future<void> _handleHttpFinishCopy(FinishCopyRequestDto request) async {
-    await _finishCopy(transferId: request.transferId);
-  }
-
-  Future<void> _handleHttpAbortCopy(AbortCopyRequestDto request) async {
-    await _abortCopy(transferId: request.transferId);
+    int receivedBytes = 0;
+    try {
+      await for (final List<int> chunk in request) {
+        receivedBytes += chunk.length;
+        await session.write(chunk);
+      }
+      if (receivedBytes != expectedBytes) {
+        throw FormatException(
+          'Received size mismatch: expected $expectedBytes bytes but got $receivedBytes.',
+        );
+      }
+      await session.close();
+      await _replaceIncomingTempFile(
+        gateway: gateway,
+        rootId: remoteRootId,
+        relativePath: relativePath,
+        tempEntryId: tempEntryId,
+        finalName: fileName,
+      );
+    } catch (_) {
+      try {
+        await session.close();
+      } catch (_) {
+        // Best effort only.
+      }
+      try {
+        await gateway.deleteEntry(tempEntryId);
+      } catch (_) {
+        // Best effort only.
+      }
+      _setIncomingSyncActive(false);
+      rethrow;
+    }
   }
 
   Future<void> _handleHttpDeleteEntry(DeleteEntryRequestDto request) async {
@@ -610,6 +661,7 @@ class ConnectionController extends Notifier<ConnectionState> {
       }
     }
     _clearPlanAndExecution();
+    _peerSupportsStreamUpload = false;
     state = ConnectionState(
       status: ConnectionStatus.idle,
       isListening: state.isListening,
@@ -963,83 +1015,6 @@ class ConnectionController extends Notifier<ConnectionState> {
     );
   }
 
-  Future<void> _beginCopy({
-    required String remoteRootId,
-    required String relativePath,
-    required String transferId,
-  }) async {
-    _setIncomingSyncActive(true);
-    if (remoteRootId.isEmpty || relativePath.isEmpty || transferId.isEmpty) {
-      throw const FormatException('Copy request payload invalid.');
-    }
-    final FileAccessGateway gateway = _ref.read(fileAccessGatewayProvider);
-    final String parentId = await _ensureRemoteParentDirectory(
-      gateway: gateway,
-      remoteRootId: remoteRootId,
-      relativePath: relativePath,
-    );
-    final String fileName = _fileNameOf(relativePath);
-    final String tempFileName = _tempFileName(fileName);
-    final FileWriteSession session = await gateway.openWrite(
-      parentId,
-      tempFileName,
-    );
-    _incomingWriteSessions[transferId] = session;
-    final String? tempEntryId = await _resolveRemoteEntryId(
-      gateway: gateway,
-      rootId: remoteRootId,
-      relativePath: _replaceFileName(relativePath, tempFileName),
-    );
-    if (tempEntryId == null) {
-      await session.close();
-      throw const FileSystemException(
-        'Temporary target file could not be resolved.',
-      );
-    }
-    _incomingWriteTargets[transferId] = _IncomingWriteTarget(
-      tempEntryId: tempEntryId,
-      finalName: fileName,
-    );
-  }
-
-  Future<void> _writeChunk({
-    required String transferId,
-    required String data,
-  }) async {
-    final FileWriteSession session =
-        _incomingWriteSessions[transferId] ??
-        (throw const FormatException('Transfer session not found.'));
-    await session.write(base64Decode(data));
-  }
-
-  Future<void> _finishCopy({required String transferId}) async {
-    final FileWriteSession session =
-        _incomingWriteSessions.remove(transferId) ??
-        (throw const FormatException('Transfer session not found.'));
-    final _IncomingWriteTarget? target = _incomingWriteTargets.remove(
-      transferId,
-    );
-    await session.close();
-    if (target != null) {
-      final FileAccessGateway gateway = _ref.read(fileAccessGatewayProvider);
-      await gateway.renameEntry(target.tempEntryId, target.finalName);
-    }
-  }
-
-  Future<void> _abortCopy({required String transferId}) async {
-    final FileWriteSession session =
-        _incomingWriteSessions.remove(transferId) ??
-        (throw const FormatException('Transfer session not found.'));
-    final _IncomingWriteTarget? target = _incomingWriteTargets.remove(
-      transferId,
-    );
-    await session.close();
-    if (target != null) {
-      final FileAccessGateway gateway = _ref.read(fileAccessGatewayProvider);
-      await gateway.deleteEntry(target.tempEntryId);
-    }
-  }
-
   Future<void> _deleteEntry({
     required String remoteRootId,
     required String relativePath,
@@ -1127,33 +1102,67 @@ class ConnectionController extends Notifier<ConnectionState> {
   String _tempFileName(String fileName) =>
       '$fileName${AppConstants.tempFileSuffix}';
 
-  Future<void> _cleanupIncomingTransfers() async {
-    if (_incomingWriteSessions.isEmpty && _incomingWriteTargets.isEmpty) {
-      _setIncomingSyncActive(false);
+  Future<void> _replaceIncomingTempFile({
+    required FileAccessGateway gateway,
+    required String rootId,
+    required String relativePath,
+    required String tempEntryId,
+    required String finalName,
+  }) async {
+    try {
+      await gateway.renameEntry(tempEntryId, finalName);
       return;
-    }
-    final FileAccessGateway gateway = _ref.read(fileAccessGatewayProvider);
-    final Map<String, FileWriteSession> sessions =
-        Map<String, FileWriteSession>.from(_incomingWriteSessions);
-    final Map<String, _IncomingWriteTarget> targets =
-        Map<String, _IncomingWriteTarget>.from(_incomingWriteTargets);
-    _incomingWriteSessions.clear();
-    _incomingWriteTargets.clear();
-    for (final FileWriteSession session in sessions.values) {
+    } on FileSystemException {
+      final String? existingEntryId = await _resolveRemoteEntryId(
+        gateway: gateway,
+        rootId: rootId,
+        relativePath: relativePath,
+      );
+      if (existingEntryId == null) {
+        rethrow;
+      }
+      final String backupName = _replacementBackupName(finalName);
+      final String backupEntryId = await gateway.renameEntry(
+        existingEntryId,
+        backupName,
+      );
       try {
-        await session.close();
+        await gateway.renameEntry(tempEntryId, finalName);
       } catch (_) {
-        // Ignore close failures during cleanup.
+        try {
+          await gateway.renameEntry(backupEntryId, finalName);
+        } catch (_) {
+          // Best effort only. Preserve the original replacement failure.
+        }
+        rethrow;
+      }
+      try {
+        await gateway.deleteEntry(backupEntryId);
+      } catch (_) {
+        // Best effort only. The new file is already in place.
       }
     }
-    for (final _IncomingWriteTarget target in targets.values) {
-      try {
-        await gateway.deleteEntry(target.tempEntryId);
-      } catch (_) {
-        // Ignore cleanup failures during disconnect recovery.
-      }
+  }
+
+  String _replacementBackupName(String fileName) {
+    return '$fileName${AppConstants.tempFileSuffix}.backup.${DateTime.now().microsecondsSinceEpoch}';
+  }
+
+  void _validateRelativePath(String relativePath) {
+    if (relativePath.isEmpty) {
+      throw const FormatException('Relative path is required.');
     }
-    _setIncomingSyncActive(false);
+    final String normalized = relativePath.replaceAll('\\', '/');
+    if (normalized.startsWith('/')) {
+      throw const FormatException('Absolute path is not allowed.');
+    }
+    final List<String> segments = normalized.split('/');
+    if (segments.any((String segment) => segment.isEmpty)) {
+      throw const FormatException('Relative path contains empty segments.');
+    }
+    if (segments.contains('.') || segments.contains('..')) {
+      throw const FormatException('Relative path contains invalid segments.');
+    }
   }
 
   Future<void> handleLocalDirectoryChanged(DirectoryHandle? handle) async {
@@ -1178,16 +1187,6 @@ class ConnectionController extends Notifier<ConnectionState> {
       errorMessage: state.errorMessage,
     );
   }
-}
-
-class _IncomingWriteTarget {
-  const _IncomingWriteTarget({
-    required this.tempEntryId,
-    required this.finalName,
-  });
-
-  final String tempEntryId;
-  final String finalName;
 }
 
 final NotifierProvider<ConnectionController, ConnectionState>
