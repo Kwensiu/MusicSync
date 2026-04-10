@@ -1278,7 +1278,35 @@
 
 这部分暂时已在相关代码位置补了 TODO，后续单独推进。
 
-## 36. 传输链路重构收口
+## 36. Home 滚动收口与预览弹窗化准备
+
+本轮重点不是继续扩功能，而是先把 Home 的滚动冲突与认知复杂度收口。
+
+已完成：
+
+- `HomePage` 组装结构已下沉为明确 section builder，主 `build` 只保留状态聚合与布局拼装
+- 新增 `home_workspace_layout.dart`，把 Home 页面滚动责任和工作台区域边界做了第一步分离
+- 修复了 `home_workspace_layout.dart` 中 Stateful 改造后的常量作用域问题
+- 针对“预览列表滚动导致主窗口跳动”做了止血：
+  - 回退 Home 主层平滑滚动
+  - 保留主滚动 `ScrollController + depth == 0` 通知过滤
+
+当前结论：
+
+- 主页面做全局平滑滚动时，与预览区局部滚动存在高冲突风险
+- 把预览工作台提取为独立弹窗，是更符合当前复杂度预算的方向
+
+下一步计划已固化为文档：
+
+- `docs/home-preview-dialog-extraction-plan.md`
+
+该方案坚持：
+
+- 复用现有 `PreviewWorkbenchSection` 与 dialog 体系
+- 对齐 MD3 交互语义
+- 不改业务状态流，仅做承载边界调整
+
+## 37. 传输链路重构收口
 
 这一轮把远端文件内容传输正式收口到了新的 HTTP 流式协议，当前状态如下：
 

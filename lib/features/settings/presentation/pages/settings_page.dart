@@ -7,6 +7,7 @@ import 'package:music_sync/features/settings/presentation/widgets/theme_mode_dia
 import 'package:music_sync/features/settings/state/settings_controller.dart';
 import 'package:music_sync/features/settings/state/settings_state.dart';
 import 'package:music_sync/l10n/app_localizations_ext.dart';
+import 'package:smooth_list_view/smooth_list_view.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -22,6 +23,7 @@ class SettingsPage extends ConsumerWidget {
   static const double _groupToGroupGap = 16;
   static const double _backButtonPadding = 12;
   static const bool _compactSwitch = true;
+  static const Duration _scrollDuration = Duration(milliseconds: 140);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -32,7 +34,9 @@ class SettingsPage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: scheme.surfaceContainerLowest,
       body: SafeArea(
-        child: ListView(
+        child: SmoothListView(
+          duration: _scrollDuration,
+          curve: Curves.easeOutCubic,
           padding: const EdgeInsets.fromLTRB(
             _pageHorizontal,
             _pageTop,

@@ -3,6 +3,7 @@ import 'package:music_sync/features/preview/models/diff_item_detail_view_data.da
 import 'package:music_sync/features/preview/presentation/widgets/diff_item_detail_sheet.dart';
 import 'package:music_sync/l10n/app_localizations_ext.dart';
 import 'package:music_sync/models/diff_item.dart';
+import 'package:smooth_list_view/smooth_list_view.dart';
 
 class PlanItemList extends StatefulWidget {
   const PlanItemList({
@@ -93,6 +94,7 @@ class PlanItemEmptyState extends StatelessWidget {
 class _PlanItemListState extends State<PlanItemList> {
   static const double _rowHeight = 50;
   static const double _separatorHeight = 1;
+  static const Duration _scrollDuration = Duration(milliseconds: 140);
   late final ScrollController _controller;
 
   @override
@@ -163,7 +165,9 @@ class _PlanItemListState extends State<PlanItemList> {
                     child: Scrollbar(
                       controller: _controller,
                       thumbVisibility: widget.items.length > 12,
-                      child: ListView.separated(
+                      child: SmoothListView.separated(
+                        duration: _scrollDuration,
+                        curve: Curves.easeOutCubic,
                         controller: _controller,
                         itemCount: widget.items.length,
                         separatorBuilder: (BuildContext context, int index) {

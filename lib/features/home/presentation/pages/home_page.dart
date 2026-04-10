@@ -19,6 +19,7 @@ import 'package:music_sync/features/home/presentation/widgets/connection_section
 import 'package:music_sync/features/home/presentation/widgets/connection_section/connection_section_actions.dart';
 import 'package:music_sync/features/home/presentation/widgets/action_chip_button.dart';
 import 'package:music_sync/features/home/presentation/widgets/home_dialogs/home_dialogs.dart';
+import 'package:music_sync/features/home/presentation/widgets/home_workspace_layout.dart';
 import 'package:music_sync/features/home/presentation/widgets/preview_workbench_section/preview_workbench_actions.dart';
 import 'package:music_sync/features/home/presentation/widgets/preview_workbench_section/preview_workbench_section.dart';
 import 'package:music_sync/features/home/presentation/widgets/recent_record_managers/recent_record_managers.dart';
@@ -207,6 +208,53 @@ class _HomePageState extends ConsumerState<HomePage>
         isRemoteSyncRunning;
     final bool showIncomingSyncOverlay =
         connectionState.isIncomingSyncActive && hasConnectedPeer;
+    // TODO(home-layout): Keep overview cards outside the workbench scroller so
+    // the page always has a single obvious primary scroll target.
+    final Widget connectionSectionCard = _buildConnectionSectionCard(
+      context: context,
+      connectionState: connectionState,
+      isConnectUiBusy: isConnectUiBusy,
+      hasConnectedPeer: hasConnectedPeer,
+    );
+    final Widget sourceSectionCard = _buildSourceSectionCard(
+      context: context,
+      directoryState: directoryState,
+      isBusy: isBusy,
+      hasRemoteDirectoryReady: hasRemoteDirectoryReady,
+    );
+    // TODO(home-layout): The preview workbench is now its own scroll region.
+    // Any future expandable panels that can change height should live here.
+    final Widget previewSectionCard = _buildPreviewSectionCard(
+      context: context,
+      directoryState: directoryState,
+      connectionState: connectionState,
+      previewState: previewState,
+      executionState: executionState,
+      ignoredExtensions: ignoredExtensions,
+      filteredCopyItems: filteredCopyItems,
+      filteredDeleteItems: filteredDeleteItems,
+      filteredConflictItems: filteredConflictItems,
+      activeItems: activeItems,
+      extensionOptions: extensionOptions,
+      scanWarnings: scanWarnings,
+      isStalePlan: isStalePlan,
+      isBusy: isBusy,
+      isExecuting: isExecuting,
+      canStartRemoteSync: canStartRemoteSync,
+      canOpenResult: canOpenResult,
+      showExecutionPanel: showExecutionPanel,
+      hasRemoteDirectoryReady: hasRemoteDirectoryReady,
+      isAllExtensionsSelected: isAllExtensionsSelected,
+    );
+    final Widget advancedSection = _buildAdvancedSection(
+      context: context,
+      executionState: executionState,
+      isBusy: isBusy,
+      hasExecutableItems: hasExecutableItems,
+      isLocalPreview: isLocalPreview,
+      previewState: previewState,
+      directoryState: directoryState,
+    );
 
     return AppScaffold(
       title: context.l10n.appTitle,
@@ -261,269 +309,11 @@ class _HomePageState extends ConsumerState<HomePage>
       ],
       body: Stack(
         children: <Widget>[
-          ListView(
-            padding: const EdgeInsets.all(16),
-            children: <Widget>[
-              SectionCard(
-                title: context.l10n.homeStepConnectionTitle,
-                child: ConnectionSection(
-                  connectionState: connectionState,
-                  isConnectUiBusy: isConnectUiBusy,
-                  hasConnectedPeer: hasConnectedPeer,
-                  onRefreshPresence: () {
-                    ref
-                        .read(connectionControllerProvider.notifier)
-                        .refreshPresence();
-                  },
-                  onOpenConnectionPanel: () =>
-                      _showConnectionOptionsPanel(connectionState),
-                  onDiscoveredDeviceTap: (DeviceInfo device) {
-                    _addressController.text =
-                        '${device.address}:${device.port}';
-                    ConnectionSectionActions.connectFromInput(
-                      ref: ref,
-                      addressController: _addressController,
-                    );
-                  },
-                  localizeUiError: _localizeUiError,
-                ),
-              ),
-              const SizedBox(height: 16),
-              SectionCard(
-                title: context.l10n.homeStepSourceTitle,
-                child: SourceDirectorySection(
-                  directoryState: directoryState,
-                  isBusy: isBusy,
-                  hasRemoteDirectoryReady: hasRemoteDirectoryReady,
-                  isCleaningSourceTemp: _isCleaningSourceTemp,
-                  onPickDirectory: () {
-                    ref
-                        .read(directoryControllerProvider.notifier)
-                        .pickDirectory();
-                  },
-                  onClearDirectory: () {
-                    ref
-                        .read(directoryControllerProvider.notifier)
-                        .clearDirectory();
-                  },
-                  onCleanupTempFiles: () => _cleanupTempFiles(
-                    rootId: directoryState.handle!.entryId,
-                    isSource: true,
-                  ),
-                  onManageRecentDirectories: _showRecentDirectoryManager,
-                  onUseRecentDirectory: (DirectoryHandle handle) {
-                    ref
-                        .read(directoryControllerProvider.notifier)
-                        .useRecentDirectory(handle);
-                  },
-                  localizePreflightReason: _localizePreflightReason,
-                ),
-              ),
-              const SizedBox(height: 16),
-              SectionCard(
-                title: context.l10n.homeStepPreviewTitle,
-                child: PreviewWorkbenchSection(
-                  directoryState: directoryState,
-                  connectionState: connectionState,
-                  previewState: previewState,
-                  executionState: executionState,
-                  ignoredExtensions: ignoredExtensions,
-                  filteredCopyItems: filteredCopyItems,
-                  filteredDeleteItems: filteredDeleteItems,
-                  filteredConflictItems: filteredConflictItems,
-                  activeItems: activeItems,
-                  extensionOptions: extensionOptions,
-                  scanWarnings: scanWarnings,
-                  isStalePlan: isStalePlan,
-                  isBusy: isBusy,
-                  isExecuting: isExecuting,
-                  canStartRemoteSync: canStartRemoteSync,
-                  canOpenResult: canOpenResult,
-                  showExecutionPanel: showExecutionPanel,
-                  hasRemoteDirectoryReady: hasRemoteDirectoryReady,
-                  isAllExtensionsSelected: isAllExtensionsSelected,
-                  selectAllSections: _selectAllSections,
-                  selectedSections: _selectedSections,
-                  selectedExtensions: _selectedExtensions,
-                  sourceDeviceLabel: _localDeviceDisplayName(),
-                  targetDeviceLabel: _targetDeviceDisplayName(
-                    context,
-                    connectionState: connectionState,
-                    previewState: previewState,
-                  ),
-                  isTransferConnected:
-                      connectionState.peer != null &&
-                      connectionState.status ==
-                          peer_connection.ConnectionStatus.connected,
-                  onBuildRemotePreview: () =>
-                      PreviewWorkbenchActions.buildRemotePreview(
-                        ref: ref,
-                        sourceRoot: directoryState.handle!,
-                        ignoredExtensions: ignoredExtensions,
-                      ),
-                  onStartRemoteSync: () =>
-                      PreviewWorkbenchActions.executeRemoteSyncFlow(
-                        context: context,
-                        ref: ref,
-                        previewState: previewState,
-                        directoryState: directoryState,
-                        connectionState: connectionState,
-                      ),
-                  onCancelSync: () {
-                    ref.read(executionControllerProvider.notifier).cancel();
-                  },
-                  onToggleSection: (DiffType? type) {
-                    setState(() {
-                      if (type == null) {
-                        _selectAllSections = true;
-                        _selectedSections = <DiffType>{
-                          DiffType.copy,
-                          DiffType.delete,
-                        };
-                        return;
-                      }
-                      final Set<DiffType> next = _selectAllSections
-                          ? <DiffType>{type}
-                          : <DiffType>{..._selectedSections};
-                      _selectAllSections = false;
-                      if (next.contains(type)) {
-                        next.remove(type);
-                      } else {
-                        next.add(type);
-                      }
-                      if (next.isEmpty) {
-                        next.add(type);
-                      }
-                      _selectedSections = next;
-                    });
-                  },
-                  onToggleExtension: (String extension) {
-                    setState(() {
-                      final bool selected = extension == '*'
-                          ? isAllExtensionsSelected
-                          : _selectedExtensions.contains(extension);
-                      _selectedExtensions =
-                          PreviewWorkbenchActions.toggleExtensionSelection(
-                            current: _selectedExtensions,
-                            extension: extension,
-                            selected: !selected,
-                          );
-                    });
-                  },
-                  localizeUiError: _localizeUiError,
-                  localizedExecutionStatus: _localizedExecutionStatus,
-                  isScanTimeoutError: _isScanTimeoutError,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ExpansionTile(
-                title: Text(context.l10n.homeAdvancedTitle),
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: SectionCard(
-                      title: context.l10n.executionTargetTitle,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text(context.l10n.executionTargetHint),
-                          const SizedBox(height: 8),
-                          Text(
-                            executionState.targetRoot ??
-                                context.l10n.executionNoTarget,
-                          ),
-                          const SizedBox(height: 12),
-                          FilledButton.tonal(
-                            onPressed: isBusy
-                                ? null
-                                : () async {
-                                    final handle = await ref
-                                        .read(fileAccessGatewayProvider)
-                                        .pickDirectory();
-                                    ref
-                                        .read(
-                                          executionControllerProvider.notifier,
-                                        )
-                                        .setTargetRoot(handle?.entryId);
-                                  },
-                            child: Text(context.l10n.executionPickTarget),
-                          ),
-                          const SizedBox(height: 8),
-                          OutlinedButton(
-                            onPressed:
-                                isBusy ||
-                                    executionState.targetRoot == null ||
-                                    _isCleaningTargetTemp
-                                ? null
-                                : () => _cleanupTempFiles(
-                                    rootId: executionState.targetRoot!,
-                                    isSource: false,
-                                  ),
-                            child: Text(context.l10n.homeCleanupTempFiles),
-                          ),
-                          const SizedBox(height: 8),
-                          FilledButton.tonal(
-                            onPressed:
-                                isBusy ||
-                                    executionState.targetRoot == null ||
-                                    !hasExecutableItems ||
-                                    !isLocalPreview
-                                ? null
-                                : () async {
-                                    if (previewState
-                                        .plan
-                                        .deleteItems
-                                        .isNotEmpty) {
-                                      final bool?
-                                      confirmed = await showDialog<bool>(
-                                        context: context,
-                                        builder: (BuildContext context) {
-                                          return AppConfirmDialog(
-                                            title: context
-                                                .l10n
-                                                .executionConfirmDeleteTitle,
-                                            message: context.l10n
-                                                .executionConfirmDeleteBody(
-                                                  previewState
-                                                      .plan
-                                                      .deleteItems
-                                                      .length,
-                                                ),
-                                          );
-                                        },
-                                      );
-
-                                      if (confirmed != true) {
-                                        return;
-                                      }
-                                    }
-                                    await ref
-                                        .read(
-                                          executionControllerProvider.notifier,
-                                        )
-                                        .execute(
-                                          plan: previewState.plan,
-                                          targetRoot:
-                                              executionState.targetRoot!,
-                                        );
-                                    await PreviewWorkbenchActions.refreshPreviewAfterExecution(
-                                      ref: ref,
-                                      previewState: previewState,
-                                      directoryState: directoryState,
-                                      executionState: ref.read(
-                                        executionControllerProvider,
-                                      ),
-                                    );
-                                  },
-                            child: Text(context.l10n.executionRunLocalDebug),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          HomeWorkspaceLayout(
+            connectionSection: connectionSectionCard,
+            sourceSection: sourceSectionCard,
+            previewSection: previewSectionCard,
+            advancedSection: advancedSection,
           ),
           if (showKeepAliveBadge)
             Positioned(
@@ -621,6 +411,286 @@ class _HomePageState extends ConsumerState<HomePage>
             ),
         ],
       ),
+    );
+  }
+
+  Widget _buildConnectionSectionCard({
+    required BuildContext context,
+    required peer_connection.ConnectionState connectionState,
+    required bool isConnectUiBusy,
+    required bool hasConnectedPeer,
+  }) {
+    return SectionCard(
+      title: context.l10n.homeStepConnectionTitle,
+      child: ConnectionSection(
+        connectionState: connectionState,
+        isConnectUiBusy: isConnectUiBusy,
+        hasConnectedPeer: hasConnectedPeer,
+        onRefreshPresence: () {
+          ref.read(connectionControllerProvider.notifier).refreshPresence();
+        },
+        onOpenConnectionPanel: () =>
+            _showConnectionOptionsPanel(connectionState),
+        onDiscoveredDeviceTap: (DeviceInfo device) {
+          _addressController.text = '${device.address}:${device.port}';
+          ConnectionSectionActions.connectFromInput(
+            ref: ref,
+            addressController: _addressController,
+          );
+        },
+        localizeUiError: _localizeUiError,
+      ),
+    );
+  }
+
+  Widget _buildSourceSectionCard({
+    required BuildContext context,
+    required DirectoryState directoryState,
+    required bool isBusy,
+    required bool hasRemoteDirectoryReady,
+  }) {
+    return SectionCard(
+      title: context.l10n.homeStepSourceTitle,
+      child: SourceDirectorySection(
+        directoryState: directoryState,
+        isBusy: isBusy,
+        hasRemoteDirectoryReady: hasRemoteDirectoryReady,
+        isCleaningSourceTemp: _isCleaningSourceTemp,
+        onPickDirectory: () {
+          ref.read(directoryControllerProvider.notifier).pickDirectory();
+        },
+        onClearDirectory: () {
+          ref.read(directoryControllerProvider.notifier).clearDirectory();
+        },
+        onCleanupTempFiles: () => _cleanupTempFiles(
+          rootId: directoryState.handle!.entryId,
+          isSource: true,
+        ),
+        onManageRecentDirectories: _showRecentDirectoryManager,
+        onUseRecentDirectory: (DirectoryHandle handle) {
+          ref
+              .read(directoryControllerProvider.notifier)
+              .useRecentDirectory(handle);
+        },
+        localizePreflightReason: _localizePreflightReason,
+      ),
+    );
+  }
+
+  Widget _buildPreviewSectionCard({
+    required BuildContext context,
+    required DirectoryState directoryState,
+    required peer_connection.ConnectionState connectionState,
+    required PreviewState previewState,
+    required ExecutionState executionState,
+    required List<String> ignoredExtensions,
+    required List<DiffItem> filteredCopyItems,
+    required List<DiffItem> filteredDeleteItems,
+    required List<DiffItem> filteredConflictItems,
+    required List<DiffItem> activeItems,
+    required List<String> extensionOptions,
+    required List<String> scanWarnings,
+    required bool isStalePlan,
+    required bool isBusy,
+    required bool isExecuting,
+    required bool canStartRemoteSync,
+    required bool canOpenResult,
+    required bool showExecutionPanel,
+    required bool hasRemoteDirectoryReady,
+    required bool isAllExtensionsSelected,
+  }) {
+    return SectionCard(
+      title: context.l10n.homeStepPreviewTitle,
+      child: PreviewWorkbenchSection(
+        directoryState: directoryState,
+        connectionState: connectionState,
+        previewState: previewState,
+        executionState: executionState,
+        ignoredExtensions: ignoredExtensions,
+        filteredCopyItems: filteredCopyItems,
+        filteredDeleteItems: filteredDeleteItems,
+        filteredConflictItems: filteredConflictItems,
+        activeItems: activeItems,
+        extensionOptions: extensionOptions,
+        scanWarnings: scanWarnings,
+        isStalePlan: isStalePlan,
+        isBusy: isBusy,
+        isExecuting: isExecuting,
+        canStartRemoteSync: canStartRemoteSync,
+        canOpenResult: canOpenResult,
+        showExecutionPanel: showExecutionPanel,
+        hasRemoteDirectoryReady: hasRemoteDirectoryReady,
+        isAllExtensionsSelected: isAllExtensionsSelected,
+        selectAllSections: _selectAllSections,
+        selectedSections: _selectedSections,
+        selectedExtensions: _selectedExtensions,
+        sourceDeviceLabel: _localDeviceDisplayName(),
+        targetDeviceLabel: _targetDeviceDisplayName(
+          context,
+          connectionState: connectionState,
+          previewState: previewState,
+        ),
+        isTransferConnected:
+            connectionState.peer != null &&
+            connectionState.status ==
+                peer_connection.ConnectionStatus.connected,
+        onBuildRemotePreview: () => PreviewWorkbenchActions.buildRemotePreview(
+          ref: ref,
+          sourceRoot: directoryState.handle!,
+          ignoredExtensions: ignoredExtensions,
+        ),
+        onStartRemoteSync: () => PreviewWorkbenchActions.executeRemoteSyncFlow(
+          context: context,
+          ref: ref,
+          previewState: previewState,
+          directoryState: directoryState,
+          connectionState: connectionState,
+        ),
+        onCancelSync: () {
+          ref.read(executionControllerProvider.notifier).cancel();
+        },
+        onToggleSection: (DiffType? type) {
+          setState(() {
+            if (type == null) {
+              _selectAllSections = true;
+              _selectedSections = <DiffType>{DiffType.copy, DiffType.delete};
+              return;
+            }
+            final Set<DiffType> next = _selectAllSections
+                ? <DiffType>{type}
+                : <DiffType>{..._selectedSections};
+            _selectAllSections = false;
+            if (next.contains(type)) {
+              next.remove(type);
+            } else {
+              next.add(type);
+            }
+            if (next.isEmpty) {
+              next.add(type);
+            }
+            _selectedSections = next;
+          });
+        },
+        onToggleExtension: (String extension) {
+          setState(() {
+            final bool selected = extension == '*'
+                ? isAllExtensionsSelected
+                : _selectedExtensions.contains(extension);
+            _selectedExtensions =
+                PreviewWorkbenchActions.toggleExtensionSelection(
+                  current: _selectedExtensions,
+                  extension: extension,
+                  selected: !selected,
+                );
+          });
+        },
+        localizeUiError: _localizeUiError,
+        localizedExecutionStatus: _localizedExecutionStatus,
+        isScanTimeoutError: _isScanTimeoutError,
+      ),
+    );
+  }
+
+  Widget _buildAdvancedSection({
+    required BuildContext context,
+    required ExecutionState executionState,
+    required bool isBusy,
+    required bool hasExecutableItems,
+    required bool isLocalPreview,
+    required PreviewState previewState,
+    required DirectoryState directoryState,
+  }) {
+    return ExpansionTile(
+      title: Text(context.l10n.homeAdvancedTitle),
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: SectionCard(
+            title: context.l10n.executionTargetTitle,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(context.l10n.executionTargetHint),
+                const SizedBox(height: 8),
+                Text(
+                  executionState.targetRoot ?? context.l10n.executionNoTarget,
+                ),
+                const SizedBox(height: 12),
+                FilledButton.tonal(
+                  onPressed: isBusy
+                      ? null
+                      : () async {
+                          final handle = await ref
+                              .read(fileAccessGatewayProvider)
+                              .pickDirectory();
+                          ref
+                              .read(executionControllerProvider.notifier)
+                              .setTargetRoot(handle?.entryId);
+                        },
+                  child: Text(context.l10n.executionPickTarget),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed:
+                      isBusy ||
+                          executionState.targetRoot == null ||
+                          _isCleaningTargetTemp
+                      ? null
+                      : () => _cleanupTempFiles(
+                          rootId: executionState.targetRoot!,
+                          isSource: false,
+                        ),
+                  child: Text(context.l10n.homeCleanupTempFiles),
+                ),
+                const SizedBox(height: 8),
+                FilledButton.tonal(
+                  onPressed:
+                      isBusy ||
+                          executionState.targetRoot == null ||
+                          !hasExecutableItems ||
+                          !isLocalPreview
+                      ? null
+                      : () async {
+                          if (previewState.plan.deleteItems.isNotEmpty) {
+                            final bool? confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AppConfirmDialog(
+                                  title:
+                                      context.l10n.executionConfirmDeleteTitle,
+                                  message: context.l10n
+                                      .executionConfirmDeleteBody(
+                                        previewState.plan.deleteItems.length,
+                                      ),
+                                );
+                              },
+                            );
+                            if (confirmed != true) {
+                              return;
+                            }
+                          }
+                          await ref
+                              .read(executionControllerProvider.notifier)
+                              .execute(
+                                plan: previewState.plan,
+                                targetRoot: executionState.targetRoot!,
+                              );
+                          await PreviewWorkbenchActions.refreshPreviewAfterExecution(
+                            ref: ref,
+                            previewState: previewState,
+                            directoryState: directoryState,
+                            executionState: ref.read(
+                              executionControllerProvider,
+                            ),
+                          );
+                        },
+                  child: Text(context.l10n.executionRunLocalDebug),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
