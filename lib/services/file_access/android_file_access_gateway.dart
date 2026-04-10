@@ -26,6 +26,8 @@ class AndroidFileWriteSession implements FileWriteSession {
   @override
   Future<void> write(List<int> chunk) async {
     try {
+      // TODO(transfer-android): pass raw Uint8List through the MethodChannel
+      // so Android writes no longer pay a second base64 encode/decode cost.
       await AndroidFileAccessGateway._channel.invokeMethod<void>(
         'writeChunk',
         <String, Object?>{'sessionId': _sessionId, 'data': base64Encode(chunk)},
@@ -139,6 +141,9 @@ class AndroidFileAccessGateway implements FileAccessGateway {
 
   @override
   Stream<List<int>> openRead(String entryId) {
+    // TODO(transfer-android): keep read/write transport symmetric if we later
+    // remove base64 from the Android bridge, so large file throughput improves
+    // in both directions instead of only on writes.
     return _AndroidReadStreamController(entryId).stream();
   }
 

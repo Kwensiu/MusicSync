@@ -172,6 +172,39 @@ void main() {
       expect(detail?.audioMetadata?.artist, 'Remote Artist');
     });
 
+    test(
+      'connect records stream upload capability from hello response',
+      () async {
+        final _FakeHttpSyncClient client = _FakeHttpSyncClient(
+          helloResponse: const HelloResponseDto(
+            device: DeviceInfo(
+              deviceId: 'peer',
+              deviceName: 'Peer',
+              platform: 'android',
+              address: '',
+              port: 44888,
+            ),
+            directoryReady: true,
+            transferProtocols: <String>['chunk-rpc', 'stream-v1'],
+          ),
+          scanResponse: ScanResponseDto(snapshot: _remoteSnapshot('Remote A')),
+        );
+        final ProviderContainer container = _container(client: client);
+        addTearDown(container.dispose);
+
+        await container
+            .read(connectionControllerProvider.notifier)
+            .connect(address: '192.168.1.2', port: 44888);
+
+        expect(
+          container
+              .read(connectionControllerProvider.notifier)
+              .peerSupportsStreamUpload,
+          isTrue,
+        );
+      },
+    );
+
     test('disconnect clears remote state but preserves listener', () async {
       final _FakeHttpSyncClient client = _FakeHttpSyncClient(
         helloResponse: const HelloResponseDto(
@@ -380,10 +413,7 @@ class _FakeHttpSyncServerService extends HttpSyncServerService {
     required ScanHandler onScan,
     required EntryDetailHandler onEntryDetail,
     required SyncSessionStateHandler onSyncSessionState,
-    required BeginCopyHandler onBeginCopy,
-    required WriteChunkHandler onWriteChunk,
-    required FinishCopyHandler onFinishCopy,
-    required AbortCopyHandler onAbortCopy,
+    required CopyFileStreamHandler onCopyFileStream,
     required DeleteEntryHandler onDeleteEntry,
   }) async {}
 
