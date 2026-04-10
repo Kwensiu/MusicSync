@@ -8,7 +8,8 @@ import 'package:music_sync/services/network/http/http_sync_dto.dart';
 import 'package:music_sync/services/network/http/http_sync_routes.dart';
 
 class HttpSyncClient {
-  HttpSyncClient({HttpClient? httpClient}) : _httpClient = httpClient ?? HttpClient();
+  HttpSyncClient({HttpClient? httpClient})
+    : _httpClient = httpClient ?? HttpClient();
 
   final HttpClient _httpClient;
 
@@ -19,7 +20,11 @@ class HttpSyncClient {
     required bool directoryReady,
     String? directoryDisplayName,
   }) async {
-    final HttpClientRequest request = await _post(address, port, HttpSyncRoutes.hello);
+    final HttpClientRequest request = await _post(
+      address,
+      port,
+      HttpSyncRoutes.hello,
+    );
     request.write(
       jsonEncode(
         HelloRequestDto(
@@ -29,7 +34,9 @@ class HttpSyncClient {
         ).toJson(),
       ),
     );
-    final Map<String, Object?> payload = await _readJson(await request.close());
+    final Map<String, Object?> payload = await _readJsonResponse(
+      await request.close(),
+    );
     return HelloResponseDto.fromJson(payload);
   }
 
@@ -42,7 +49,9 @@ class HttpSyncClient {
       port,
       HttpSyncRoutes.directoryStatus,
     )).close();
-    return DirectoryStatusResponseDto.fromJson(await _readJson(response));
+    return DirectoryStatusResponseDto.fromJson(
+      await _readJsonResponse(response),
+    );
   }
 
   Future<void> closeSession({
@@ -58,8 +67,7 @@ class HttpSyncClient {
     request.write(
       jsonEncode(SessionCloseRequestDto(deviceId: deviceId).toJson()),
     );
-    final HttpClientResponse response = await request.close();
-    await response.drain<void>();
+    await _drainSuccessResponse(await request.close());
   }
 
   Future<ScanResponseDto> scan({
@@ -71,7 +79,7 @@ class HttpSyncClient {
       port,
       HttpSyncRoutes.scan,
     )).close();
-    return ScanResponseDto.fromJson(await _readJson(response));
+    return ScanResponseDto.fromJson(await _readJsonResponse(response));
   }
 
   Future<void> notifySyncSessionState({
@@ -87,8 +95,7 @@ class HttpSyncClient {
     request.write(
       jsonEncode(SyncSessionStateRequestDto(active: active).toJson()),
     );
-    final HttpClientResponse response = await request.close();
-    await response.drain<void>();
+    await _drainSuccessResponse(await request.close());
   }
 
   Future<void> beginCopy({
@@ -112,8 +119,7 @@ class HttpSyncClient {
         ).toJson(),
       ),
     );
-    final HttpClientResponse response = await request.close();
-    await response.drain<void>();
+    await _drainSuccessResponse(await request.close());
   }
 
   Future<void> writeChunk({
@@ -135,8 +141,7 @@ class HttpSyncClient {
         ).toJson(),
       ),
     );
-    final HttpClientResponse response = await request.close();
-    await response.drain<void>();
+    await _drainSuccessResponse(await request.close());
   }
 
   Future<void> finishCopy({
@@ -152,8 +157,7 @@ class HttpSyncClient {
     request.write(
       jsonEncode(FinishCopyRequestDto(transferId: transferId).toJson()),
     );
-    final HttpClientResponse response = await request.close();
-    await response.drain<void>();
+    await _drainSuccessResponse(await request.close());
   }
 
   Future<void> abortCopy({
@@ -169,8 +173,7 @@ class HttpSyncClient {
     request.write(
       jsonEncode(AbortCopyRequestDto(transferId: transferId).toJson()),
     );
-    final HttpClientResponse response = await request.close();
-    await response.drain<void>();
+    await _drainSuccessResponse(await request.close());
   }
 
   Future<void> deleteEntry({
@@ -192,8 +195,7 @@ class HttpSyncClient {
         ).toJson(),
       ),
     );
-    final HttpClientResponse response = await request.close();
-    await response.drain<void>();
+    await _drainSuccessResponse(await request.close());
   }
 
   Future<DiffEntryDetailViewData> entryDetail({
@@ -206,14 +208,11 @@ class HttpSyncClient {
       port,
       HttpSyncRoutes.entryDetail,
     );
-    request.write(
-      jsonEncode(EntryDetailRequestDto(entryId: entryId).toJson()),
+    request.write(jsonEncode(EntryDetailRequestDto(entryId: entryId).toJson()));
+    final Map<String, Object?> payload = await _readJsonResponse(
+      await request.close(),
     );
-    final Map<String, Object?> payload = await _readJson(await request.close());
-    final Map<String, Object?> detail =
-        (payload['detail'] as Map<Object?, Object?>).map(
-          (Object? key, Object? value) => MapEntry(key.toString(), value),
-        );
+    final Map<String, Object?> detail = _requireMap(payload, 'detail');
     final Map<String, Object?>? audioMetadata =
         switch (detail['audioMetadata']) {
           final Map<Object?, Object?> raw => raw.map(
@@ -243,19 +242,13 @@ class HttpSyncClient {
     );
   }
 
-  Future<HttpClientRequest> _get(
-    String address,
-    int port,
-    String path,
-  ) {
-    return _httpClient.getUrl(Uri.http('$address:${_resolveControlPort(port)}', path));
+  Future<HttpClientRequest> _get(String address, int port, String path) {
+    return _httpClient.getUrl(
+      Uri.http('$address:${_resolveControlPort(port)}', path),
+    );
   }
 
-  Future<HttpClientRequest> _post(
-    String address,
-    int port,
-    String path,
-  ) async {
+  Future<HttpClientRequest> _post(String address, int port, String path) async {
     final HttpClientRequest request = await _httpClient.postUrl(
       Uri.http('$address:${_resolveControlPort(port)}', path),
     );
@@ -263,10 +256,56 @@ class HttpSyncClient {
     return request;
   }
 
-  int _resolveControlPort(int port) => port + AppConstants.httpControlPortOffset;
+  int _resolveControlPort(int port) =>
+      port + AppConstants.httpControlPortOffset;
 
-  Future<Map<String, Object?>> _readJson(HttpClientResponse response) async {
-    final String body = await utf8.decoder.bind(response).join();
+  Future<void> _drainSuccessResponse(HttpClientResponse response) async {
+    final String body = await _readResponseBody(response);
+    _throwIfErrorResponse(response, body);
+  }
+
+  Future<Map<String, Object?>> _readJsonResponse(
+    HttpClientResponse response,
+  ) async {
+    final String body = await _readResponseBody(response);
+    _throwIfErrorResponse(response, body);
+    return _decodeJsonMap(body);
+  }
+
+  Future<String> _readResponseBody(HttpClientResponse response) {
+    return utf8.decoder.bind(response).join();
+  }
+
+  void _throwIfErrorResponse(HttpClientResponse response, String body) {
+    final int statusCode = response.statusCode;
+    if (statusCode >= HttpStatus.ok &&
+        statusCode < HttpStatus.multipleChoices) {
+      return;
+    }
+    final String? message = _tryReadErrorMessage(body);
+    throw HttpException(
+      message ??
+          'HTTP ${response.statusCode} ${response.reasonPhrase ?? 'request failed'}',
+    );
+  }
+
+  String? _tryReadErrorMessage(String body) {
+    if (body.isEmpty) {
+      return null;
+    }
+    try {
+      final Map<String, Object?> payload = _decodeJsonMap(body);
+      final Object? message = payload['message'];
+      if (message is String && message.isNotEmpty) {
+        return message;
+      }
+    } on FormatException {
+      return null;
+    }
+    return null;
+  }
+
+  Map<String, Object?> _decodeJsonMap(String body) {
     final Object? decoded = jsonDecode(body);
     if (decoded is! Map<Object?, Object?>) {
       throw const FormatException('HTTP JSON payload invalid.');
@@ -274,5 +313,21 @@ class HttpSyncClient {
     return decoded.map(
       (Object? key, Object? value) => MapEntry(key.toString(), value),
     );
+  }
+
+  Map<String, Object?> _requireMap(Map<String, Object?> payload, String key) {
+    final Object? value = payload[key];
+    if (value is! Map<Object?, Object?>) {
+      throw FormatException('HTTP JSON payload missing valid "$key" map.');
+    }
+    return value.map(
+      (Object? nestedKey, Object? nestedValue) =>
+          MapEntry(nestedKey.toString(), nestedValue),
+    );
+  }
+
+  Future<Map<String, Object?>> _readJson(HttpClientResponse response) async {
+    final String body = await _readResponseBody(response);
+    return _decodeJsonMap(body);
   }
 }

@@ -23,19 +23,18 @@ import 'package:music_sync/services/network/http/http_sync_dto.dart';
 import 'package:music_sync/services/network/http/http_sync_server_service.dart';
 import 'package:music_sync/services/storage/recent_items_store.dart';
 
-final Provider<DiscoveryService> discoveryServiceProvider = Provider<DiscoveryService>(
-  (Ref ref) => DiscoveryService(),
-);
-final Provider<HttpSyncClient> httpSyncClientProvider = Provider<HttpSyncClient>(
-  (Ref ref) => HttpSyncClient(),
-);
+final Provider<DiscoveryService> discoveryServiceProvider =
+    Provider<DiscoveryService>((Ref ref) => DiscoveryService());
+final Provider<HttpSyncClient> httpSyncClientProvider =
+    Provider<HttpSyncClient>((Ref ref) => HttpSyncClient());
 final Provider<HttpSyncServerService> httpSyncServerServiceProvider =
     Provider<HttpSyncServerService>((Ref ref) => HttpSyncServerService());
 
 class ConnectionController extends Notifier<ConnectionState> {
   Ref get _ref => ref;
   HttpSyncClient get _httpClient => ref.read(httpSyncClientProvider);
-  HttpSyncServerService get _httpServer => ref.read(httpSyncServerServiceProvider);
+  HttpSyncServerService get _httpServer =>
+      ref.read(httpSyncServerServiceProvider);
   RecentItemsStore get _store => ref.read(recentItemsStoreProvider);
   DiscoveryService get _discovery => ref.read(discoveryServiceProvider);
 
@@ -44,6 +43,7 @@ class ConnectionController extends Notifier<ConnectionState> {
   @override
   ConnectionState build() {
     _isDisposed = false;
+    final DiscoveryService discovery = _discovery;
     unawaited(_loadRecent());
     _discoveryCleanupTimer = Timer.periodic(
       const Duration(seconds: 3),
@@ -53,12 +53,12 @@ class ConnectionController extends Notifier<ConnectionState> {
       const Duration(seconds: 2),
       (_) => unawaited(_pollRemoteDirectoryState()),
     );
-    unawaited(_discovery.startReceiving(onDevice: _handleDiscoveryEvent));
+    unawaited(discovery.startReceiving(onDevice: _handleDiscoveryEvent));
     ref.onDispose(() {
       _isDisposed = true;
       _discoveryCleanupTimer?.cancel();
       _remoteDirectorySyncTimer?.cancel();
-      unawaited(_discovery.dispose());
+      unawaited(discovery.dispose());
     });
     return ConnectionState.initial();
   }
@@ -66,8 +66,10 @@ class ConnectionController extends Notifier<ConnectionState> {
   Timer? _discoveryCleanupTimer;
   Timer? _remoteDirectorySyncTimer;
   final Map<String, DateTime> _discoveredAt = <String, DateTime>{};
-  final Map<String, FileWriteSession> _incomingWriteSessions = <String, FileWriteSession>{};
-  final Map<String, _IncomingWriteTarget> _incomingWriteTargets = <String, _IncomingWriteTarget>{};
+  final Map<String, FileWriteSession> _incomingWriteSessions =
+      <String, FileWriteSession>{};
+  final Map<String, _IncomingWriteTarget> _incomingWriteTargets =
+      <String, _IncomingWriteTarget>{};
   int _connectAttemptId = 0;
 
   Future<void> startListening({int port = AppConstants.defaultPort}) async {
@@ -88,7 +90,9 @@ class ConnectionController extends Notifier<ConnectionState> {
       );
       await _discovery.startBroadcasting(_buildLocalDevice(port: port));
       state = ConnectionState(
-        status: state.peer == null ? ConnectionStatus.idle : ConnectionStatus.connected,
+        status: state.peer == null
+            ? ConnectionStatus.idle
+            : ConnectionStatus.connected,
         isListening: true,
         listenPort: port,
         peer: state.peer,
@@ -132,7 +136,9 @@ class ConnectionController extends Notifier<ConnectionState> {
         await _httpClient.closeSession(
           address: peer.address,
           port: peer.port,
-          deviceId: _buildLocalDevice(port: state.listenPort ?? AppConstants.defaultPort).deviceId,
+          deviceId: _buildLocalDevice(
+            port: state.listenPort ?? AppConstants.defaultPort,
+          ).deviceId,
         );
       } catch (_) {
         // Best effort only.
@@ -173,7 +179,9 @@ class ConnectionController extends Notifier<ConnectionState> {
 
   Future<void> connect({required String address, required int port}) async {
     final int attemptId = ++_connectAttemptId;
-    final DirectoryHandle? localHandle = _ref.read(directoryControllerProvider).handle;
+    final DirectoryHandle? localHandle = _ref
+        .read(directoryControllerProvider)
+        .handle;
     _clearPlanAndExecution();
     state = ConnectionState(
       status: ConnectionStatus.connecting,
@@ -192,7 +200,9 @@ class ConnectionController extends Notifier<ConnectionState> {
       final HelloResponseDto response = await _httpClient.hello(
         address: address,
         port: port,
-        localDevice: _buildLocalDevice(port: state.listenPort ?? AppConstants.defaultPort),
+        localDevice: _buildLocalDevice(
+          port: state.listenPort ?? AppConstants.defaultPort,
+        ),
         directoryReady: localHandle != null,
         directoryDisplayName: localHandle?.displayName,
       );
@@ -208,8 +218,20 @@ class ConnectionController extends Notifier<ConnectionState> {
         port: port,
       );
       await _store.saveRecentAddress('$address:$port');
-      ScanSnapshot? remoteSnapshot;
       final bool isRemoteDirectoryReady = response.directoryReady;
+      state = ConnectionState(
+        status: ConnectionStatus.connecting,
+        isListening: state.isListening,
+        peer: peer,
+        remoteSnapshot: null,
+        isRemoteDirectoryReady: isRemoteDirectoryReady,
+        isIncomingSyncActive: false,
+        listenPort: state.listenPort,
+        discoveredDevices: state.discoveredDevices,
+        recentAddresses: state.recentAddresses,
+        recentLabels: state.recentLabels,
+      );
+      ScanSnapshot? remoteSnapshot;
       try {
         if (isRemoteDirectoryReady) {
           remoteSnapshot = await _requestRemoteSnapshot();
@@ -258,10 +280,8 @@ class ConnectionController extends Notifier<ConnectionState> {
       return false;
     }
     try {
-      final DirectoryStatusResponseDto response = await _httpClient.directoryStatus(
-        address: peer.address,
-        port: peer.port,
-      );
+      final DirectoryStatusResponseDto response = await _httpClient
+          .directoryStatus(address: peer.address, port: peer.port);
       state = ConnectionState(
         status: ConnectionStatus.connected,
         isListening: state.isListening,
@@ -305,7 +325,9 @@ class ConnectionController extends Notifier<ConnectionState> {
 
   void _handleDisconnected(Object? error) {
     unawaited(_cleanupIncomingTransfers());
-    final ExecutionState executionState = _ref.read(executionControllerProvider);
+    final ExecutionState executionState = _ref.read(
+      executionControllerProvider,
+    );
     _ref.read(previewControllerProvider.notifier).clear();
     if (executionState.status == ExecutionStatus.running &&
         executionState.mode == ExecutionMode.remote) {
@@ -333,7 +355,9 @@ class ConnectionController extends Notifier<ConnectionState> {
     );
   }
 
-  Future<ScanSnapshot?> refreshRemoteSnapshot({bool clearTransientState = true}) async {
+  Future<ScanSnapshot?> refreshRemoteSnapshot({
+    bool clearTransientState = true,
+  }) async {
     final DeviceInfo? peer = state.peer;
     if (peer == null) {
       return null;
@@ -379,7 +403,8 @@ class ConnectionController extends Notifier<ConnectionState> {
         _handleDisconnected(error);
         return null;
       }
-      final bool remoteDirectoryUnavailable = _isRemoteDirectoryUnavailableError(message);
+      final bool remoteDirectoryUnavailable =
+          _isRemoteDirectoryUnavailableError(message);
       if (remoteDirectoryUnavailable) {
         _handleRemoteDirectoryUnavailable();
       }
@@ -387,8 +412,12 @@ class ConnectionController extends Notifier<ConnectionState> {
         status: ConnectionStatus.connected,
         isListening: state.isListening,
         peer: peer,
-        remoteSnapshot: remoteDirectoryUnavailable ? null : state.remoteSnapshot,
-        isRemoteDirectoryReady: remoteDirectoryUnavailable ? false : state.isRemoteDirectoryReady,
+        remoteSnapshot: remoteDirectoryUnavailable
+            ? null
+            : state.remoteSnapshot,
+        isRemoteDirectoryReady: remoteDirectoryUnavailable
+            ? false
+            : state.isRemoteDirectoryReady,
         isIncomingSyncActive: state.isIncomingSyncActive,
         listenPort: state.listenPort,
         discoveredDevices: state.discoveredDevices,
@@ -405,12 +434,20 @@ class ConnectionController extends Notifier<ConnectionState> {
     if (peer == null || peer.address.isEmpty) {
       throw const SocketException('Not connected to any peer.');
     }
-    final ScanResponseDto response = await _httpClient.scan(address: peer.address, port: peer.port);
+    final ScanResponseDto response = await _httpClient.scan(
+      address: peer.address,
+      port: peer.port,
+    );
     return response.snapshot;
   }
 
-  Future<HelloResponseDto> _handleHttpHello(HelloRequestDto request, String remoteAddress) async {
-    final DirectoryHandle? handle = _ref.read(directoryControllerProvider).handle;
+  Future<HelloResponseDto> _handleHttpHello(
+    HelloRequestDto request,
+    String remoteAddress,
+  ) async {
+    final DirectoryHandle? handle = _ref
+        .read(directoryControllerProvider)
+        .handle;
     state = ConnectionState(
       status: ConnectionStatus.connected,
       isListening: state.isListening,
@@ -434,7 +471,9 @@ class ConnectionController extends Notifier<ConnectionState> {
       recentLabels: state.recentLabels,
     );
     return HelloResponseDto(
-      device: _buildLocalDevice(port: state.listenPort ?? AppConstants.defaultPort),
+      device: _buildLocalDevice(
+        port: state.listenPort ?? AppConstants.defaultPort,
+      ),
       directoryReady: handle != null,
       directoryDisplayName: handle?.displayName,
     );
@@ -446,7 +485,9 @@ class ConnectionController extends Notifier<ConnectionState> {
     }
     _clearPlanAndExecution();
     state = ConnectionState(
-      status: state.isListening ? ConnectionStatus.idle : ConnectionStatus.disconnected,
+      status: state.isListening
+          ? ConnectionStatus.idle
+          : ConnectionStatus.disconnected,
       isListening: state.isListening,
       listenPort: state.listenPort,
       discoveredDevices: state.discoveredDevices,
@@ -460,7 +501,9 @@ class ConnectionController extends Notifier<ConnectionState> {
   }
 
   Future<DirectoryStatusResponseDto> _handleHttpDirectoryStatus() async {
-    final DirectoryHandle? handle = _ref.read(directoryControllerProvider).handle;
+    final DirectoryHandle? handle = _ref
+        .read(directoryControllerProvider)
+        .handle;
     return DirectoryStatusResponseDto(
       directoryReady: handle != null,
       directoryDisplayName: handle?.displayName,
@@ -468,7 +511,9 @@ class ConnectionController extends Notifier<ConnectionState> {
   }
 
   Future<ScanResponseDto> _handleHttpScan() async {
-    final DirectoryHandle? handle = _ref.read(directoryControllerProvider).handle;
+    final DirectoryHandle? handle = _ref
+        .read(directoryControllerProvider)
+        .handle;
     if (handle == null) {
       throw const SocketException('No shared directory selected on peer.');
     }
@@ -476,7 +521,9 @@ class ConnectionController extends Notifier<ConnectionState> {
         .read(directoryScannerProvider)
         .scan(
           root: handle,
-          deviceId: _buildLocalDevice(port: state.listenPort ?? AppConstants.defaultPort).deviceId,
+          deviceId: _buildLocalDevice(
+            port: state.listenPort ?? AppConstants.defaultPort,
+          ).deviceId,
         );
     return ScanResponseDto(snapshot: snapshot);
   }
@@ -497,7 +544,9 @@ class ConnectionController extends Notifier<ConnectionState> {
     );
   }
 
-  Future<void> _handleHttpSyncSessionState(SyncSessionStateRequestDto request) async {
+  Future<void> _handleHttpSyncSessionState(
+    SyncSessionStateRequestDto request,
+  ) async {
     _setIncomingSyncActive(request.active);
   }
 
@@ -522,7 +571,10 @@ class ConnectionController extends Notifier<ConnectionState> {
   }
 
   Future<void> _handleHttpDeleteEntry(DeleteEntryRequestDto request) async {
-    await _deleteEntry(remoteRootId: request.remoteRootId, relativePath: request.relativePath);
+    await _deleteEntry(
+      remoteRootId: request.remoteRootId,
+      relativePath: request.relativePath,
+    );
   }
 
   Future<void> disconnect() async {
@@ -533,7 +585,9 @@ class ConnectionController extends Notifier<ConnectionState> {
         await _httpClient.closeSession(
           address: peer.address,
           port: peer.port,
-          deviceId: _buildLocalDevice(port: state.listenPort ?? AppConstants.defaultPort).deviceId,
+          deviceId: _buildLocalDevice(
+            port: state.listenPort ?? AppConstants.defaultPort,
+          ).deviceId,
         );
       } catch (_) {
         // Best effort only.
@@ -574,7 +628,9 @@ class ConnectionController extends Notifier<ConnectionState> {
     }
   }
 
-  Future<DiffEntryDetailViewData?> requestRemoteEntryDetail(String entryId) async {
+  Future<DiffEntryDetailViewData?> requestRemoteEntryDetail(
+    String entryId,
+  ) async {
     final DeviceInfo? peer = state.peer;
     if (entryId.isEmpty || peer == null || peer.address.isEmpty) {
       return null;
@@ -596,13 +652,17 @@ class ConnectionController extends Notifier<ConnectionState> {
   }
 
   void _handleRemoteDirectoryUnavailable() {
-    final ExecutionState executionState = _ref.read(executionControllerProvider);
+    final ExecutionState executionState = _ref.read(
+      executionControllerProvider,
+    );
     _ref.read(previewControllerProvider.notifier).clear();
     if (executionState.status == ExecutionStatus.running &&
         executionState.mode == ExecutionMode.remote) {
       _ref
           .read(executionControllerProvider.notifier)
-          .failRemoteExecution('The selected directory is not accessible anymore.');
+          .failRemoteExecution(
+            'The selected directory is not accessible anymore.',
+          );
       return;
     }
     _ref.read(executionControllerProvider.notifier).clearTransient();
@@ -656,7 +716,9 @@ class ConnectionController extends Notifier<ConnectionState> {
             : Platform.isWindows
             ? 'Windows'
             : Platform.operatingSystem);
-    final String deviceName = hostName.toLowerCase() == 'localhost' ? fallbackName : hostName;
+    final String deviceName = hostName.toLowerCase() == 'localhost'
+        ? fallbackName
+        : hostName;
     return DeviceInfo(
       deviceId: '$deviceName:$port',
       deviceName: deviceName,
@@ -666,9 +728,15 @@ class ConnectionController extends Notifier<ConnectionState> {
     );
   }
 
-  String _sanitizePeerName(String? rawName, {String? fallbackPlatform, String? fallbackAddress}) {
+  String _sanitizePeerName(
+    String? rawName, {
+    String? fallbackPlatform,
+    String? fallbackAddress,
+  }) {
     final String? normalized = rawName?.trim();
-    if (normalized != null && normalized.isNotEmpty && normalized.toLowerCase() != 'localhost') {
+    if (normalized != null &&
+        normalized.isNotEmpty &&
+        normalized.toLowerCase() != 'localhost') {
       return normalized;
     }
     final String? platform = fallbackPlatform?.trim();
@@ -690,7 +758,8 @@ class ConnectionController extends Notifier<ConnectionState> {
 
   Future<void> _loadRecent() async {
     final List<String> recentAddresses = await _store.loadRecentAddresses();
-    final Map<String, String> recentLabels = await _store.loadRecentAddressLabels();
+    final Map<String, String> recentLabels = await _store
+        .loadRecentAddressLabels();
     if (_isDisposed) {
       return;
     }
@@ -721,14 +790,18 @@ class ConnectionController extends Notifier<ConnectionState> {
   }
 
   void _handleDiscoveredDevice(DeviceInfo device) {
-    final DeviceInfo local = _buildLocalDevice(port: state.listenPort ?? AppConstants.defaultPort);
+    final DeviceInfo local = _buildLocalDevice(
+      port: state.listenPort ?? AppConstants.defaultPort,
+    );
     if (device.deviceId == local.deviceId) {
       return;
     }
     _discoveredAt[device.deviceId] = DateTime.now();
     final List<DeviceInfo> next = <DeviceInfo>[
       device,
-      ...state.discoveredDevices.where((DeviceInfo item) => item.deviceId != device.deviceId),
+      ...state.discoveredDevices.where(
+        (DeviceInfo item) => item.deviceId != device.deviceId,
+      ),
     ];
     state = ConnectionState(
       status: state.status,
@@ -773,8 +846,12 @@ class ConnectionController extends Notifier<ConnectionState> {
 
   void _pruneDiscoveredDevices() {
     final DateTime cutoff = DateTime.now().subtract(const Duration(seconds: 8));
-    _discoveredAt.removeWhere((String _, DateTime seenAt) => seenAt.isBefore(cutoff));
-    final List<DeviceInfo> next = state.discoveredDevices.where((DeviceInfo device) {
+    _discoveredAt.removeWhere(
+      (String _, DateTime seenAt) => seenAt.isBefore(cutoff),
+    );
+    final List<DeviceInfo> next = state.discoveredDevices.where((
+      DeviceInfo device,
+    ) {
       if (_isConnectedPeer(device)) {
         return true;
       }
@@ -800,7 +877,8 @@ class ConnectionController extends Notifier<ConnectionState> {
   }
 
   bool _isConnectedPeer(DeviceInfo device) {
-    return state.status == ConnectionStatus.connected && state.peer?.deviceId == device.deviceId;
+    return state.status == ConnectionStatus.connected &&
+        state.peer?.deviceId == device.deviceId;
   }
 
   void _ensureConnectedPeerVisible() {
@@ -821,7 +899,10 @@ class ConnectionController extends Notifier<ConnectionState> {
       remoteSnapshot: state.remoteSnapshot,
       isRemoteDirectoryReady: state.isRemoteDirectoryReady,
       isIncomingSyncActive: state.isIncomingSyncActive,
-      discoveredDevices: <DeviceInfo>[peer, ...state.discoveredDevices].take(12).toList(),
+      discoveredDevices: <DeviceInfo>[
+        peer,
+        ...state.discoveredDevices,
+      ].take(12).toList(),
       recentAddresses: state.recentAddresses,
       recentLabels: state.recentLabels,
       listenPort: state.listenPort,
@@ -846,7 +927,10 @@ class ConnectionController extends Notifier<ConnectionState> {
     );
     final String fileName = _fileNameOf(relativePath);
     final String tempFileName = _tempFileName(fileName);
-    final FileWriteSession session = await gateway.openWrite(parentId, tempFileName);
+    final FileWriteSession session = await gateway.openWrite(
+      parentId,
+      tempFileName,
+    );
     _incomingWriteSessions[transferId] = session;
     final String? tempEntryId = await _resolveRemoteEntryId(
       gateway: gateway,
@@ -855,7 +939,9 @@ class ConnectionController extends Notifier<ConnectionState> {
     );
     if (tempEntryId == null) {
       await session.close();
-      throw const FileSystemException('Temporary target file could not be resolved.');
+      throw const FileSystemException(
+        'Temporary target file could not be resolved.',
+      );
     }
     _incomingWriteTargets[transferId] = _IncomingWriteTarget(
       tempEntryId: tempEntryId,
@@ -863,7 +949,10 @@ class ConnectionController extends Notifier<ConnectionState> {
     );
   }
 
-  Future<void> _writeChunk({required String transferId, required String data}) async {
+  Future<void> _writeChunk({
+    required String transferId,
+    required String data,
+  }) async {
     final FileWriteSession session =
         _incomingWriteSessions[transferId] ??
         (throw const FormatException('Transfer session not found.'));
@@ -874,7 +963,9 @@ class ConnectionController extends Notifier<ConnectionState> {
     final FileWriteSession session =
         _incomingWriteSessions.remove(transferId) ??
         (throw const FormatException('Transfer session not found.'));
-    final _IncomingWriteTarget? target = _incomingWriteTargets.remove(transferId);
+    final _IncomingWriteTarget? target = _incomingWriteTargets.remove(
+      transferId,
+    );
     await session.close();
     if (target != null) {
       final FileAccessGateway gateway = _ref.read(fileAccessGatewayProvider);
@@ -886,7 +977,9 @@ class ConnectionController extends Notifier<ConnectionState> {
     final FileWriteSession session =
         _incomingWriteSessions.remove(transferId) ??
         (throw const FormatException('Transfer session not found.'));
-    final _IncomingWriteTarget? target = _incomingWriteTargets.remove(transferId);
+    final _IncomingWriteTarget? target = _incomingWriteTargets.remove(
+      transferId,
+    );
     await session.close();
     if (target != null) {
       final FileAccessGateway gateway = _ref.read(fileAccessGatewayProvider);
@@ -894,7 +987,10 @@ class ConnectionController extends Notifier<ConnectionState> {
     }
   }
 
-  Future<void> _deleteEntry({required String remoteRootId, required String relativePath}) async {
+  Future<void> _deleteEntry({
+    required String remoteRootId,
+    required String relativePath,
+  }) async {
     final FileAccessGateway gateway = _ref.read(fileAccessGatewayProvider);
     final String? entryId = await _resolveRemoteEntryId(
       gateway: gateway,
@@ -917,11 +1013,16 @@ class ConnectionController extends Notifier<ConnectionState> {
     }
     String currentId = remoteRootId;
     for (final String segment in segments.take(segments.length - 1)) {
-      final List<FileAccessEntry> children = await gateway.listChildren(currentId);
-      final FileAccessEntry? existing = children.cast<FileAccessEntry?>().firstWhere(
-        (FileAccessEntry? child) => child != null && child.isDirectory && child.name == segment,
-        orElse: () => null,
+      final List<FileAccessEntry> children = await gateway.listChildren(
+        currentId,
       );
+      final FileAccessEntry? existing = children
+          .cast<FileAccessEntry?>()
+          .firstWhere(
+            (FileAccessEntry? child) =>
+                child != null && child.isDirectory && child.name == segment,
+            orElse: () => null,
+          );
       if (existing != null) {
         currentId = existing.entryId;
         continue;
@@ -939,11 +1040,15 @@ class ConnectionController extends Notifier<ConnectionState> {
     String currentId = rootId;
     final List<String> segments = relativePath.split(RegExp(r'[\\/]'));
     for (final String segment in segments) {
-      final List<FileAccessEntry> children = await gateway.listChildren(currentId);
-      final FileAccessEntry? match = children.cast<FileAccessEntry?>().firstWhere(
-        (FileAccessEntry? child) => child != null && child.name == segment,
-        orElse: () => null,
+      final List<FileAccessEntry> children = await gateway.listChildren(
+        currentId,
       );
+      final FileAccessEntry? match = children
+          .cast<FileAccessEntry?>()
+          .firstWhere(
+            (FileAccessEntry? child) => child != null && child.name == segment,
+            orElse: () => null,
+          );
       if (match == null) {
         return null;
       }
@@ -966,7 +1071,8 @@ class ConnectionController extends Notifier<ConnectionState> {
     return segments.join('/');
   }
 
-  String _tempFileName(String fileName) => '$fileName${AppConstants.tempFileSuffix}';
+  String _tempFileName(String fileName) =>
+      '$fileName${AppConstants.tempFileSuffix}';
 
   Future<void> _cleanupIncomingTransfers() async {
     if (_incomingWriteSessions.isEmpty && _incomingWriteTargets.isEmpty) {
@@ -974,12 +1080,10 @@ class ConnectionController extends Notifier<ConnectionState> {
       return;
     }
     final FileAccessGateway gateway = _ref.read(fileAccessGatewayProvider);
-    final Map<String, FileWriteSession> sessions = Map<String, FileWriteSession>.from(
-      _incomingWriteSessions,
-    );
-    final Map<String, _IncomingWriteTarget> targets = Map<String, _IncomingWriteTarget>.from(
-      _incomingWriteTargets,
-    );
+    final Map<String, FileWriteSession> sessions =
+        Map<String, FileWriteSession>.from(_incomingWriteSessions);
+    final Map<String, _IncomingWriteTarget> targets =
+        Map<String, _IncomingWriteTarget>.from(_incomingWriteTargets);
     _incomingWriteSessions.clear();
     _incomingWriteTargets.clear();
     for (final FileWriteSession session in sessions.values) {
@@ -1024,11 +1128,17 @@ class ConnectionController extends Notifier<ConnectionState> {
 }
 
 class _IncomingWriteTarget {
-  const _IncomingWriteTarget({required this.tempEntryId, required this.finalName});
+  const _IncomingWriteTarget({
+    required this.tempEntryId,
+    required this.finalName,
+  });
 
   final String tempEntryId;
   final String finalName;
 }
 
-final NotifierProvider<ConnectionController, ConnectionState> connectionControllerProvider =
-    NotifierProvider<ConnectionController, ConnectionState>(ConnectionController.new);
+final NotifierProvider<ConnectionController, ConnectionState>
+connectionControllerProvider =
+    NotifierProvider<ConnectionController, ConnectionState>(
+      ConnectionController.new,
+    );

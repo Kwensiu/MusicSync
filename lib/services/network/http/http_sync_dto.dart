@@ -16,16 +16,13 @@ class HelloRequestDto {
   Map<String, Object?> toJson() => <String, Object?>{
     'device': device.toJson(),
     'directoryReady': directoryReady,
-    if (directoryDisplayName != null) 'directoryDisplayName': directoryDisplayName,
+    if (directoryDisplayName != null)
+      'directoryDisplayName': directoryDisplayName,
   };
 
   factory HelloRequestDto.fromJson(Map<String, Object?> json) {
     return HelloRequestDto(
-      device: DeviceInfo.fromJson(
-        (json['device'] as Map<Object?, Object?>).map(
-          (Object? key, Object? value) => MapEntry(key.toString(), value),
-        ),
-      ),
+      device: DeviceInfo.fromJson(_requireMap(json, 'device')),
       directoryReady: json['directoryReady'] as bool? ?? false,
       directoryDisplayName: json['directoryDisplayName'] as String?,
     );
@@ -46,16 +43,13 @@ class HelloResponseDto {
   Map<String, Object?> toJson() => <String, Object?>{
     'device': device.toJson(),
     'directoryReady': directoryReady,
-    if (directoryDisplayName != null) 'directoryDisplayName': directoryDisplayName,
+    if (directoryDisplayName != null)
+      'directoryDisplayName': directoryDisplayName,
   };
 
   factory HelloResponseDto.fromJson(Map<String, Object?> json) {
     return HelloResponseDto(
-      device: DeviceInfo.fromJson(
-        (json['device'] as Map<Object?, Object?>).map(
-          (Object? key, Object? value) => MapEntry(key.toString(), value),
-        ),
-      ),
+      device: DeviceInfo.fromJson(_requireMap(json, 'device')),
       directoryReady: json['directoryReady'] as bool? ?? false,
       directoryDisplayName: json['directoryDisplayName'] as String?,
     );
@@ -73,7 +67,8 @@ class DirectoryStatusResponseDto {
 
   Map<String, Object?> toJson() => <String, Object?>{
     'directoryReady': directoryReady,
-    if (directoryDisplayName != null) 'directoryDisplayName': directoryDisplayName,
+    if (directoryDisplayName != null)
+      'directoryDisplayName': directoryDisplayName,
   };
 
   factory DirectoryStatusResponseDto.fromJson(Map<String, Object?> json) {
@@ -92,9 +87,7 @@ class SessionCloseRequestDto {
   Map<String, Object?> toJson() => <String, Object?>{'deviceId': deviceId};
 
   factory SessionCloseRequestDto.fromJson(Map<String, Object?> json) {
-    return SessionCloseRequestDto(
-      deviceId: json['deviceId'] as String? ?? '',
-    );
+    return SessionCloseRequestDto(deviceId: json['deviceId'] as String? ?? '');
   }
 }
 
@@ -106,9 +99,7 @@ class SyncSessionStateRequestDto {
   Map<String, Object?> toJson() => <String, Object?>{'active': active};
 
   factory SyncSessionStateRequestDto.fromJson(Map<String, Object?> json) {
-    return SyncSessionStateRequestDto(
-      active: json['active'] as bool? ?? false,
-    );
+    return SyncSessionStateRequestDto(active: json['active'] as bool? ?? false);
   }
 }
 
@@ -139,10 +130,7 @@ class BeginCopyRequestDto {
 }
 
 class WriteChunkRequestDto {
-  const WriteChunkRequestDto({
-    required this.transferId,
-    required this.data,
-  });
+  const WriteChunkRequestDto({required this.transferId, required this.data});
 
   final String transferId;
   final String data;
@@ -182,9 +170,7 @@ class AbortCopyRequestDto {
   Map<String, Object?> toJson() => <String, Object?>{'transferId': transferId};
 
   factory AbortCopyRequestDto.fromJson(Map<String, Object?> json) {
-    return AbortCopyRequestDto(
-      transferId: json['transferId'] as String? ?? '',
-    );
+    return AbortCopyRequestDto(transferId: json['transferId'] as String? ?? '');
   }
 }
 
@@ -221,11 +207,7 @@ class ScanResponseDto {
 
   factory ScanResponseDto.fromJson(Map<String, Object?> json) {
     return ScanResponseDto(
-      snapshot: ScanSnapshot.fromJson(
-        (json['snapshot'] as Map<Object?, Object?>).map(
-          (Object? key, Object? value) => MapEntry(key.toString(), value),
-        ),
-      ),
+      snapshot: ScanSnapshot.fromJson(_requireMap(json, 'snapshot')),
     );
   }
 }
@@ -238,9 +220,7 @@ class EntryDetailRequestDto {
   Map<String, Object?> toJson() => <String, Object?>{'entryId': entryId};
 
   factory EntryDetailRequestDto.fromJson(Map<String, Object?> json) {
-    return EntryDetailRequestDto(
-      entryId: json['entryId'] as String? ?? '',
-    );
+    return EntryDetailRequestDto(entryId: json['entryId'] as String? ?? '');
   }
 }
 
@@ -258,18 +238,32 @@ class EntryDetailResponseDto {
       'modifiedTime': detail.modifiedTime.millisecondsSinceEpoch,
       if (detail.audioMetadata != null)
         'audioMetadata': <String, Object?>{
-          if (detail.audioMetadata!.title case final String title) 'title': title,
+          if (detail.audioMetadata!.title case final String title)
+            'title': title,
           if (detail.audioMetadata!.artist case final String artist)
             'artist': artist,
-          if (detail.audioMetadata!.album case final String album) 'album': album,
+          if (detail.audioMetadata!.album case final String album)
+            'album': album,
           if (detail.audioMetadata!.composer case final String composer)
             'composer': composer,
           if (detail.audioMetadata!.trackNumber case final String trackNumber)
             'trackNumber': trackNumber,
           if (detail.audioMetadata!.discNumber case final String discNumber)
             'discNumber': discNumber,
-          if (detail.audioMetadata!.lyrics case final String lyrics) 'lyrics': lyrics,
+          if (detail.audioMetadata!.lyrics case final String lyrics)
+            'lyrics': lyrics,
         },
     },
   };
+}
+
+Map<String, Object?> _requireMap(Map<String, Object?> payload, String key) {
+  final Object? value = payload[key];
+  if (value is! Map<Object?, Object?>) {
+    throw FormatException('HTTP JSON payload missing valid "$key" map.');
+  }
+  return value.map(
+    (Object? nestedKey, Object? nestedValue) =>
+        MapEntry(nestedKey.toString(), nestedValue),
+  );
 }
