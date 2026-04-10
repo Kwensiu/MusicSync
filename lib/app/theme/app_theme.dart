@@ -108,13 +108,9 @@ abstract final class AppTheme {
         selectedColor: colorScheme.secondaryContainer,
         secondarySelectedColor: colorScheme.secondaryContainer,
         side: BorderSide(color: colorScheme.outlineVariant),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
-        secondaryLabelStyle: TextStyle(
-          color: colorScheme.onSecondaryContainer,
-        ),
+        secondaryLabelStyle: TextStyle(color: colorScheme.onSecondaryContainer),
       ),
       switchTheme: SwitchThemeData(
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,

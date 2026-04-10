@@ -124,9 +124,7 @@ class _ConnectionStatusDialogState extends State<ConnectionStatusDialog> {
               decoration: BoxDecoration(
                 color: scheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(_statusCardRadius),
-                border: Border.all(
-                  color: scheme.outlineVariant,
-                ),
+                border: Border.all(color: scheme.outlineVariant),
               ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(

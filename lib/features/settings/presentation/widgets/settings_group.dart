@@ -140,11 +140,7 @@ class SettingsGroupDivider extends StatelessWidget {
         left: SettingsUiScale.dividerStart,
         right: SettingsUiScale.dividerEnd,
       ),
-      child: Divider(
-        height: 1,
-        thickness: 1,
-        color: color,
-      ),
+      child: Divider(height: 1, thickness: 1, color: color),
     );
   }
 }

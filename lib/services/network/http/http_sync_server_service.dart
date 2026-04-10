@@ -6,17 +6,24 @@ import 'package:music_sync/services/network/http/http_sync_dto.dart';
 import 'package:music_sync/services/network/http/http_sync_routes.dart';
 
 typedef HelloHandler =
-    Future<HelloResponseDto> Function(HelloRequestDto request, String remoteAddress);
-typedef SessionCloseHandler = Future<void> Function(SessionCloseRequestDto request);
+    Future<HelloResponseDto> Function(
+      HelloRequestDto request,
+      String remoteAddress,
+    );
+typedef SessionCloseHandler =
+    Future<void> Function(SessionCloseRequestDto request);
 typedef DirectoryStatusHandler = Future<DirectoryStatusResponseDto> Function();
 typedef ScanHandler = Future<ScanResponseDto> Function();
-typedef EntryDetailHandler = Future<DiffEntryDetailViewData> Function(String entryId);
-typedef SyncSessionStateHandler = Future<void> Function(SyncSessionStateRequestDto request);
+typedef EntryDetailHandler =
+    Future<DiffEntryDetailViewData> Function(String entryId);
+typedef SyncSessionStateHandler =
+    Future<void> Function(SyncSessionStateRequestDto request);
 typedef BeginCopyHandler = Future<void> Function(BeginCopyRequestDto request);
 typedef WriteChunkHandler = Future<void> Function(WriteChunkRequestDto request);
 typedef FinishCopyHandler = Future<void> Function(FinishCopyRequestDto request);
 typedef AbortCopyHandler = Future<void> Function(AbortCopyRequestDto request);
-typedef DeleteEntryHandler = Future<void> Function(DeleteEntryRequestDto request);
+typedef DeleteEntryHandler =
+    Future<void> Function(DeleteEntryRequestDto request);
 
 class HttpSyncServerService {
   HttpServer? _server;
@@ -38,7 +45,10 @@ class HttpSyncServerService {
     required DeleteEntryHandler onDeleteEntry,
   }) async {
     await stop();
-    final HttpServer server = await HttpServer.bind(InternetAddress.anyIPv4, port);
+    final HttpServer server = await HttpServer.bind(
+      InternetAddress.anyIPv4,
+      port,
+    );
     server.listen((HttpRequest request) async {
       try {
         await _handleRequest(
@@ -89,7 +99,8 @@ class HttpSyncServerService {
     switch ('${request.method} ${request.uri.path}') {
       case 'POST ${HttpSyncRoutes.hello}':
         final Map<String, Object?> payload = await _readJsonBody(request);
-        final String remoteAddress = request.connectionInfo?.remoteAddress.address ?? '';
+        final String remoteAddress =
+            request.connectionInfo?.remoteAddress.address ?? '';
         final HelloResponseDto response = await onHello(
           HelloRequestDto.fromJson(payload),
           remoteAddress,
@@ -111,9 +122,14 @@ class HttpSyncServerService {
         return;
       case 'POST ${HttpSyncRoutes.entryDetail}':
         final Map<String, Object?> payload = await _readJsonBody(request);
-        final EntryDetailRequestDto dto = EntryDetailRequestDto.fromJson(payload);
+        final EntryDetailRequestDto dto = EntryDetailRequestDto.fromJson(
+          payload,
+        );
         final DiffEntryDetailViewData detail = await onEntryDetail(dto.entryId);
-        await _writeJson(request.response, EntryDetailResponseDto(detail: detail).toJson());
+        await _writeJson(
+          request.response,
+          EntryDetailResponseDto(detail: detail).toJson(),
+        );
         return;
       case 'POST ${HttpSyncRoutes.syncSessionState}':
         final Map<String, Object?> payload = await _readJsonBody(request);
@@ -157,10 +173,15 @@ class HttpSyncServerService {
     if (decoded is! Map<Object?, Object?>) {
       throw const FormatException('HTTP JSON payload invalid.');
     }
-    return decoded.map((Object? key, Object? value) => MapEntry(key.toString(), value));
+    return decoded.map(
+      (Object? key, Object? value) => MapEntry(key.toString(), value),
+    );
   }
 
-  Future<void> _writeJson(HttpResponse response, Map<String, Object?> payload) async {
+  Future<void> _writeJson(
+    HttpResponse response,
+    Map<String, Object?> payload,
+  ) async {
     response
       ..statusCode = HttpStatus.ok
       ..headers.contentType = ContentType.json

@@ -43,9 +43,7 @@ class ActionChipButton extends StatelessWidget {
     final Color resolvedForeground = isEnabled
         ? foreground
         : scheme.onSurfaceVariant;
-    final Color resolvedBorder = isEnabled
-        ? border
-        : scheme.outlineVariant;
+    final Color resolvedBorder = isEnabled ? border : scheme.outlineVariant;
 
     return Material(
       color: resolvedBackground,

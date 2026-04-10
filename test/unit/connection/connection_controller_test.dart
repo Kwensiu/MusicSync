@@ -19,33 +19,37 @@ import 'package:music_sync/services/storage/recent_items_store.dart';
 
 void main() {
   group('ConnectionController (HTTP)', () {
-    test('connect succeeds even when remote shared directory is not selected yet',
-        () async {
-      final _FakeHttpSyncClient client = _FakeHttpSyncClient(
-        helloResponse: const HelloResponseDto(
-          device: DeviceInfo(
-            deviceId: 'peer',
-            deviceName: 'Peer',
-            platform: 'android',
-            address: '',
-            port: 44888,
+    test(
+      'connect succeeds even when remote shared directory is not selected yet',
+      () async {
+        final _FakeHttpSyncClient client = _FakeHttpSyncClient(
+          helloResponse: const HelloResponseDto(
+            device: DeviceInfo(
+              deviceId: 'peer',
+              deviceName: 'Peer',
+              platform: 'android',
+              address: '',
+              port: 44888,
+            ),
+            directoryReady: false,
           ),
-          directoryReady: false,
-        ),
-      );
-      final ProviderContainer container = _container(client: client);
-      addTearDown(container.dispose);
+        );
+        final ProviderContainer container = _container(client: client);
+        addTearDown(container.dispose);
 
-      await container
-          .read(connectionControllerProvider.notifier)
-          .connect(address: '192.168.1.2', port: 44888);
+        await container
+            .read(connectionControllerProvider.notifier)
+            .connect(address: '192.168.1.2', port: 44888);
 
-      final ConnectionState state = container.read(connectionControllerProvider);
-      expect(state.status, ConnectionStatus.connected);
-      expect(state.peer?.address, '192.168.1.2');
-      expect(state.isRemoteDirectoryReady, isFalse);
-      expect(state.remoteSnapshot, isNull);
-    });
+        final ConnectionState state = container.read(
+          connectionControllerProvider,
+        );
+        expect(state.status, ConnectionStatus.connected);
+        expect(state.peer?.address, '192.168.1.2');
+        expect(state.isRemoteDirectoryReady, isFalse);
+        expect(state.remoteSnapshot, isNull);
+      },
+    );
 
     test('refreshRemoteSnapshot updates remote snapshot over HTTP', () async {
       final _FakeHttpSyncClient client = _FakeHttpSyncClient(
@@ -82,38 +86,44 @@ void main() {
       );
     });
 
-    test('polling picks up remote directory after peer selects directory later',
-        () async {
-      final _FakeHttpSyncClient client = _FakeHttpSyncClient(
-        helloResponse: const HelloResponseDto(
-          device: DeviceInfo(
-            deviceId: 'peer',
-            deviceName: 'Peer',
-            platform: 'android',
-            address: '',
-            port: 44888,
+    test(
+      'polling picks up remote directory after peer selects directory later',
+      () async {
+        final _FakeHttpSyncClient client = _FakeHttpSyncClient(
+          helloResponse: const HelloResponseDto(
+            device: DeviceInfo(
+              deviceId: 'peer',
+              deviceName: 'Peer',
+              platform: 'android',
+              address: '',
+              port: 44888,
+            ),
+            directoryReady: false,
           ),
-          directoryReady: false,
-        ),
-        directoryStatusSequence: <DirectoryStatusResponseDto>[
-          const DirectoryStatusResponseDto(directoryReady: false),
-          const DirectoryStatusResponseDto(directoryReady: true),
-        ],
-        scanResponse: ScanResponseDto(snapshot: _remoteSnapshot('Remote Later')),
-      );
-      final ProviderContainer container = _container(client: client);
-      addTearDown(container.dispose);
+          directoryStatusSequence: <DirectoryStatusResponseDto>[
+            const DirectoryStatusResponseDto(directoryReady: false),
+            const DirectoryStatusResponseDto(directoryReady: true),
+          ],
+          scanResponse: ScanResponseDto(
+            snapshot: _remoteSnapshot('Remote Later'),
+          ),
+        );
+        final ProviderContainer container = _container(client: client);
+        addTearDown(container.dispose);
 
-      await container
-          .read(connectionControllerProvider.notifier)
-          .connect(address: '192.168.1.2', port: 44888);
+        await container
+            .read(connectionControllerProvider.notifier)
+            .connect(address: '192.168.1.2', port: 44888);
 
-      await Future<void>.delayed(const Duration(milliseconds: 2300));
+        await Future<void>.delayed(const Duration(milliseconds: 2300));
 
-      final ConnectionState state = container.read(connectionControllerProvider);
-      expect(state.isRemoteDirectoryReady, isTrue);
-      expect(state.remoteSnapshot?.rootDisplayName, 'Remote Later');
-    });
+        final ConnectionState state = container.read(
+          connectionControllerProvider,
+        );
+        expect(state.isRemoteDirectoryReady, isTrue);
+        expect(state.remoteSnapshot?.rootDisplayName, 'Remote Later');
+      },
+    );
 
     test('requestRemoteEntryDetail uses HTTP control plane', () async {
       final _FakeHttpSyncClient client = _FakeHttpSyncClient(
@@ -186,7 +196,9 @@ void main() {
 
       await container.read(connectionControllerProvider.notifier).disconnect();
 
-      final ConnectionState state = container.read(connectionControllerProvider);
+      final ConnectionState state = container.read(
+        connectionControllerProvider,
+      );
       expect(state.status, ConnectionStatus.idle);
       expect(state.isListening, isTrue);
       expect(state.peer, isNull);
@@ -195,13 +207,13 @@ void main() {
   });
 }
 
-ProviderContainer _container({
-  required _FakeHttpSyncClient client,
-}) {
+ProviderContainer _container({required _FakeHttpSyncClient client}) {
   return ProviderContainer(
     overrides: [
       httpSyncClientProvider.overrideWithValue(client),
-      httpSyncServerServiceProvider.overrideWithValue(_FakeHttpSyncServerService()),
+      httpSyncServerServiceProvider.overrideWithValue(
+        _FakeHttpSyncServerService(),
+      ),
       discoveryServiceProvider.overrideWithValue(_FakeDiscoveryService()),
       recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
       fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),

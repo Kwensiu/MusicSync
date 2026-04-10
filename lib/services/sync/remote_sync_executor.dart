@@ -12,11 +12,7 @@ import 'package:music_sync/services/sync/sync_cancel_token.dart';
 typedef RemoteProgressCallback = void Function(TransferProgress progress);
 
 class RemoteSyncExecutor {
-  RemoteSyncExecutor(
-    this._httpClient,
-    this._fileAccessGateway,
-    this._getPeer,
-  );
+  RemoteSyncExecutor(this._httpClient, this._fileAccessGateway, this._getPeer);
 
   final HttpSyncClient _httpClient;
   final FileAccessGateway _fileAccessGateway;

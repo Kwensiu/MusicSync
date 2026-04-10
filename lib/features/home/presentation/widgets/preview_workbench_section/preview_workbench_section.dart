@@ -642,9 +642,9 @@ class _InlineMessage extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     detail!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: foreground,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: foreground),
                   ),
                 ],
               ],
@@ -842,9 +842,7 @@ class _CompactFilterChip extends StatelessWidget {
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       labelPadding: const EdgeInsets.symmetric(horizontal: 2),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-      side: BorderSide(
-        color: Theme.of(context).colorScheme.outlineVariant,
-      ),
+      side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     );
   }
