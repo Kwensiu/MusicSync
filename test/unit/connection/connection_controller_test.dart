@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:music_sync/features/connection/state/connection_controller.dart';
@@ -245,6 +249,121 @@ void main() {
     });
 
     test(
+      'failed incoming stream upload clears incoming sync active state',
+      () async {
+        final _CapturingHttpSyncServerService server =
+            _CapturingHttpSyncServerService();
+        final ProviderContainer container = ProviderContainer(
+          overrides: [
+            httpSyncClientProvider.overrideWithValue(
+              _FakeHttpSyncClient(
+                helloResponse: const HelloResponseDto(
+                  device: DeviceInfo(
+                    deviceId: 'peer',
+                    deviceName: 'Peer',
+                    platform: 'android',
+                    address: '',
+                    port: 44888,
+                  ),
+                  directoryReady: false,
+                ),
+              ),
+            ),
+            httpSyncServerServiceProvider.overrideWithValue(server),
+            discoveryServiceProvider.overrideWithValue(_FakeDiscoveryService()),
+            recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+            fileAccessGatewayProvider.overrideWithValue(
+              _ThrowingFileAccessGateway(),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await container
+            .read(connectionControllerProvider.notifier)
+            .startListening(port: 44888);
+        container
+            .read(connectionControllerProvider.notifier)
+            .state = const ConnectionState(
+          status: ConnectionStatus.connected,
+          isListening: true,
+          isIncomingSyncActive: true,
+        );
+
+        final CopyFileStreamHandler handler =
+            server.onCopyFileStream ??
+            (throw StateError('Missing upload handler'));
+        final Object? error = await _postToCopyHandler(
+          handler: handler,
+          remoteRootId: 'root',
+          relativePath: 'song.mp3',
+          expectedBytes: 4,
+          body: <int>[1, 2, 3, 4],
+        );
+
+        expect(error, isA<FileSystemException>());
+
+        expect(
+          container.read(connectionControllerProvider).isIncomingSyncActive,
+          isFalse,
+        );
+      },
+    );
+
+    test(
+      'incoming upload restores original file when replacement rename fails',
+      () async {
+        final _CapturingHttpSyncServerService server =
+            _CapturingHttpSyncServerService();
+        final _RecoveringFileAccessGateway gateway =
+            _RecoveringFileAccessGateway();
+        final ProviderContainer container = ProviderContainer(
+          overrides: [
+            httpSyncClientProvider.overrideWithValue(
+              _FakeHttpSyncClient(
+                helloResponse: const HelloResponseDto(
+                  device: DeviceInfo(
+                    deviceId: 'peer',
+                    deviceName: 'Peer',
+                    platform: 'android',
+                    address: '',
+                    port: 44888,
+                  ),
+                  directoryReady: false,
+                ),
+              ),
+            ),
+            httpSyncServerServiceProvider.overrideWithValue(server),
+            discoveryServiceProvider.overrideWithValue(_FakeDiscoveryService()),
+            recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+            fileAccessGatewayProvider.overrideWithValue(gateway),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await container
+            .read(connectionControllerProvider.notifier)
+            .startListening(port: 44888);
+
+        final CopyFileStreamHandler handler =
+            server.onCopyFileStream ??
+            (throw StateError('Missing upload handler'));
+        final Object? error = await _postToCopyHandler(
+          handler: handler,
+          remoteRootId: 'root',
+          relativePath: 'song.mp3',
+          expectedBytes: 4,
+          body: <int>[1, 2, 3, 4],
+        );
+
+        expect(error, isA<FileSystemException>());
+
+        expect(gateway.restoreAttempted, isTrue);
+        expect(gateway.deletedBackup, isFalse);
+      },
+    );
+
+    test(
       'resetNetworkStateForProtocolChange rejects while connecting',
       () async {
         final ProviderContainer container = _container(
@@ -421,6 +540,29 @@ class _FakeHttpSyncServerService extends HttpSyncServerService {
   Future<void> stop() async {}
 }
 
+class _CapturingHttpSyncServerService extends HttpSyncServerService {
+  CopyFileStreamHandler? onCopyFileStream;
+
+  @override
+  Future<void> start({
+    required int port,
+    required bool httpEncryptionEnabled,
+    required HelloHandler onHello,
+    required SessionCloseHandler onSessionClose,
+    required DirectoryStatusHandler onDirectoryStatus,
+    required ScanHandler onScan,
+    required EntryDetailHandler onEntryDetail,
+    required SyncSessionStateHandler onSyncSessionState,
+    required CopyFileStreamHandler onCopyFileStream,
+    required DeleteEntryHandler onDeleteEntry,
+  }) async {
+    this.onCopyFileStream = onCopyFileStream;
+  }
+
+  @override
+  Future<void> stop() async {}
+}
+
 class _FakeDiscoveryService extends DiscoveryService {
   @override
   Future<void> startReceiving({required DiscoveryCallback onDevice}) async {}
@@ -488,6 +630,164 @@ class _FakeFileAccessGateway implements FileAccessGateway {
   Future<FileAccessEntry> stat(String entryId) {
     throw UnimplementedError();
   }
+}
+
+class _ThrowingWriteSession implements FileWriteSession {
+  @override
+  Future<void> close() async {}
+
+  @override
+  Future<void> write(List<int> chunk) async {
+    throw const FileSystemException('write failed');
+  }
+}
+
+class _ThrowingFileAccessGateway extends _FakeFileAccessGateway {
+  @override
+  Future<List<FileAccessEntry>> listChildren(String directoryId) async {
+    if (directoryId == 'root') {
+      return <FileAccessEntry>[
+        FileAccessEntry(
+          entryId: 'temp-entry',
+          name: 'song.mp3.music_sync_tmp',
+          isDirectory: false,
+          size: 1,
+          modifiedTime: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      ];
+    }
+    return const <FileAccessEntry>[];
+  }
+
+  @override
+  Future<FileWriteSession> openWrite(String parentId, String name) async {
+    return _ThrowingWriteSession();
+  }
+}
+
+class _RecordingWriteSession implements FileWriteSession {
+  @override
+  Future<void> close() async {}
+
+  @override
+  Future<void> write(List<int> chunk) async {}
+}
+
+class _RecoveringFileAccessGateway extends _FakeFileAccessGateway {
+  bool restoreAttempted = false;
+  bool deletedBackup = false;
+  int tempRenameAttempts = 0;
+
+  @override
+  Future<List<FileAccessEntry>> listChildren(String directoryId) async {
+    if (directoryId == 'root') {
+      return <FileAccessEntry>[
+        FileAccessEntry(
+          entryId: 'existing-entry',
+          name: 'song.mp3',
+          isDirectory: false,
+          size: 1,
+          modifiedTime: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+        FileAccessEntry(
+          entryId: 'temp-entry',
+          name: 'song.mp3.music_sync_tmp',
+          isDirectory: false,
+          size: 1,
+          modifiedTime: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      ];
+    }
+    return const <FileAccessEntry>[];
+  }
+
+  @override
+  Future<FileWriteSession> openWrite(String parentId, String name) async {
+    return _RecordingWriteSession();
+  }
+
+  @override
+  Future<String> renameEntry(String entryId, String newName) async {
+    if (entryId == 'temp-entry' && newName == 'song.mp3') {
+      tempRenameAttempts++;
+      if (tempRenameAttempts == 1) {
+        throw const FileSystemException('target exists');
+      }
+      throw const FileSystemException('replacement failed');
+    }
+    if (entryId == 'existing-entry' &&
+        newName.startsWith('song.mp3.music_sync_tmp.backup.')) {
+      return 'backup-entry';
+    }
+    if (entryId == 'backup-entry' && newName == 'song.mp3') {
+      restoreAttempted = true;
+      return 'existing-entry';
+    }
+    if (entryId == 'temp-entry') {
+      return 'temp-entry';
+    }
+    return entryId;
+  }
+
+  @override
+  Future<void> deleteEntry(String entryId) async {
+    if (entryId == 'backup-entry') {
+      deletedBackup = true;
+    }
+  }
+}
+
+Future<Object?> _postToCopyHandler({
+  required CopyFileStreamHandler handler,
+  required String remoteRootId,
+  required String relativePath,
+  required int expectedBytes,
+  required List<int> body,
+}) async {
+  final HttpServer server = await HttpServer.bind(
+    InternetAddress.loopbackIPv4,
+    0,
+  );
+  final Completer<Object?> completed = Completer<Object?>();
+  server.listen((HttpRequest request) async {
+    Object? error;
+    try {
+      await handler(request, remoteRootId, relativePath, expectedBytes);
+      request.response.statusCode = HttpStatus.ok;
+    } catch (caught) {
+      error = caught;
+      request.response.statusCode = HttpStatus.internalServerError;
+      request.response.write(caught.toString());
+    } finally {
+      await request.response.close();
+      if (!completed.isCompleted) {
+        completed.complete(error);
+      }
+    }
+  });
+  final Socket socket = await Socket.connect(
+    InternetAddress.loopbackIPv4,
+    server.port,
+  );
+  final List<String> headerLines = <String>[
+    'POST /test HTTP/1.1',
+    'Host: ${InternetAddress.loopbackIPv4.host}:${server.port}',
+    'x-remote-root-id: $remoteRootId',
+    'x-relative-path: ${Uri.encodeComponent(relativePath)}',
+    'x-file-size: $expectedBytes',
+    'Content-Length: ${body.length}',
+    '',
+    '',
+  ];
+  socket.add(utf8.encode(headerLines.join('\r\n')));
+  socket.add(body);
+  await socket.flush();
+  await socket.close();
+  final Object? error = await completed.future;
+  addTearDown(() async {
+    await server.close(force: true);
+  });
+  return error;
 }
 
 ScanSnapshot _remoteSnapshot(String name) {

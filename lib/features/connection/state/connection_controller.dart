@@ -613,19 +613,13 @@ class ConnectionController extends Notifier<ConnectionState> {
         );
       }
       await session.close();
-      try {
-        await gateway.renameEntry(tempEntryId, fileName);
-      } on FileSystemException {
-        final String? existingEntryId = await _resolveRemoteEntryId(
-          gateway: gateway,
-          rootId: remoteRootId,
-          relativePath: relativePath,
-        );
-        if (existingEntryId != null) {
-          await gateway.deleteEntry(existingEntryId);
-        }
-        await gateway.renameEntry(tempEntryId, fileName);
-      }
+      await _replaceIncomingTempFile(
+        gateway: gateway,
+        rootId: remoteRootId,
+        relativePath: relativePath,
+        tempEntryId: tempEntryId,
+        finalName: fileName,
+      );
     } catch (_) {
       try {
         await session.close();
@@ -637,6 +631,7 @@ class ConnectionController extends Notifier<ConnectionState> {
       } catch (_) {
         // Best effort only.
       }
+      _setIncomingSyncActive(false);
       rethrow;
     }
   }
@@ -1106,6 +1101,52 @@ class ConnectionController extends Notifier<ConnectionState> {
 
   String _tempFileName(String fileName) =>
       '$fileName${AppConstants.tempFileSuffix}';
+
+  Future<void> _replaceIncomingTempFile({
+    required FileAccessGateway gateway,
+    required String rootId,
+    required String relativePath,
+    required String tempEntryId,
+    required String finalName,
+  }) async {
+    try {
+      await gateway.renameEntry(tempEntryId, finalName);
+      return;
+    } on FileSystemException {
+      final String? existingEntryId = await _resolveRemoteEntryId(
+        gateway: gateway,
+        rootId: rootId,
+        relativePath: relativePath,
+      );
+      if (existingEntryId == null) {
+        rethrow;
+      }
+      final String backupName = _replacementBackupName(finalName);
+      final String backupEntryId = await gateway.renameEntry(
+        existingEntryId,
+        backupName,
+      );
+      try {
+        await gateway.renameEntry(tempEntryId, finalName);
+      } catch (_) {
+        try {
+          await gateway.renameEntry(backupEntryId, finalName);
+        } catch (_) {
+          // Best effort only. Preserve the original replacement failure.
+        }
+        rethrow;
+      }
+      try {
+        await gateway.deleteEntry(backupEntryId);
+      } catch (_) {
+        // Best effort only. The new file is already in place.
+      }
+    }
+  }
+
+  String _replacementBackupName(String fileName) {
+    return '$fileName${AppConstants.tempFileSuffix}.backup.${DateTime.now().microsecondsSinceEpoch}';
+  }
 
   void _validateRelativePath(String relativePath) {
     if (relativePath.isEmpty) {
