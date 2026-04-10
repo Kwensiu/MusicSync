@@ -6,6 +6,7 @@
   "homeConnectionStateConnecting": "连接中",
   "homeConnectionStateListening": "监听中",
   "homeConnectionStateConnected": "已连接",
+  "homeConnectionStateDisconnected": "未连接",
   "homeConnectionStateConnectedListening": "已连接",
   "homePortChipLabel": "端口 {port}",
   "@homePortChipLabel": {
@@ -459,6 +460,8 @@
   "settingsIgnoredExtensionRequired": "请输入后缀",
   "settingsIgnoredExtensionInvalid": "后缀格式无效，只能包含字母、数字、下划线或短横线",
   "settingsIgnoredExtensionDuplicate": "这个后缀已经存在",
+  "settingsHttpEncryptionTitle": "HTTP 加密",
+  "settingsHttpEncryptionDescription": "开启后使用自签名 HTTPS；关闭后改用未加密 HTTP。",
   "settingsThemeModeTitle": "主题模式",
   "settingsThemeModeDescription": "选择应用使用浅色、深色或跟随系统。",
   "settingsThemeModeLight": "浅色模式",

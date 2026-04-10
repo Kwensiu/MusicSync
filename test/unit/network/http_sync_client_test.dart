@@ -71,6 +71,7 @@ void main() {
           remoteRootId: 'root',
           relativePath: 'music/song.mp3',
           transferId: 'tx-1',
+          httpEncryptionEnabled: false,
         ),
         throwsA(
           isA<HttpException>().having(
@@ -100,6 +101,7 @@ void main() {
           address: InternetAddress.loopbackIPv4.address,
           port: server.port,
           entryId: 'entry-1',
+          httpEncryptionEnabled: false,
         ),
         throwsA(isA<FormatException>()),
       );
@@ -132,6 +134,7 @@ void main() {
         address: InternetAddress.loopbackIPv4.address,
         port: server.port,
         entryId: 'entry-1',
+        httpEncryptionEnabled: false,
       );
 
       expect(detail.displayName, 'song.mp3');

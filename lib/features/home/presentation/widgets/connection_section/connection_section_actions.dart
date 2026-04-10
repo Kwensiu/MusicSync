@@ -14,7 +14,26 @@ import 'package:music_sync/l10n/app_localizations_ext.dart';
 class ConnectionSectionActions {
   const ConnectionSectionActions._();
 
-  static String connectionStateChipLabel(
+  static String listeningStateChipLabel(
+    BuildContext context,
+    peer_connection.ConnectionState connectionState,
+  ) {
+    if (connectionState.isListening) {
+      return context.l10n.homeConnectionStateListening;
+    }
+    return context.l10n.homeConnectionStateIdle;
+  }
+
+  static ActionChipTone listeningStateChipTone(
+    peer_connection.ConnectionState connectionState,
+  ) {
+    if (connectionState.isListening) {
+      return ActionChipTone.active;
+    }
+    return ActionChipTone.neutral;
+  }
+
+  static String peerConnectionChipLabel(
     BuildContext context,
     peer_connection.ConnectionState connectionState,
   ) {
@@ -25,24 +44,24 @@ class ConnectionSectionActions {
     if (connectionState.status == peer_connection.ConnectionStatus.connecting) {
       return context.l10n.homeConnectionStateConnecting;
     }
-    if (connectionState.isListening) {
-      return context.l10n.homeConnectionStateListening;
-    }
-    return context.l10n.homeConnectionStateIdle;
+    return context.l10n.homeConnectionStateDisconnected;
   }
 
-  static ActionChipTone connectionStateChipTone(
+  static ActionChipTone peerConnectionChipTone(
     peer_connection.ConnectionState connectionState,
   ) {
     if (connectionState.peer != null &&
         connectionState.status == peer_connection.ConnectionStatus.connected) {
       return ActionChipTone.success;
     }
-    if (connectionState.isListening ||
-        connectionState.status == peer_connection.ConnectionStatus.connecting) {
+    if (connectionState.status == peer_connection.ConnectionStatus.connecting) {
       return ActionChipTone.active;
     }
     return ActionChipTone.neutral;
+  }
+
+  static Future<void> disconnectConnectedPeer({required WidgetRef ref}) {
+    return ref.read(connectionControllerProvider.notifier).disconnect();
   }
 
   static Future<void> showConnectionStateChipDialog({

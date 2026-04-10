@@ -11,6 +11,7 @@ import 'package:music_sync/features/execution/state/execution_controller.dart';
 import 'package:music_sync/features/execution/state/execution_state.dart';
 import 'package:music_sync/features/preview/models/diff_item_detail_view_data.dart';
 import 'package:music_sync/features/preview/state/preview_controller.dart';
+import 'package:music_sync/features/settings/state/settings_controller.dart';
 import 'package:music_sync/models/device_info.dart';
 import 'package:music_sync/models/scan_snapshot.dart';
 import 'package:music_sync/services/file_access/file_access_entry.dart';
@@ -37,6 +38,8 @@ class ConnectionController extends Notifier<ConnectionState> {
       ref.read(httpSyncServerServiceProvider);
   RecentItemsStore get _store => ref.read(recentItemsStoreProvider);
   DiscoveryService get _discovery => ref.read(discoveryServiceProvider);
+  bool get _httpEncryptionEnabled =>
+      ref.read(settingsControllerProvider).httpEncryptionEnabled;
 
   bool _isDisposed = false;
 
@@ -76,6 +79,7 @@ class ConnectionController extends Notifier<ConnectionState> {
     try {
       await _httpServer.start(
         port: port,
+        httpEncryptionEnabled: _httpEncryptionEnabled,
         onHello: _handleHttpHello,
         onSessionClose: _handleHttpSessionClose,
         onDirectoryStatus: _handleHttpDirectoryStatus,
@@ -139,6 +143,7 @@ class ConnectionController extends Notifier<ConnectionState> {
           deviceId: _buildLocalDevice(
             port: state.listenPort ?? AppConstants.defaultPort,
           ).deviceId,
+          httpEncryptionEnabled: peer.httpEncryptionEnabled,
         );
       } catch (_) {
         // Best effort only.
@@ -178,6 +183,9 @@ class ConnectionController extends Notifier<ConnectionState> {
   }
 
   Future<void> connect({required String address, required int port}) async {
+    // TODO(http-fingerprint): manual connections currently learn only address
+    // and port. To fully pin HTTPS peers, extend this flow so a known
+    // fingerprint can be supplied/resolved before trusting the certificate.
     final int attemptId = ++_connectAttemptId;
     final DirectoryHandle? localHandle = _ref
         .read(directoryControllerProvider)
@@ -216,6 +224,7 @@ class ConnectionController extends Notifier<ConnectionState> {
         platform: response.device.platform,
         address: address,
         port: port,
+        httpEncryptionEnabled: response.device.httpEncryptionEnabled,
       );
       await _store.saveRecentAddress('$address:$port');
       final bool isRemoteDirectoryReady = response.directoryReady;
@@ -281,7 +290,11 @@ class ConnectionController extends Notifier<ConnectionState> {
     }
     try {
       final DirectoryStatusResponseDto response = await _httpClient
-          .directoryStatus(address: peer.address, port: peer.port);
+          .directoryStatus(
+            address: peer.address,
+            port: peer.port,
+            httpEncryptionEnabled: peer.httpEncryptionEnabled,
+          );
       state = ConnectionState(
         status: ConnectionStatus.connected,
         isListening: state.isListening,
@@ -437,6 +450,7 @@ class ConnectionController extends Notifier<ConnectionState> {
     final ScanResponseDto response = await _httpClient.scan(
       address: peer.address,
       port: peer.port,
+      httpEncryptionEnabled: peer.httpEncryptionEnabled,
     );
     return response.snapshot;
   }
@@ -461,6 +475,7 @@ class ConnectionController extends Notifier<ConnectionState> {
         platform: request.device.platform,
         address: remoteAddress,
         port: request.device.port,
+        httpEncryptionEnabled: request.device.httpEncryptionEnabled,
       ),
       remoteSnapshot: request.directoryReady ? state.remoteSnapshot : null,
       isRemoteDirectoryReady: request.directoryReady,
@@ -588,6 +603,7 @@ class ConnectionController extends Notifier<ConnectionState> {
           deviceId: _buildLocalDevice(
             port: state.listenPort ?? AppConstants.defaultPort,
           ).deviceId,
+          httpEncryptionEnabled: peer.httpEncryptionEnabled,
         );
       } catch (_) {
         // Best effort only.
@@ -606,6 +622,41 @@ class ConnectionController extends Notifier<ConnectionState> {
       isRemoteDirectoryReady: false,
       isIncomingSyncActive: false,
     );
+  }
+
+  Future<void> resetNetworkStateForProtocolChange() async {
+    final ExecutionState executionState = _ref.read(
+      executionControllerProvider,
+    );
+    if (state.status == ConnectionStatus.connecting) {
+      throw StateError(
+        'Cannot change HTTP encryption while a device connection is in progress.',
+      );
+    }
+    if (state.isIncomingSyncActive) {
+      throw StateError(
+        'Cannot change HTTP encryption while this device is receiving a sync.',
+      );
+    }
+    if (executionState.status == ExecutionStatus.running) {
+      throw StateError(
+        'Cannot change HTTP encryption while a sync task is running.',
+      );
+    }
+
+    final bool wasListening = state.isListening;
+    final int restartPort = state.listenPort ?? AppConstants.defaultPort;
+    final DeviceInfo? peer = state.peer;
+
+    if (wasListening) {
+      await stopListening();
+    } else if (peer != null) {
+      await disconnect();
+    }
+
+    if (wasListening) {
+      await startListening(port: restartPort);
+    }
   }
 
   Future<FileAccessEntry?> requestRemoteEntryStat(String entryId) async {
@@ -640,6 +691,7 @@ class ConnectionController extends Notifier<ConnectionState> {
         address: peer.address,
         port: peer.port,
         entryId: entryId,
+        httpEncryptionEnabled: peer.httpEncryptionEnabled,
       );
     } catch (_) {
       return null;
@@ -725,6 +777,7 @@ class ConnectionController extends Notifier<ConnectionState> {
       platform: Platform.operatingSystem,
       address: '',
       port: port,
+      httpEncryptionEnabled: _httpEncryptionEnabled,
     );
   }
 

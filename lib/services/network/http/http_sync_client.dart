@@ -8,8 +8,16 @@ import 'package:music_sync/services/network/http/http_sync_dto.dart';
 import 'package:music_sync/services/network/http/http_sync_routes.dart';
 
 class HttpSyncClient {
+  // TODO(http-fingerprint): replace the current permissive self-signed
+  // certificate acceptance with fingerprint pinning. This needs to work for
+  // the initial hello request, all follow-up requests, and manual connections
+  // that do not have discovery metadata yet.
   HttpSyncClient({HttpClient? httpClient})
-    : _httpClient = httpClient ?? HttpClient();
+    : _httpClient =
+          httpClient ??
+          (HttpClient()
+            ..badCertificateCallback = (X509Certificate _, String _, int _) =>
+                true);
 
   final HttpClient _httpClient;
 
@@ -20,34 +28,46 @@ class HttpSyncClient {
     required bool directoryReady,
     String? directoryDisplayName,
   }) async {
-    final HttpClientRequest request = await _post(
-      address,
-      port,
-      HttpSyncRoutes.hello,
+    final HelloRequestDto dto = HelloRequestDto(
+      device: localDevice,
+      directoryReady: directoryReady,
+      directoryDisplayName: directoryDisplayName,
     );
-    request.write(
-      jsonEncode(
-        HelloRequestDto(
-          device: localDevice,
-          directoryReady: directoryReady,
-          directoryDisplayName: directoryDisplayName,
-        ).toJson(),
-      ),
-    );
-    final Map<String, Object?> payload = await _readJsonResponse(
-      await request.close(),
-    );
-    return HelloResponseDto.fromJson(payload);
+    for (final bool useHttps in <bool>[true, false]) {
+      try {
+        final HttpClientRequest request = await _post(
+          address,
+          port,
+          HttpSyncRoutes.hello,
+          useHttps: useHttps,
+        );
+        request.write(jsonEncode(dto.toJson()));
+        final Map<String, Object?> payload = await _readJsonResponse(
+          await request.close(),
+        );
+        return HelloResponseDto.fromJson(payload);
+      } on HandshakeException {
+        continue;
+      } on SocketException {
+        if (useHttps) {
+          continue;
+        }
+        rethrow;
+      }
+    }
+    throw const SocketException('Unable to connect over HTTP or HTTPS.');
   }
 
   Future<DirectoryStatusResponseDto> directoryStatus({
     required String address,
     required int port,
+    required bool httpEncryptionEnabled,
   }) async {
     final HttpClientResponse response = await (await _get(
       address,
       port,
       HttpSyncRoutes.directoryStatus,
+      useHttps: httpEncryptionEnabled,
     )).close();
     return DirectoryStatusResponseDto.fromJson(
       await _readJsonResponse(response),
@@ -58,11 +78,13 @@ class HttpSyncClient {
     required String address,
     required int port,
     required String deviceId,
+    required bool httpEncryptionEnabled,
   }) async {
     final HttpClientRequest request = await _post(
       address,
       port,
       HttpSyncRoutes.sessionClose,
+      useHttps: httpEncryptionEnabled,
     );
     request.write(
       jsonEncode(SessionCloseRequestDto(deviceId: deviceId).toJson()),
@@ -73,11 +95,13 @@ class HttpSyncClient {
   Future<ScanResponseDto> scan({
     required String address,
     required int port,
+    required bool httpEncryptionEnabled,
   }) async {
     final HttpClientResponse response = await (await _get(
       address,
       port,
       HttpSyncRoutes.scan,
+      useHttps: httpEncryptionEnabled,
     )).close();
     return ScanResponseDto.fromJson(await _readJsonResponse(response));
   }
@@ -86,11 +110,13 @@ class HttpSyncClient {
     required String address,
     required int port,
     required bool active,
+    required bool httpEncryptionEnabled,
   }) async {
     final HttpClientRequest request = await _post(
       address,
       port,
       HttpSyncRoutes.syncSessionState,
+      useHttps: httpEncryptionEnabled,
     );
     request.write(
       jsonEncode(SyncSessionStateRequestDto(active: active).toJson()),
@@ -104,11 +130,13 @@ class HttpSyncClient {
     required String remoteRootId,
     required String relativePath,
     required String transferId,
+    required bool httpEncryptionEnabled,
   }) async {
     final HttpClientRequest request = await _post(
       address,
       port,
       HttpSyncRoutes.beginCopy,
+      useHttps: httpEncryptionEnabled,
     );
     request.write(
       jsonEncode(
@@ -127,11 +155,13 @@ class HttpSyncClient {
     required int port,
     required String transferId,
     required List<int> chunk,
+    required bool httpEncryptionEnabled,
   }) async {
     final HttpClientRequest request = await _post(
       address,
       port,
       HttpSyncRoutes.writeChunk,
+      useHttps: httpEncryptionEnabled,
     );
     request.write(
       jsonEncode(
@@ -148,11 +178,13 @@ class HttpSyncClient {
     required String address,
     required int port,
     required String transferId,
+    required bool httpEncryptionEnabled,
   }) async {
     final HttpClientRequest request = await _post(
       address,
       port,
       HttpSyncRoutes.finishCopy,
+      useHttps: httpEncryptionEnabled,
     );
     request.write(
       jsonEncode(FinishCopyRequestDto(transferId: transferId).toJson()),
@@ -164,11 +196,13 @@ class HttpSyncClient {
     required String address,
     required int port,
     required String transferId,
+    required bool httpEncryptionEnabled,
   }) async {
     final HttpClientRequest request = await _post(
       address,
       port,
       HttpSyncRoutes.abortCopy,
+      useHttps: httpEncryptionEnabled,
     );
     request.write(
       jsonEncode(AbortCopyRequestDto(transferId: transferId).toJson()),
@@ -181,11 +215,13 @@ class HttpSyncClient {
     required int port,
     required String remoteRootId,
     required String relativePath,
+    required bool httpEncryptionEnabled,
   }) async {
     final HttpClientRequest request = await _post(
       address,
       port,
       HttpSyncRoutes.deleteEntry,
+      useHttps: httpEncryptionEnabled,
     );
     request.write(
       jsonEncode(
@@ -202,11 +238,13 @@ class HttpSyncClient {
     required String address,
     required int port,
     required String entryId,
+    required bool httpEncryptionEnabled,
   }) async {
     final HttpClientRequest request = await _post(
       address,
       port,
       HttpSyncRoutes.entryDetail,
+      useHttps: httpEncryptionEnabled,
     );
     request.write(jsonEncode(EntryDetailRequestDto(entryId: entryId).toJson()));
     final Map<String, Object?> payload = await _readJsonResponse(
@@ -242,18 +280,38 @@ class HttpSyncClient {
     );
   }
 
-  Future<HttpClientRequest> _get(String address, int port, String path) {
+  Future<HttpClientRequest> _get(
+    String address,
+    int port,
+    String path, {
+    required bool useHttps,
+  }) {
     return _httpClient.getUrl(
-      Uri.http('$address:${_resolveControlPort(port)}', path),
+      _buildUri(address, port, path, useHttps: useHttps),
     );
   }
 
-  Future<HttpClientRequest> _post(String address, int port, String path) async {
+  Future<HttpClientRequest> _post(
+    String address,
+    int port,
+    String path, {
+    required bool useHttps,
+  }) async {
     final HttpClientRequest request = await _httpClient.postUrl(
-      Uri.http('$address:${_resolveControlPort(port)}', path),
+      _buildUri(address, port, path, useHttps: useHttps),
     );
     request.headers.contentType = ContentType.json;
     return request;
+  }
+
+  Uri _buildUri(
+    String address,
+    int port,
+    String path, {
+    required bool useHttps,
+  }) {
+    final String authority = '$address:${_resolveControlPort(port)}';
+    return useHttps ? Uri.https(authority, path) : Uri.http(authority, path);
   }
 
   int _resolveControlPort(int port) =>
@@ -284,8 +342,7 @@ class HttpSyncClient {
     }
     final String? message = _tryReadErrorMessage(body);
     throw HttpException(
-      message ??
-          'HTTP ${response.statusCode} ${response.reasonPhrase ?? 'request failed'}',
+      message ?? 'HTTP ${response.statusCode} ${response.reasonPhrase}',
     );
   }
 
@@ -324,10 +381,5 @@ class HttpSyncClient {
       (Object? nestedKey, Object? nestedValue) =>
           MapEntry(nestedKey.toString(), nestedValue),
     );
-  }
-
-  Future<Map<String, Object?>> _readJson(HttpClientResponse response) async {
-    final String body = await _readResponseBody(response);
-    return _decodeJsonMap(body);
   }
 }

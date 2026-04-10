@@ -40,6 +40,8 @@ class RecentDirectoryRecord {
 }
 
 class RecentAddressRecord {
+  // TODO(http-fingerprint): if we pin HTTPS peers by certificate fingerprint,
+  // recent/manual addresses should be able to persist that fingerprint too.
   const RecentAddressRecord({
     required this.address,
     this.note,

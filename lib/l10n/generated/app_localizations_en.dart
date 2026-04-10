@@ -27,6 +27,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeConnectionStateConnected => 'Connected';
 
   @override
+  String get homeConnectionStateDisconnected => 'Not connected';
+
+  @override
   String get homeConnectionStateConnectedListening => 'Connected';
 
   @override
@@ -826,6 +829,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsIgnoredExtensionDuplicate =>
       'This extension already exists';
+
+  @override
+  String get settingsHttpEncryptionTitle => 'HTTP Encryption';
+
+  @override
+  String get settingsHttpEncryptionDescription =>
+      'When enabled, MusicSync uses self-signed HTTPS. When disabled, it falls back to unencrypted HTTP.';
 
   @override
   String get settingsThemeModeTitle => 'Theme Mode';

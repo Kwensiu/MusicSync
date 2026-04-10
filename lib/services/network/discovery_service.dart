@@ -17,6 +17,8 @@ class DiscoveryEvent {
 typedef DiscoveryCallback = void Function(DiscoveryEvent event);
 
 class DiscoveryService {
+  // TODO(http-fingerprint): include certificate fingerprint in discovery
+  // packets. Protocol alone is not enough to authenticate an HTTPS peer.
   RawDatagramSocket? _receiver;
   final List<RawDatagramSocket> _senders = <RawDatagramSocket>[];
   Timer? _broadcastTimer;
@@ -57,6 +59,7 @@ class DiscoveryService {
           'platform': payload['platform'],
           'address': datagram.address.address,
           'port': payload['port'],
+          'httpEncryptionEnabled': payload['httpEncryptionEnabled'],
         });
         final DiscoveryEventType type = payload['action'] == 'goodbye'
             ? DiscoveryEventType.goodbye
@@ -126,6 +129,7 @@ class DiscoveryService {
         'deviceName': device.deviceName,
         'platform': device.platform,
         'port': device.port,
+        'httpEncryptionEnabled': device.httpEncryptionEnabled,
       }),
     );
     for (final RawDatagramSocket sender in _senders) {

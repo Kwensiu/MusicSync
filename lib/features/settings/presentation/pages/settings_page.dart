@@ -124,6 +124,25 @@ class SettingsPage extends ConsumerWidget {
                           },
                         ),
                 ),
+                SettingsGroupDivider(color: scheme.outlineVariant),
+                SettingsActionRow(
+                  icon: Icons.lock_outline_rounded,
+                  title: context.l10n.settingsHttpEncryptionTitle,
+                  subtitle: context.l10n.settingsHttpEncryptionDescription,
+                  trailing: Switch(
+                    value: settingsState.httpEncryptionEnabled,
+                    materialTapTargetSize: _compactSwitch
+                        ? MaterialTapTargetSize.shrinkWrap
+                        : MaterialTapTargetSize.padded,
+                    onChanged: settingsState.isLoading
+                        ? null
+                        : (bool value) {
+                            ref
+                                .read(settingsControllerProvider.notifier)
+                                .setHttpEncryptionEnabled(value);
+                          },
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: _groupToGroupGap),

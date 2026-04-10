@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsStore {
   static const String _autoStartListeningKey = 'auto_start_listening';
+  static const String _httpEncryptionEnabledKey = 'http_encryption_enabled';
   static const String _ignoredExtensionsKey = 'ignored_extensions';
   static const String _themeModeKey = 'theme_mode';
   static const String _paletteKey = 'palette';
@@ -16,6 +17,16 @@ class SettingsStore {
   Future<void> saveAutoStartListening(bool value) async {
     final SharedPreferences preferences = await SharedPreferences.getInstance();
     await preferences.setBool(_autoStartListeningKey, value);
+  }
+
+  Future<bool> loadHttpEncryptionEnabled() async {
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    return preferences.getBool(_httpEncryptionEnabledKey) ?? true;
+  }
+
+  Future<void> saveHttpEncryptionEnabled(bool value) async {
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    await preferences.setBool(_httpEncryptionEnabledKey, value);
   }
 
   Future<List<String>> loadIgnoredExtensions() async {

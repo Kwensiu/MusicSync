@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:music_sync/features/preview/models/diff_item_detail_view_data.dart';
+import 'package:music_sync/services/network/http/http_security_context.dart';
 import 'package:music_sync/services/network/http/http_sync_dto.dart';
 import 'package:music_sync/services/network/http/http_sync_routes.dart';
 
@@ -26,12 +27,18 @@ typedef DeleteEntryHandler =
     Future<void> Function(DeleteEntryRequestDto request);
 
 class HttpSyncServerService {
+  HttpSyncServerService({HttpSecurityContextStore? securityContextStore})
+    : _securityContextStore =
+          securityContextStore ?? HttpSecurityContextStore();
+
+  final HttpSecurityContextStore _securityContextStore;
   HttpServer? _server;
 
   bool get isRunning => _server != null;
 
   Future<void> start({
     required int port,
+    required bool httpEncryptionEnabled,
     required HelloHandler onHello,
     required SessionCloseHandler onSessionClose,
     required DirectoryStatusHandler onDirectoryStatus,
@@ -45,10 +52,13 @@ class HttpSyncServerService {
     required DeleteEntryHandler onDeleteEntry,
   }) async {
     await stop();
-    final HttpServer server = await HttpServer.bind(
-      InternetAddress.anyIPv4,
-      port,
-    );
+    final HttpServer server = httpEncryptionEnabled
+        ? await HttpServer.bindSecure(
+            InternetAddress.anyIPv4,
+            port,
+            (await _securityContextStore.loadOrCreate()).toSecurityContext(),
+          )
+        : await HttpServer.bind(InternetAddress.anyIPv4, port);
     server.listen((HttpRequest request) async {
       try {
         await _handleRequest(

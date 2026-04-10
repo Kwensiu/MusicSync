@@ -31,6 +31,7 @@ class RemoteSyncExecutor {
       address: peer.address,
       port: peer.port,
       active: true,
+      httpEncryptionEnabled: peer.httpEncryptionEnabled,
     );
     int processedFiles = 0;
     int processedBytes = 0;
@@ -59,6 +60,7 @@ class RemoteSyncExecutor {
             remoteRootId: remoteRootId,
             relativePath: item.relativePath,
             transferId: transferId,
+            httpEncryptionEnabled: peer.httpEncryptionEnabled,
           );
 
           await for (final List<int> chunk in _fileAccessGateway.openRead(
@@ -70,6 +72,7 @@ class RemoteSyncExecutor {
               port: peer.port,
               transferId: transferId,
               chunk: chunk,
+              httpEncryptionEnabled: peer.httpEncryptionEnabled,
             );
             processedBytes += chunk.length;
             onProgress(
@@ -88,6 +91,7 @@ class RemoteSyncExecutor {
             address: peer.address,
             port: peer.port,
             transferId: transferId,
+            httpEncryptionEnabled: peer.httpEncryptionEnabled,
           );
           copiedCount++;
           processedFiles++;
@@ -108,6 +112,7 @@ class RemoteSyncExecutor {
                 address: peer.address,
                 port: peer.port,
                 transferId: transferId,
+                httpEncryptionEnabled: peer.httpEncryptionEnabled,
               );
             } catch (_) {
               // Ignore cleanup failures while cancelling.
@@ -122,6 +127,7 @@ class RemoteSyncExecutor {
               address: peer.address,
               port: peer.port,
               transferId: transferId,
+              httpEncryptionEnabled: peer.httpEncryptionEnabled,
             );
           } catch (_) {
             // Ignore cleanup failures; preserve original transfer error.
@@ -137,6 +143,7 @@ class RemoteSyncExecutor {
             port: peer.port,
             remoteRootId: remoteRootId,
             relativePath: item.relativePath,
+            httpEncryptionEnabled: peer.httpEncryptionEnabled,
           );
           deletedCount++;
           processedFiles++;
@@ -181,6 +188,7 @@ class RemoteSyncExecutor {
           address: peer.address,
           port: peer.port,
           active: false,
+          httpEncryptionEnabled: peer.httpEncryptionEnabled,
         );
       } catch (_) {
         // Best effort only.

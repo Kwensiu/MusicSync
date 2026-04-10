@@ -27,6 +27,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get homeConnectionStateConnected => '已连接';
 
   @override
+  String get homeConnectionStateDisconnected => '未连接';
+
+  @override
   String get homeConnectionStateConnectedListening => '已连接';
 
   @override
@@ -782,6 +785,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsIgnoredExtensionDuplicate => '这个后缀已经存在';
+
+  @override
+  String get settingsHttpEncryptionTitle => 'HTTP 加密';
+
+  @override
+  String get settingsHttpEncryptionDescription =>
+      '开启后使用自签名 HTTPS；关闭后改用未加密 HTTP。';
 
   @override
   String get settingsThemeModeTitle => '主题模式';

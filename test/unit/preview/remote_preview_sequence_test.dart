@@ -18,8 +18,12 @@ import 'package:music_sync/services/network/http/http_sync_client.dart';
 import 'package:music_sync/services/network/http/http_sync_dto.dart';
 import 'package:music_sync/services/network/http/http_sync_server_service.dart';
 import 'package:music_sync/services/storage/recent_items_store.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues(<String, Object>{});
+
   test(
     'remote preview sequence refreshes remote snapshot before building plan',
     () async {
@@ -174,6 +178,7 @@ class _PreviewFakeHttpSyncClient extends HttpSyncClient {
   Future<DirectoryStatusResponseDto> directoryStatus({
     required String address,
     required int port,
+    required bool httpEncryptionEnabled,
   }) async {
     return const DirectoryStatusResponseDto(directoryReady: true);
   }
@@ -182,6 +187,7 @@ class _PreviewFakeHttpSyncClient extends HttpSyncClient {
   Future<ScanResponseDto> scan({
     required String address,
     required int port,
+    required bool httpEncryptionEnabled,
   }) async {
     final int index = scanRequestCount < scanResponses.length
         ? scanRequestCount
@@ -195,6 +201,7 @@ class _NoopHttpServer extends HttpSyncServerService {
   @override
   Future<void> start({
     required int port,
+    required bool httpEncryptionEnabled,
     required HelloHandler onHello,
     required SessionCloseHandler onSessionClose,
     required DirectoryStatusHandler onDirectoryStatus,

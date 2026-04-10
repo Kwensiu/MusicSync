@@ -6,6 +6,7 @@
   "homeConnectionStateConnecting": "Connecting",
   "homeConnectionStateListening": "Listening",
   "homeConnectionStateConnected": "Connected",
+  "homeConnectionStateDisconnected": "Not connected",
   "homeConnectionStateConnectedListening": "Connected",
   "homePortChipLabel": "Port {port}",
   "@homePortChipLabel": {
@@ -459,6 +460,8 @@
   "settingsIgnoredExtensionRequired": "Enter an extension",
   "settingsIgnoredExtensionInvalid": "Invalid extension format. Use letters, numbers, underscores, or hyphens only",
   "settingsIgnoredExtensionDuplicate": "This extension already exists",
+  "settingsHttpEncryptionTitle": "HTTP Encryption",
+  "settingsHttpEncryptionDescription": "When enabled, MusicSync uses self-signed HTTPS. When disabled, it falls back to unencrypted HTTP.",
   "settingsThemeModeTitle": "Theme Mode",
   "settingsThemeModeDescription": "Choose light mode, dark mode, or follow the system.",
   "settingsThemeModeLight": "Light",

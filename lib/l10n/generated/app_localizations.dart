@@ -134,6 +134,12 @@ abstract class AppLocalizations {
   /// **'Connected'**
   String get homeConnectionStateConnected;
 
+  /// No description provided for @homeConnectionStateDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not connected'**
+  String get homeConnectionStateDisconnected;
+
   /// No description provided for @homeConnectionStateConnectedListening.
   ///
   /// In en, this message translates to:
@@ -1487,6 +1493,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This extension already exists'**
   String get settingsIgnoredExtensionDuplicate;
+
+  /// No description provided for @settingsHttpEncryptionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'HTTP Encryption'**
+  String get settingsHttpEncryptionTitle;
+
+  /// No description provided for @settingsHttpEncryptionDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'When enabled, MusicSync uses self-signed HTTPS. When disabled, it falls back to unencrypted HTTP.'**
+  String get settingsHttpEncryptionDescription;
 
   /// No description provided for @settingsThemeModeTitle.
   ///

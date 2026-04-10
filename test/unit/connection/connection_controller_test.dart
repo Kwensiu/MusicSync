@@ -4,8 +4,10 @@ import 'package:music_sync/features/connection/state/connection_controller.dart'
 import 'package:music_sync/features/connection/state/connection_state.dart';
 import 'package:music_sync/features/directory/state/directory_controller.dart';
 import 'package:music_sync/features/execution/state/execution_controller.dart';
+import 'package:music_sync/features/execution/state/execution_state.dart';
 import 'package:music_sync/features/preview/models/diff_item_detail_view_data.dart';
 import 'package:music_sync/models/device_info.dart';
+import 'package:music_sync/models/execution_result.dart';
 import 'package:music_sync/models/file_entry.dart';
 import 'package:music_sync/models/scan_snapshot.dart';
 import 'package:music_sync/services/file_access/file_access_entry.dart';
@@ -16,8 +18,12 @@ import 'package:music_sync/services/network/http/http_sync_client.dart';
 import 'package:music_sync/services/network/http/http_sync_dto.dart';
 import 'package:music_sync/services/network/http/http_sync_server_service.dart';
 import 'package:music_sync/services/storage/recent_items_store.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues(<String, Object>{});
+
   group('ConnectionController (HTTP)', () {
     test(
       'connect succeeds even when remote shared directory is not selected yet',
@@ -115,7 +121,7 @@ void main() {
             .read(connectionControllerProvider.notifier)
             .connect(address: '192.168.1.2', port: 44888);
 
-        await Future<void>.delayed(const Duration(milliseconds: 2300));
+        await Future<void>.delayed(const Duration(milliseconds: 4600));
 
         final ConnectionState state = container.read(
           connectionControllerProvider,
@@ -204,6 +210,75 @@ void main() {
       expect(state.peer, isNull);
       expect(state.remoteSnapshot, isNull);
     });
+
+    test(
+      'resetNetworkStateForProtocolChange rejects while connecting',
+      () async {
+        final ProviderContainer container = _container(
+          client: _FakeHttpSyncClient(
+            helloResponse: const HelloResponseDto(
+              device: DeviceInfo(
+                deviceId: 'peer',
+                deviceName: 'Peer',
+                platform: 'android',
+                address: '',
+                port: 44888,
+              ),
+              directoryReady: false,
+            ),
+          ),
+        );
+        addTearDown(container.dispose);
+
+        container.read(connectionControllerProvider.notifier).state =
+            const ConnectionState(status: ConnectionStatus.connecting);
+
+        await expectLater(
+          container
+              .read(connectionControllerProvider.notifier)
+              .resetNetworkStateForProtocolChange(),
+          throwsA(isA<StateError>()),
+        );
+      },
+    );
+
+    test(
+      'resetNetworkStateForProtocolChange rejects while remote sync is running',
+      () async {
+        final ProviderContainer container = _container(
+          client: _FakeHttpSyncClient(
+            helloResponse: const HelloResponseDto(
+              device: DeviceInfo(
+                deviceId: 'peer',
+                deviceName: 'Peer',
+                platform: 'android',
+                address: '',
+                port: 44888,
+              ),
+              directoryReady: false,
+            ),
+          ),
+        );
+        addTearDown(container.dispose);
+
+        container
+            .read(executionControllerProvider.notifier)
+            .state = ExecutionState(
+          status: ExecutionStatus.running,
+          progress: container.read(executionControllerProvider).progress,
+          result: const ExecutionResult.empty(),
+          mode: ExecutionMode.remote,
+          targetRoot: 'remote-root',
+        );
+
+        await expectLater(
+          container
+              .read(connectionControllerProvider.notifier)
+              .resetNetworkStateForProtocolChange(),
+          throwsA(isA<StateError>()),
+        );
+      },
+    );
   });
 }
 
@@ -254,6 +329,7 @@ class _FakeHttpSyncClient extends HttpSyncClient {
   Future<DirectoryStatusResponseDto> directoryStatus({
     required String address,
     required int port,
+    required bool httpEncryptionEnabled,
   }) async {
     final List<DirectoryStatusResponseDto>? sequence = directoryStatusSequence;
     if (sequence == null || sequence.isEmpty) {
@@ -270,6 +346,7 @@ class _FakeHttpSyncClient extends HttpSyncClient {
   Future<ScanResponseDto> scan({
     required String address,
     required int port,
+    required bool httpEncryptionEnabled,
   }) async {
     return scanResponse ?? ScanResponseDto(snapshot: _remoteSnapshot('Remote'));
   }
@@ -279,6 +356,7 @@ class _FakeHttpSyncClient extends HttpSyncClient {
     required String address,
     required int port,
     required String entryId,
+    required bool httpEncryptionEnabled,
   }) async {
     return entryDetailResponse ??
         DiffEntryDetailViewData(
@@ -295,6 +373,7 @@ class _FakeHttpSyncServerService extends HttpSyncServerService {
   @override
   Future<void> start({
     required int port,
+    required bool httpEncryptionEnabled,
     required HelloHandler onHello,
     required SessionCloseHandler onSessionClose,
     required DirectoryStatusHandler onDirectoryStatus,

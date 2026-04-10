@@ -214,22 +214,44 @@ class _HomePageState extends ConsumerState<HomePage>
       actions: <Widget>[
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 10),
-          child: ActionChipButton(
-            label: ConnectionSectionActions.connectionStateChipLabel(
-              context,
-              connectionState,
-            ),
-            tone: ConnectionSectionActions.connectionStateChipTone(
-              connectionState,
-            ),
-            compact: true,
-            onPressed: isConnectUiBusy
-                ? null
-                : () => ConnectionSectionActions.showConnectionStateChipDialog(
-                    context: context,
-                    ref: ref,
-                    connectionState: connectionState,
-                  ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ActionChipButton(
+                label: ConnectionSectionActions.listeningStateChipLabel(
+                  context,
+                  connectionState,
+                ),
+                tone: ConnectionSectionActions.listeningStateChipTone(
+                  connectionState,
+                ),
+                compact: true,
+                onPressed: isConnectUiBusy
+                    ? null
+                    : () =>
+                          ConnectionSectionActions.showConnectionStateChipDialog(
+                            context: context,
+                            ref: ref,
+                            connectionState: connectionState,
+                          ),
+              ),
+              const SizedBox(width: 8),
+              ActionChipButton(
+                label: ConnectionSectionActions.peerConnectionChipLabel(
+                  context,
+                  connectionState,
+                ),
+                tone: ConnectionSectionActions.peerConnectionChipTone(
+                  connectionState,
+                ),
+                compact: true,
+                onPressed: isConnectUiBusy || !hasConnectedPeer
+                    ? null
+                    : () => ConnectionSectionActions.disconnectConnectedPeer(
+                        ref: ref,
+                      ),
+              ),
+            ],
           ),
         ),
         IconButton(

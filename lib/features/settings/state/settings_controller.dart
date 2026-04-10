@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:music_sync/features/connection/state/connection_controller.dart';
 import 'package:music_sync/features/settings/state/settings_state.dart';
 import 'package:music_sync/services/storage/settings_store.dart';
 
@@ -22,14 +23,32 @@ class SettingsController extends Notifier<SettingsState> {
   }
 
   Future<void> load() async {
+    final SettingsStore store = _store;
     state = state.copyWith(isLoading: true);
-    final bool autoStartListening = await _store.loadAutoStartListening();
-    final List<String> ignoredExtensions = await _store.loadIgnoredExtensions();
-    final AppThemeModeSetting themeMode = await _store.loadThemeMode();
-    final AppPaletteSetting palette = await _store.loadPalette();
+    final bool autoStartListening = await store.loadAutoStartListening();
+    if (!ref.mounted) {
+      return;
+    }
+    final bool httpEncryptionEnabled = await store.loadHttpEncryptionEnabled();
+    if (!ref.mounted) {
+      return;
+    }
+    final List<String> ignoredExtensions = await store.loadIgnoredExtensions();
+    if (!ref.mounted) {
+      return;
+    }
+    final AppThemeModeSetting themeMode = await store.loadThemeMode();
+    if (!ref.mounted) {
+      return;
+    }
+    final AppPaletteSetting palette = await store.loadPalette();
+    if (!ref.mounted) {
+      return;
+    }
     state = state.copyWith(
       isLoading: false,
       autoStartListening: autoStartListening,
+      httpEncryptionEnabled: httpEncryptionEnabled,
       ignoredExtensions: ignoredExtensions,
       themeMode: themeMode,
       palette: palette,
@@ -40,6 +59,48 @@ class SettingsController extends Notifier<SettingsState> {
     state = state.copyWith(isLoading: true, autoStartListening: value);
     await _store.saveAutoStartListening(value);
     state = state.copyWith(isLoading: false, autoStartListening: value);
+  }
+
+  Future<void> setHttpEncryptionEnabled(bool value) async {
+    final bool previousValue = state.httpEncryptionEnabled;
+    if (value == previousValue) {
+      return;
+    }
+
+    final ConnectionController connectionController = ref.read(
+      connectionControllerProvider.notifier,
+    );
+    final SettingsStore store = _store;
+
+    state = state.copyWith(isLoading: true, httpEncryptionEnabled: value);
+
+    try {
+      await connectionController.resetNetworkStateForProtocolChange();
+      await store.saveHttpEncryptionEnabled(value);
+      if (!ref.mounted) {
+        return;
+      }
+      state = state.copyWith(isLoading: false, httpEncryptionEnabled: value);
+    } catch (error) {
+      if (ref.mounted) {
+        state = state.copyWith(
+          isLoading: true,
+          httpEncryptionEnabled: previousValue,
+        );
+      }
+      try {
+        await connectionController.resetNetworkStateForProtocolChange();
+      } catch (_) {
+        // Keep the original switch failure as the surfaced error.
+      }
+      if (ref.mounted) {
+        state = state.copyWith(
+          isLoading: false,
+          httpEncryptionEnabled: previousValue,
+        );
+      }
+      rethrow;
+    }
   }
 
   Future<void> saveIgnoredExtensions(List<String> values) async {
