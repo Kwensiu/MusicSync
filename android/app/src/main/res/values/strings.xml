@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">MusicSync</string>
     <string name="keep_alive_channel_name">MusicSync background connection</string>
     <string name="keep_alive_channel_description">Keeps MusicSync connection more stable while the app is backgrounded.</string>
     <string name="keep_alive_notification_title">MusicSync</string>

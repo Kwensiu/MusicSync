@@ -1,20 +1,26 @@
 import 'dart:math';
 
+import 'package:music_sync/models/device_info.dart';
 import 'package:music_sync/models/diff_item.dart';
 import 'package:music_sync/models/execution_result.dart';
 import 'package:music_sync/models/sync_plan.dart';
 import 'package:music_sync/models/transfer_progress.dart';
 import 'package:music_sync/services/file_access/file_access_gateway.dart';
-import 'package:music_sync/services/network/connection_service.dart';
+import 'package:music_sync/services/network/http/http_sync_client.dart';
 import 'package:music_sync/services/sync/sync_cancel_token.dart';
 
 typedef RemoteProgressCallback = void Function(TransferProgress progress);
 
 class RemoteSyncExecutor {
-  RemoteSyncExecutor(this._connectionService, this._fileAccessGateway);
+  RemoteSyncExecutor(
+    this._httpClient,
+    this._fileAccessGateway,
+    this._getPeer,
+  );
 
-  final ConnectionService _connectionService;
+  final HttpSyncClient _httpClient;
   final FileAccessGateway _fileAccessGateway;
+  final DeviceInfo? Function() _getPeer;
   final Random _random = Random();
 
   Future<ExecutionResult> execute({
@@ -23,7 +29,13 @@ class RemoteSyncExecutor {
     required RemoteProgressCallback onProgress,
     SyncCancelToken? cancelToken,
   }) async {
-    await _connectionService.notifySyncSessionState(active: true);
+    final DeviceInfo peer =
+        _getPeer() ?? (throw const FormatException('Remote peer unavailable.'));
+    await _httpClient.notifySyncSessionState(
+      address: peer.address,
+      port: peer.port,
+      active: true,
+    );
     int processedFiles = 0;
     int processedBytes = 0;
     int copiedCount = 0;
@@ -45,7 +57,9 @@ class RemoteSyncExecutor {
         final String transferId = _nextTransferId();
         try {
           cancelToken?.throwIfCancelled();
-          await _connectionService.beginRemoteCopy(
+          await _httpClient.beginCopy(
+            address: peer.address,
+            port: peer.port,
             remoteRootId: remoteRootId,
             relativePath: item.relativePath,
             transferId: transferId,
@@ -55,7 +69,9 @@ class RemoteSyncExecutor {
             sourceEntryId,
           )) {
             cancelToken?.throwIfCancelled();
-            await _connectionService.writeRemoteChunk(
+            await _httpClient.writeChunk(
+              address: peer.address,
+              port: peer.port,
               transferId: transferId,
               chunk: chunk,
             );
@@ -72,7 +88,11 @@ class RemoteSyncExecutor {
             );
           }
 
-          await _connectionService.finishRemoteCopy(transferId: transferId);
+          await _httpClient.finishCopy(
+            address: peer.address,
+            port: peer.port,
+            transferId: transferId,
+          );
           copiedCount++;
           processedFiles++;
           onProgress(
@@ -88,7 +108,11 @@ class RemoteSyncExecutor {
         } catch (error) {
           if (cancelToken?.isCancelled == true) {
             try {
-              await _connectionService.abortRemoteCopy(transferId: transferId);
+              await _httpClient.abortCopy(
+                address: peer.address,
+                port: peer.port,
+                transferId: transferId,
+              );
             } catch (_) {
               // Ignore cleanup failures while cancelling.
             }
@@ -98,7 +122,11 @@ class RemoteSyncExecutor {
           processedFiles++;
           lastError = error.toString();
           try {
-            await _connectionService.abortRemoteCopy(transferId: transferId);
+            await _httpClient.abortCopy(
+              address: peer.address,
+              port: peer.port,
+              transferId: transferId,
+            );
           } catch (_) {
             // Ignore cleanup failures; preserve original transfer error.
           }
@@ -108,7 +136,9 @@ class RemoteSyncExecutor {
       for (final DiffItem item in plan.deleteItems) {
         cancelToken?.throwIfCancelled();
         try {
-          await _connectionService.deleteRemoteEntry(
+          await _httpClient.deleteEntry(
+            address: peer.address,
+            port: peer.port,
             remoteRootId: remoteRootId,
             relativePath: item.relativePath,
           );
@@ -151,7 +181,11 @@ class RemoteSyncExecutor {
       );
     } finally {
       try {
-        await _connectionService.notifySyncSessionState(active: false);
+        await _httpClient.notifySyncSessionState(
+          address: peer.address,
+          port: peer.port,
+          active: false,
+        );
       } catch (_) {
         // Best effort only.
       }

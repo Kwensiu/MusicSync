@@ -133,8 +133,9 @@ class SourceDirectorySection extends StatelessWidget {
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: scheme.errorContainer.withValues(alpha: 0.55),
+                      color: scheme.errorContainer,
                       borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: scheme.error),
                     ),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,

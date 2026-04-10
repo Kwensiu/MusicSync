@@ -132,15 +132,11 @@ class _PlanItemListState extends State<PlanItemList> {
         borderRadius: widget.borderRadius,
         border: Border(
           top: widget.showTopBorder
-              ? BorderSide(color: scheme.outlineVariant.withValues(alpha: 1.0))
+              ? BorderSide(color: scheme.outlineVariant)
               : BorderSide.none,
-          left: BorderSide(color: scheme.outlineVariant.withValues(alpha: 1.0)),
-          right: BorderSide(
-            color: scheme.outlineVariant.withValues(alpha: 1.0),
-          ),
-          bottom: BorderSide(
-            color: scheme.outlineVariant.withValues(alpha: 1.0),
-          ),
+          left: BorderSide(color: scheme.outlineVariant),
+          right: BorderSide(color: scheme.outlineVariant),
+          bottom: BorderSide(color: scheme.outlineVariant),
         ),
       ),
       child: Padding(
@@ -241,11 +237,18 @@ class _TypeBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     final (Color background, Color foreground) = switch (type) {
-      DiffType.copy => (const Color(0xFFD9F2E3), const Color(0xFF0B5D2A)),
-      DiffType.delete => (const Color(0xFFFBE2D8), const Color(0xFFA33D12)),
-      DiffType.conflict => (const Color(0xFFF9E1CF), const Color(0xFF8A4100)),
-      DiffType.skip => (const Color(0xFFE7EAF0), const Color(0xFF425466)),
+      DiffType.copy => (scheme.tertiaryContainer, scheme.onTertiaryContainer),
+      DiffType.delete => (scheme.errorContainer, scheme.onErrorContainer),
+      DiffType.conflict => (
+        scheme.secondaryContainer,
+        scheme.onSecondaryContainer,
+      ),
+      DiffType.skip => (
+        scheme.surfaceContainerHighest,
+        scheme.onSurfaceVariant,
+      ),
     };
 
     return Container(

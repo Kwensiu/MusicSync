@@ -25,6 +25,7 @@ android/captures/
 android/key.properties
 *.jks
 *.keystore
+windows/inno-output/
 
 # Generated Android / Flutter bridge files
 android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
@@ -56,5 +57,6 @@ ios/Runner/GeneratedPluginRegistrant.*
 # Coverage
 coverage/
 
-# InstallerX-Revived
-InstallerX-Revived/
+# Other Git Repo
+InstallerX-Revived/*
+localsend/*

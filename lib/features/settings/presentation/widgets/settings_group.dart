@@ -26,7 +26,7 @@ class SettingsJoinedGroup extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(SettingsUiScale.radiusGroup),
-        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(SettingsUiScale.radiusGroup),
@@ -143,7 +143,7 @@ class SettingsGroupDivider extends StatelessWidget {
       child: Divider(
         height: 1,
         thickness: 1,
-        color: color.withValues(alpha: 0.3),
+        color: color,
       ),
     );
   }

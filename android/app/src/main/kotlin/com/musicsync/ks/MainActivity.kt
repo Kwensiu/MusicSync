@@ -1,4 +1,4 @@
-package com.example.music_sync
+package com.musicsync.ks
 
 import android.app.Activity
 import android.content.Intent

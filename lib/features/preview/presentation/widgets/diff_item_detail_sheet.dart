@@ -283,7 +283,7 @@ class _DetailRefreshBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final Color background = refreshFailed
-        ? scheme.errorContainer.withValues(alpha: 0.85)
+        ? scheme.errorContainer
         : scheme.surfaceContainerHigh;
     final Color foreground = refreshFailed
         ? scheme.onErrorContainer

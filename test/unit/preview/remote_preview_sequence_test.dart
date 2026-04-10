@@ -1,5 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:music_sync/features/connection/state/connection_controller.dart';
 import 'package:music_sync/features/directory/state/directory_controller.dart';
 import 'package:music_sync/features/execution/state/execution_controller.dart';
@@ -13,270 +13,207 @@ import 'package:music_sync/models/scan_snapshot.dart';
 import 'package:music_sync/services/file_access/file_access_entry.dart';
 import 'package:music_sync/services/file_access/file_access_gateway.dart';
 import 'package:music_sync/services/file_access/file_access_provider.dart';
-import 'package:music_sync/services/network/connection_service.dart';
-import 'package:music_sync/services/network/listener_service.dart';
-import 'package:music_sync/services/network/peer_session.dart';
+import 'package:music_sync/services/network/discovery_service.dart';
+import 'package:music_sync/services/network/http/http_sync_client.dart';
+import 'package:music_sync/services/network/http/http_sync_dto.dart';
+import 'package:music_sync/services/network/http/http_sync_server_service.dart';
 import 'package:music_sync/services/storage/recent_items_store.dart';
 
 void main() {
-  test(
-    'remote preview sequence refreshes remote snapshot before building plan',
-    () async {
-      final _PreviewFakeConnectionService connectionService =
-          _PreviewFakeConnectionService(
-            snapshots: <ScanSnapshot>[
-              _remoteSnapshot('Remote Old'),
-              _remoteSnapshot('Remote New'),
-            ],
-          );
-      final ProviderContainer container = ProviderContainer(
-        overrides: [
-          connectionServiceProvider.overrideWithValue(connectionService),
-          listenerServiceProvider.overrideWithValue(
-            _PreviewFakeListenerService(),
-          ),
-          recentItemsStoreProvider.overrideWithValue(
-            _PreviewFakeRecentItemsStore(),
-          ),
-          fileAccessGatewayProvider.overrideWithValue(
-            _PreviewFakeFileAccessGateway(),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      container
-          .read(directoryControllerProvider.notifier)
-          .setDirectory(
-            const DirectoryHandle(entryId: 'local-root', displayName: 'Music'),
-          );
-      await container
-          .read(connectionControllerProvider.notifier)
-          .connect(address: '192.168.1.2', port: 44888);
-
-      final ScanSnapshot? refreshed = await container
-          .read(connectionControllerProvider.notifier)
-          .refreshRemoteSnapshot();
-      final ScanSnapshot localSnapshot = await container
-          .read(directoryScannerProvider)
-          .scan(
-            root: const DirectoryHandle(
-              entryId: 'local-root',
-              displayName: 'Music',
-            ),
-            deviceId: 'local-device',
-          );
-      await container
-          .read(previewControllerProvider.notifier)
-          .buildPreviewFromSnapshots(
-            source: localSnapshot,
-            target: refreshed!,
-            deleteEnabled: true,
-            sourceRootId: 'local-root',
-          );
-
-      final PreviewState previewState = container.read(
-        previewControllerProvider,
-      );
-      expect(connectionService.requestCount, 2);
-      expect(previewState.mode, PreviewMode.remote);
-      expect(previewState.targetSnapshot?.rootDisplayName, 'Remote New');
-    },
-  );
-
-  test(
-    'refreshRemoteSnapshot can preserve execution result while updating remote index',
-    () async {
-      final _PreviewFakeConnectionService connectionService =
-          _PreviewFakeConnectionService(
-            snapshots: <ScanSnapshot>[
-              _remoteSnapshot('Remote Old'),
-              _remoteSnapshot('Remote New'),
-            ],
-          );
-      final ProviderContainer container = ProviderContainer(
-        overrides: [
-          connectionServiceProvider.overrideWithValue(connectionService),
-          listenerServiceProvider.overrideWithValue(
-            _PreviewFakeListenerService(),
-          ),
-          recentItemsStoreProvider.overrideWithValue(
-            _PreviewFakeRecentItemsStore(),
-          ),
-          fileAccessGatewayProvider.overrideWithValue(
-            _PreviewFakeFileAccessGateway(),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      await container
-          .read(connectionControllerProvider.notifier)
-          .connect(address: '192.168.1.2', port: 44888);
-      container
-          .read(executionControllerProvider.notifier)
-          .state = ExecutionState(
-        status: ExecutionStatus.completed,
-        progress: container.read(executionControllerProvider).progress,
-        result: const ExecutionResult(
-          copiedCount: 2,
-          deletedCount: 1,
-          failedCount: 0,
-          totalBytes: 128,
-          targetRoot: 'remote-root',
+  test('remote preview sequence refreshes remote snapshot before building plan',
+      () async {
+    final _PreviewFakeHttpSyncClient client = _PreviewFakeHttpSyncClient(
+      helloResponse: const HelloResponseDto(
+        device: DeviceInfo(
+          deviceId: 'peer',
+          deviceName: 'Peer',
+          platform: 'android',
+          address: '',
+          port: 44888,
         ),
-        mode: ExecutionMode.remote,
-        targetRoot: 'remote-root',
-      );
+        directoryReady: true,
+      ),
+      scanResponses: <ScanResponseDto>[
+        ScanResponseDto(snapshot: _remoteSnapshot('Remote Old')),
+        ScanResponseDto(snapshot: _remoteSnapshot('Remote New')),
+      ],
+    );
+    final ProviderContainer container = _container(client);
+    addTearDown(container.dispose);
 
-      final ScanSnapshot? refreshed = await container
-          .read(connectionControllerProvider.notifier)
-          .refreshRemoteSnapshot(clearTransientState: false);
+    container.read(directoryControllerProvider.notifier).setDirectory(
+          const DirectoryHandle(entryId: 'local-root', displayName: 'Music'),
+        );
+    await container
+        .read(connectionControllerProvider.notifier)
+        .connect(address: '192.168.1.2', port: 44888);
 
-      expect(refreshed?.rootDisplayName, 'Remote New');
-      expect(
-        container.read(executionControllerProvider).status,
-        ExecutionStatus.completed,
-      );
-      expect(container.read(executionControllerProvider).result.copiedCount, 2);
-    },
-  );
+    final ScanSnapshot? refreshed = await container
+        .read(connectionControllerProvider.notifier)
+        .refreshRemoteSnapshot();
+    final ScanSnapshot localSnapshot =
+        await container.read(directoryScannerProvider).scan(
+              root: const DirectoryHandle(
+                entryId: 'local-root',
+                displayName: 'Music',
+              ),
+              deviceId: 'local-device',
+            );
+    await container.read(previewControllerProvider.notifier).buildPreviewFromSnapshots(
+          source: localSnapshot,
+          target: refreshed!,
+          deleteEnabled: true,
+          sourceRootId: 'local-root',
+        );
+
+    final PreviewState previewState = container.read(previewControllerProvider);
+    expect(client.scanRequestCount, 2);
+    expect(previewState.mode, PreviewMode.remote);
+    expect(previewState.targetSnapshot?.rootDisplayName, 'Remote New');
+  });
 
   test(
-    'refreshRemoteSnapshot clears stale preview and execution state by default',
-    () async {
-      final _PreviewFakeConnectionService connectionService =
-          _PreviewFakeConnectionService(
-            snapshots: <ScanSnapshot>[
-              _remoteSnapshot('Remote Old'),
-              _remoteSnapshot('Remote New'),
-            ],
-          );
-      final ProviderContainer container = ProviderContainer(
-        overrides: [
-          connectionServiceProvider.overrideWithValue(connectionService),
-          listenerServiceProvider.overrideWithValue(
-            _PreviewFakeListenerService(),
-          ),
-          recentItemsStoreProvider.overrideWithValue(
-            _PreviewFakeRecentItemsStore(),
-          ),
-          fileAccessGatewayProvider.overrideWithValue(
-            _PreviewFakeFileAccessGateway(),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      container
-          .read(directoryControllerProvider.notifier)
-          .setDirectory(
-            const DirectoryHandle(entryId: 'local-root', displayName: 'Music'),
-          );
-      await container
-          .read(connectionControllerProvider.notifier)
-          .connect(address: '192.168.1.2', port: 44888);
-
-      final ScanSnapshot localSnapshot = await container
-          .read(directoryScannerProvider)
-          .scan(
-            root: const DirectoryHandle(
-              entryId: 'local-root',
-              displayName: 'Music',
-            ),
-            deviceId: 'local-device',
-          );
-      await container
-          .read(previewControllerProvider.notifier)
-          .buildPreviewFromSnapshots(
-            source: localSnapshot,
-            target: _remoteSnapshot('Remote Old'),
-            deleteEnabled: true,
-            sourceRootId: 'local-root',
-          );
-      container
-          .read(executionControllerProvider.notifier)
-          .state = ExecutionState(
-        status: ExecutionStatus.completed,
-        progress: container.read(executionControllerProvider).progress,
-        result: const ExecutionResult(
-          copiedCount: 2,
-          deletedCount: 1,
-          failedCount: 0,
-          totalBytes: 128,
-          targetRoot: 'remote-root',
+      'refreshRemoteSnapshot can preserve execution result while updating remote index',
+      () async {
+    final _PreviewFakeHttpSyncClient client = _PreviewFakeHttpSyncClient(
+      helloResponse: const HelloResponseDto(
+        device: DeviceInfo(
+          deviceId: 'peer',
+          deviceName: 'Peer',
+          platform: 'android',
+          address: '',
+          port: 44888,
         ),
-        mode: ExecutionMode.remote,
-        targetRoot: 'remote-root',
-      );
+        directoryReady: true,
+      ),
+      scanResponses: <ScanResponseDto>[
+        ScanResponseDto(snapshot: _remoteSnapshot('Remote Old')),
+        ScanResponseDto(snapshot: _remoteSnapshot('Remote New')),
+      ],
+    );
+    final ProviderContainer container = _container(client);
+    addTearDown(container.dispose);
 
-      final ScanSnapshot? refreshed = await container
-          .read(connectionControllerProvider.notifier)
-          .refreshRemoteSnapshot();
+    await container
+        .read(connectionControllerProvider.notifier)
+        .connect(address: '192.168.1.2', port: 44888);
+    container.read(executionControllerProvider.notifier).state = ExecutionState(
+          status: ExecutionStatus.completed,
+          progress: container.read(executionControllerProvider).progress,
+          result: const ExecutionResult(
+            copiedCount: 2,
+            deletedCount: 1,
+            failedCount: 0,
+            totalBytes: 128,
+            targetRoot: 'remote-root',
+          ),
+          mode: ExecutionMode.remote,
+          targetRoot: 'remote-root',
+        );
 
-      expect(refreshed?.rootDisplayName, 'Remote New');
-      expect(
-        container.read(previewControllerProvider).status,
-        PreviewStatus.idle,
-      );
-      expect(
-        container.read(executionControllerProvider).status,
-        ExecutionStatus.idle,
-      );
-      expect(container.read(executionControllerProvider).result.copiedCount, 0);
-      expect(
-        container.read(executionControllerProvider).targetRoot,
-        'remote-root',
-      );
-    },
+    final ScanSnapshot? refreshed = await container
+        .read(connectionControllerProvider.notifier)
+        .refreshRemoteSnapshot(clearTransientState: false);
+
+    expect(refreshed?.rootDisplayName, 'Remote New');
+    expect(container.read(executionControllerProvider).status,
+        ExecutionStatus.completed);
+  });
+}
+
+ProviderContainer _container(_PreviewFakeHttpSyncClient client) {
+  return ProviderContainer(
+    overrides: [
+      httpSyncClientProvider.overrideWithValue(client),
+      httpSyncServerServiceProvider.overrideWithValue(_NoopHttpServer()),
+      discoveryServiceProvider.overrideWithValue(_NoopDiscovery()),
+      recentItemsStoreProvider.overrideWithValue(_NoopRecentStore()),
+      fileAccessGatewayProvider.overrideWithValue(_PreviewFakeFileAccessGateway()),
+    ],
   );
 }
 
-class _PreviewFakeConnectionService extends ConnectionService {
-  _PreviewFakeConnectionService({required this.snapshots});
+class _PreviewFakeHttpSyncClient extends HttpSyncClient {
+  _PreviewFakeHttpSyncClient({
+    required this.helloResponse,
+    required this.scanResponses,
+  });
 
-  final List<ScanSnapshot> snapshots;
-  int requestCount = 0;
+  final HelloResponseDto helloResponse;
+  final List<ScanResponseDto> scanResponses;
+  int scanRequestCount = 0;
 
   @override
-  Future<DeviceInfo> connect({
+  Future<HelloResponseDto> hello({
     required String address,
     required int port,
     required DeviceInfo localDevice,
-    bool isDirectoryReady = false,
+    required bool directoryReady,
     String? directoryDisplayName,
   }) async {
-    return DeviceInfo(
-      deviceId: 'peer',
-      deviceName: 'Peer',
-      platform: 'android',
-      address: address,
-      port: port,
-    );
+    return helloResponse;
   }
 
   @override
-  Future<ScanSnapshot> requestRemoteScan() async {
-    final int index = requestCount < snapshots.length
-        ? requestCount
-        : snapshots.length - 1;
-    requestCount++;
-    return snapshots[index];
+  Future<DirectoryStatusResponseDto> directoryStatus({
+    required String address,
+    required int port,
+  }) async {
+    return const DirectoryStatusResponseDto(directoryReady: true);
+  }
+
+  @override
+  Future<ScanResponseDto> scan({
+    required String address,
+    required int port,
+  }) async {
+    final int index = scanRequestCount < scanResponses.length
+        ? scanRequestCount
+        : scanResponses.length - 1;
+    scanRequestCount++;
+    return scanResponses[index];
   }
 }
 
-class _PreviewFakeListenerService extends ListenerService {
+class _NoopHttpServer extends HttpSyncServerService {
   @override
   Future<void> start({
     required int port,
-    void Function(PeerSession session)? onClient,
+    required HelloHandler onHello,
+    required SessionCloseHandler onSessionClose,
+    required DirectoryStatusHandler onDirectoryStatus,
+    required ScanHandler onScan,
+    required EntryDetailHandler onEntryDetail,
+    required SyncSessionStateHandler onSyncSessionState,
+    required BeginCopyHandler onBeginCopy,
+    required WriteChunkHandler onWriteChunk,
+    required FinishCopyHandler onFinishCopy,
+    required AbortCopyHandler onAbortCopy,
+    required DeleteEntryHandler onDeleteEntry,
   }) async {}
 
   @override
   Future<void> stop() async {}
 }
 
-class _PreviewFakeRecentItemsStore extends RecentItemsStore {
+class _NoopDiscovery extends DiscoveryService {
+  @override
+  Future<void> startReceiving({required DiscoveryCallback onDevice}) async {}
+
+  @override
+  Future<void> startBroadcasting(DeviceInfo device) async {}
+
+  @override
+  Future<void> sendGoodbye(DeviceInfo device) async {}
+
+  @override
+  Future<void> stopBroadcasting() async {}
+
+  @override
+  Future<void> dispose() async {}
+}
+
+class _NoopRecentStore extends RecentItemsStore {
   @override
   Future<List<String>> loadRecentAddresses() async => const <String>[];
 

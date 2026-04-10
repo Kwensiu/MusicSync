@@ -6,11 +6,12 @@ import 'package:music_sync/core/errors/app_error_localizer.dart';
 import 'package:music_sync/features/execution/state/execution_controller.dart';
 import 'package:music_sync/features/execution/state/execution_state.dart';
 import 'package:music_sync/models/execution_result.dart';
+import 'package:music_sync/models/device_info.dart';
 import 'package:music_sync/models/sync_plan.dart';
 import 'package:music_sync/models/transfer_progress.dart';
 import 'package:music_sync/services/file_access/file_access_entry.dart';
 import 'package:music_sync/services/file_access/file_access_gateway.dart';
-import 'package:music_sync/services/network/connection_service.dart';
+import 'package:music_sync/services/network/http/http_sync_client.dart';
 import 'package:music_sync/services/sync/local_sync_executor.dart';
 import 'package:music_sync/services/sync/remote_sync_executor.dart';
 import 'package:music_sync/services/sync/sync_cancel_token.dart';
@@ -329,12 +330,12 @@ class _BlockingLocalSyncExecutor extends LocalSyncExecutor {
 
 class _FakeRemoteSyncExecutor extends RemoteSyncExecutor {
   _FakeRemoteSyncExecutor()
-    : super(_NoopConnectionService(), _NoopFileAccessGateway());
+    : super(_NoopHttpSyncClient(), _NoopFileAccessGateway(), () => _peer);
 }
 
 class _BlockingRemoteSyncExecutor extends RemoteSyncExecutor {
   _BlockingRemoteSyncExecutor()
-    : super(_NoopConnectionService(), _NoopFileAccessGateway());
+    : super(_NoopHttpSyncClient(), _NoopFileAccessGateway(), () => _peer);
 
   @override
   Future<ExecutionResult> execute({
@@ -357,7 +358,7 @@ class _BlockingRemoteSyncExecutor extends RemoteSyncExecutor {
 
 class _ProgressControlledRemoteSyncExecutor extends RemoteSyncExecutor {
   _ProgressControlledRemoteSyncExecutor()
-    : super(_NoopConnectionService(), _NoopFileAccessGateway());
+    : super(_NoopHttpSyncClient(), _NoopFileAccessGateway(), () => _peer);
 
   final Completer<void> started = Completer<void>();
   final Completer<void> _finish = Completer<void>();
@@ -395,7 +396,15 @@ class _ProgressControlledRemoteSyncExecutor extends RemoteSyncExecutor {
   }
 }
 
-class _NoopConnectionService extends ConnectionService {}
+const DeviceInfo _peer = DeviceInfo(
+  deviceId: 'peer',
+  deviceName: 'Peer',
+  platform: 'android',
+  address: '127.0.0.1',
+  port: 44888,
+);
+
+class _NoopHttpSyncClient extends HttpSyncClient {}
 
 class _NoopFileAccessGateway implements FileAccessGateway {
   @override

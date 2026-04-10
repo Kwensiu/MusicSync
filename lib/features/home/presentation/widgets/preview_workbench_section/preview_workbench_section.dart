@@ -179,8 +179,8 @@ class PreviewWorkbenchSection extends StatelessWidget {
                         ? null
                         : onBuildRemotePreview,
                     style: FilledButton.styleFrom(
-                      backgroundColor: scheme.tertiaryContainer,
-                      foregroundColor: scheme.onTertiaryContainer,
+                      backgroundColor: scheme.secondaryContainer,
+                      foregroundColor: scheme.onSecondaryContainer,
                     ),
                     icon: const Icon(Icons.file_download_rounded),
                     label: Text(context.l10n.previewBuildRemotePlan),
@@ -414,9 +414,7 @@ class _ExecutionPanel extends StatelessWidget {
         decoration: BoxDecoration(
           color: scheme.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: scheme.outlineVariant.withValues(alpha: 0.72),
-          ),
+          border: Border.all(color: scheme.outlineVariant),
         ),
         child: Padding(padding: const EdgeInsets.all(12), child: child),
       ),
@@ -597,17 +595,17 @@ class _InlineMessage extends StatelessWidget {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final (Color background, Color foreground, IconData icon) = switch (tone) {
       _InlineMessageTone.success => (
-        scheme.tertiaryContainer.withValues(alpha: 0.8),
+        scheme.tertiaryContainer,
         scheme.onTertiaryContainer,
         Icons.check_circle_outline_rounded,
       ),
       _InlineMessageTone.warning => (
-        scheme.secondaryContainer.withValues(alpha: 0.72),
+        scheme.secondaryContainer,
         scheme.onSecondaryContainer,
         Icons.warning_amber_rounded,
       ),
       _InlineMessageTone.error => (
-        scheme.errorContainer.withValues(alpha: 0.82),
+        scheme.errorContainer,
         scheme.onErrorContainer,
         Icons.error_outline_rounded,
       ),
@@ -645,7 +643,7 @@ class _InlineMessage extends StatelessWidget {
                   Text(
                     detail!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: foreground.withValues(alpha: 0.88),
+                      color: foreground,
                     ),
                   ),
                 ],
@@ -686,11 +684,9 @@ class _CompactNotice extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerLowest,
+        color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.72),
-        ),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -710,7 +706,7 @@ class _CompactNotice extends StatelessWidget {
                   Text(
                     detail!,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: foreground.withValues(alpha: 0.84),
+                      color: foreground,
                     ),
                   ),
                 ],
@@ -722,7 +718,7 @@ class _CompactNotice extends StatelessWidget {
                       child: Text(
                         line,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: foreground.withValues(alpha: 0.84),
+                          color: foreground,
                         ),
                       ),
                     ),
@@ -847,9 +843,7 @@ class _CompactFilterChip extends StatelessWidget {
       labelPadding: const EdgeInsets.symmetric(horizontal: 2),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
       side: BorderSide(
-        color: Theme.of(
-          context,
-        ).colorScheme.outlineVariant.withValues(alpha: 0.7),
+        color: Theme.of(context).colorScheme.outlineVariant,
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     );

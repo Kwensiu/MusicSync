@@ -93,7 +93,7 @@ class _ConnectionStatusDialogState extends State<ConnectionStatusDialog> {
       ),
       foregroundColor: WidgetStatePropertyAll<Color>(scheme.onSurfaceVariant),
       side: WidgetStatePropertyAll<BorderSide>(
-        BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.7)),
+        BorderSide(color: scheme.outlineVariant),
       ),
     );
 
@@ -125,7 +125,7 @@ class _ConnectionStatusDialogState extends State<ConnectionStatusDialog> {
                 color: scheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(_statusCardRadius),
                 border: Border.all(
-                  color: scheme.outlineVariant.withValues(alpha: 0.6),
+                  color: scheme.outlineVariant,
                 ),
               ),
               child: Padding(
