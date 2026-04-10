@@ -1346,3 +1346,21 @@
   - Android `MethodChannel` 写入去 base64
   - 取消时主动中断正在进行的 HTTP 上传
   - 小文件有限并发与吞吐埋点
+
+## 37. 音乐领域参考项目清单落档
+
+为避免“讨论结论散落在对话中难回看”，新增了文档：
+
+- `docs/music-reference-projects.md`
+
+本次把以下内容固化为可执行清单：
+
+- 已有借鉴基线确认：
+  - InstallerX-Revived（UI 设计）
+  - LocalSend（网络/文件传输）
+- 音乐语义方向新增参考：
+  - Picard / beets / TagLib / Harmonoid / Strawberry / Navidrome
+- 优先策略：
+  - 先收口标签一致性（Picard + beets + TagLib 思路）
+  - 再推进播放器交互能力（Harmonoid / Strawberry）
+- 并补了一版可直接转代码规则的最小字段集与冲突优先级建议，作为后续任务起点。
