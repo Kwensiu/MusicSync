@@ -21,6 +21,7 @@ dependencies:
   shared_preferences: ^2.5.3
   dart_tags: ^0.4.1
   basic_utils: ^5.8.2
+  smooth_list_view: ^2.0.2
 
 dev_dependencies:
   flutter_test:
