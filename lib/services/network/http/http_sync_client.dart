@@ -32,6 +32,7 @@ class HttpSyncClient {
       device: localDevice,
       directoryReady: directoryReady,
       directoryDisplayName: directoryDisplayName,
+      transferProtocols: const <String>['chunk-rpc', 'stream-v1'],
     );
     for (final bool useHttps in <bool>[true, false]) {
       try {
@@ -124,89 +125,29 @@ class HttpSyncClient {
     await _drainSuccessResponse(await request.close());
   }
 
-  Future<void> beginCopy({
+  Future<void> copyFileStream({
     required String address,
     required int port,
     required String remoteRootId,
     required String relativePath,
-    required String transferId,
+    required int expectedBytes,
+    required Stream<List<int>> source,
     required bool httpEncryptionEnabled,
   }) async {
     final HttpClientRequest request = await _post(
       address,
       port,
-      HttpSyncRoutes.beginCopy,
+      HttpSyncRoutes.copyFileStream,
       useHttps: httpEncryptionEnabled,
     );
-    request.write(
-      jsonEncode(
-        BeginCopyRequestDto(
-          remoteRootId: remoteRootId,
-          relativePath: relativePath,
-          transferId: transferId,
-        ).toJson(),
-      ),
-    );
-    await _drainSuccessResponse(await request.close());
-  }
-
-  Future<void> writeChunk({
-    required String address,
-    required int port,
-    required String transferId,
-    required List<int> chunk,
-    required bool httpEncryptionEnabled,
-  }) async {
-    final HttpClientRequest request = await _post(
-      address,
-      port,
-      HttpSyncRoutes.writeChunk,
-      useHttps: httpEncryptionEnabled,
-    );
-    request.write(
-      jsonEncode(
-        WriteChunkRequestDto(
-          transferId: transferId,
-          data: base64Encode(chunk),
-        ).toJson(),
-      ),
-    );
-    await _drainSuccessResponse(await request.close());
-  }
-
-  Future<void> finishCopy({
-    required String address,
-    required int port,
-    required String transferId,
-    required bool httpEncryptionEnabled,
-  }) async {
-    final HttpClientRequest request = await _post(
-      address,
-      port,
-      HttpSyncRoutes.finishCopy,
-      useHttps: httpEncryptionEnabled,
-    );
-    request.write(
-      jsonEncode(FinishCopyRequestDto(transferId: transferId).toJson()),
-    );
-    await _drainSuccessResponse(await request.close());
-  }
-
-  Future<void> abortCopy({
-    required String address,
-    required int port,
-    required String transferId,
-    required bool httpEncryptionEnabled,
-  }) async {
-    final HttpClientRequest request = await _post(
-      address,
-      port,
-      HttpSyncRoutes.abortCopy,
-      useHttps: httpEncryptionEnabled,
-    );
-    request.write(
-      jsonEncode(AbortCopyRequestDto(transferId: transferId).toJson()),
-    );
+    // TODO(transfer-compression): if we ever add optional transport
+    // compression, negotiate it explicitly instead of changing the raw upload
+    // body format implicitly here.
+    request.headers.contentType = ContentType.binary;
+    request.headers.set('x-remote-root-id', remoteRootId);
+    request.headers.set('x-relative-path', Uri.encodeComponent(relativePath));
+    request.headers.set('x-file-size', expectedBytes.toString());
+    await request.addStream(source);
     await _drainSuccessResponse(await request.close());
   }
 

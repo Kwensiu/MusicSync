@@ -7,9 +7,6 @@ abstract final class HttpSyncRoutes {
   static const String scan = '$apiBase/scan';
   static const String entryDetail = '$apiBase/entry-detail';
   static const String syncSessionState = '$apiBase/sync-session-state';
-  static const String beginCopy = '$apiBase/begin-copy';
-  static const String writeChunk = '$apiBase/write-chunk';
-  static const String finishCopy = '$apiBase/finish-copy';
-  static const String abortCopy = '$apiBase/abort-copy';
+  static const String copyFileStream = '$apiBase/copy-file-stream';
   static const String deleteEntry = '$apiBase/delete-entry';
 }

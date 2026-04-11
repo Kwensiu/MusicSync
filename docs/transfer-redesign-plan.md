@@ -54,19 +54,19 @@
 第一阶段采用：
 
 - 新增单文件单请求的二进制流上传接口
-- 通过 `hello` 能力字段协商是否启用新协议
 - 请求元数据通过请求头传输
 - 请求体直接承载文件原始字节流
 - 服务端对该接口直接以流式方式写入临时文件
 - 成功后 rename 临时文件，失败或中断则清理临时文件
 
-保留现有控制面接口不变，仅移除或废弃远程复制流程中的：
+本轮收口后，远程复制流程中的旧接口已移除：
 
+- `beginCopy`
 - `writeChunk`
 - `finishCopy`
 - `abortCopy`
 
-`beginCopy` 是否保留，第一阶段建议也一并移除，改为由单请求上传接口自行负责：
+由单请求上传接口自行负责：
 
 - 校验参数
 - 创建目标目录
@@ -77,12 +77,14 @@
 
 这样可以避免“先 begin 再 stream 再 finish”造成的会话状态分散。
 
-为避免新旧版本设备之间的兼容问题，发送端不应直接假设对端一定支持新接口，而应先通过控制面能力协商决定：
+## 3.2 实施状态
 
-- 若对端声明支持 `stream-v1`，则走新上传协议
-- 若对端未声明支持，则回退到当前 `beginCopy/writeChunk/finishCopy` 旧链路
+当前代码状态已收口到单协议实现：
 
-这样可以支持灰度切换，也降低回滚成本。
+- 发送侧固定走 `copyFileStream`（`stream-v1`）
+- 接收侧固定通过 `copyFileStream` 路由处理文件写入
+- 旧 `begin/write/finish/abort` 协议链路与状态管理已从主流程移除
+- `hello` 中仍携带 `transferProtocols`，用于连接期能力可见性和诊断日志
 
 ## 3.1 LocalSend 可参考点
 
@@ -286,18 +288,9 @@ Future<void> copyFileStream({
 
 仅在新上传方法中覆写请求头和 body 写入方式即可。
 
-### 协议协商逻辑
-
-在客户端发起复制前，应先基于 `hello` 阶段缓存的能力信息判断：
-
-- 对端支持 `stream-v1` 时，调用 `copyFileStream(...)`
-- 对端不支持时，继续走旧 `beginCopy/writeChunk/finishCopy`
-
-不要在 `copyFileStream()` 内部通过“先试新接口，失败再降级”的方式做隐式探测，以免把真实传输故障误判成“不支持新协议”。
-
 ### 旧方法处理
 
-以下方法在迁移完成前可暂时保留，待调用方切换后删除：
+以下方法已从 `HttpSyncClient` 中删除：
 
 - `beginCopy`
 - `writeChunk`
@@ -312,7 +305,7 @@ Future<void> copyFileStream({
 
 ### 当前问题
 
-当前复制逻辑是：
+改造前复制逻辑是：
 
 - 生成 `transferId`
 - `beginCopy`
@@ -331,7 +324,7 @@ Future<void> copyFileStream({
 2. `source` 由 `openRead(sourceEntryId)` 提供
 3. 进度统计仍在发送端读取流时进行
 4. 若发生异常，保留当前失败计数、`lastError` 记录和继续后续文件的语义
-5. 若对端未声明支持 `stream-v1`，则继续走旧协议
+5. 不再保留旧协议回退分支
 
 ### 关键难点：进度上报
 
@@ -370,8 +363,6 @@ final Stream<List<int>> source = _fileAccessGateway
 
 ### 取消语义
 
-当前取消依赖 `abortCopy` 进行远端清理。
-
 新模型建议：
 
 - 在 `copyFileStream` 过程中若 `cancelToken` 被触发，主动终止上传流程
@@ -384,10 +375,7 @@ final Stream<List<int>> source = _fileAccessGateway
 - 中断后应继续向上层抛出 `SyncCancelledException`
 - 服务端应把“请求流提前结束”视为失败路径，而不是正常完成
 
-因此：
-
-- `RemoteSyncExecutor` 中不再需要显式调用 `abortCopy`
-- 清理由服务端上传 handler 的 `try / catch / finally` 保证
+清理由服务端上传 handler 的 `try / catch / finally` 保证。
 
 ## 5.4 服务端 HTTP 层
 
@@ -472,16 +460,7 @@ String _requireHeader(HttpHeaders headers, String name)
 
 当前负责文件接收的逻辑分散在：
 
-- `_handleHttpBeginCopy`
-- `_handleHttpWriteChunk`
-- `_handleHttpFinishCopy`
-- `_handleHttpAbortCopy`
-- `_beginCopy`
-- `_writeChunk`
-- `_finishCopy`
-- `_abortCopy`
-- `_incomingWriteSessions`
-- `_incomingWriteTargets`
+- `_handleHttpCopyFileStream(...)`
 
 ### 重构方向
 
@@ -516,16 +495,7 @@ String _requireHeader(HttpHeaders headers, String name)
 
 ### 会话状态是否保留
 
-第一阶段建议：
-
-- 删除 `_incomingWriteSessions`
-- 删除 `_incomingWriteTargets`
-- 删除与 transferId 相关的接收态状态管理
-
-原因：
-
-- 单请求单文件上传不再需要跨多个 HTTP 请求维护接收会话
-- 旧状态结构只对 begin/write/finish/abort 模型有意义
+已删除 `_incomingWriteSessions`、`_incomingWriteTargets` 及 transferId 相关接收态管理。
 
 ### `isIncomingSyncActive` 的处理
 
@@ -648,7 +618,7 @@ Android 侧当前 `FileWriteSession.write()` 仍会把 chunk 再做一次 base64
 - 调用新的 `copyFileStream(...)`
 - 保留并调整进度上报
 
-### 第 6 步：清理旧协议残留
+### 第 6 步：清理旧协议残留（已完成）
 
 修改：
 
@@ -658,7 +628,7 @@ Android 侧当前 `FileWriteSession.write()` 仍会把 chunk 再做一次 base64
 - `lib/features/connection/state/connection_controller.dart`
 - 相关测试文件
 
-删除：
+已删除：
 
 - 旧的分块复制 DTO
 - 旧的 begin/write/finish/abort handler 和状态
@@ -689,7 +659,7 @@ Android 侧当前 `FileWriteSession.write()` 仍会把 chunk 再做一次 base64
 - `session.close()` 抛错
 - rename 失败
 
-不能依赖客户端额外发一个 `abortCopy` 做清理。
+不能依赖客户端额外接口做清理。
 
 还应把“请求体提前结束且接收字节数小于 `x-file-size`”视为失败路径，并删除临时文件。
 
@@ -797,9 +767,9 @@ Android 侧当前 `FileWriteSession.write()` 仍会把 chunk 再做一次 base64
    - 单文件失败不影响后续文件继续处理
    - 取消时能正确停止并把错误上传到上层执行状态
 
-5. 新旧协议协商
-   - 对端声明 `stream-v1` 时走新接口
-   - 对端未声明时回退旧接口
+5. 协议可见性
+   - `hello` 请求与响应均携带 `transferProtocols`
+   - 被动连接建立后也能更新能力状态（用于诊断与日志）
 
 6. 特殊路径与文件名
    - 中文路径可正常传输
@@ -811,34 +781,26 @@ Android 侧当前 `FileWriteSession.write()` 仍会把 chunk 再做一次 base64
 - 与 `writeChunk` / `finishCopy` / `abortCopy` 细节强绑定的单元测试
 - 对 transferId 生命周期有断言的测试
 
-## 9. 回滚策略
+## 9. 收口说明
 
-为降低切换风险，建议分两步提交：
+本方案对应代码已完成主路径收口：
 
-### 第一阶段提交
+- 仅保留 `stream-v1` 文件内容传输协议
+- 旧 chunk RPC 协议代码已清理
+- 测试已同步迁移到新协议路径
 
-- 新增 `copyFileStream` 协议与实现
-- 调用方切换到新协议
-- 旧协议代码先保留但不再使用
+## 10. 后续事项归档
 
-### 第二阶段提交
+本次协议重构已经完成主路径收口。
 
-- 删除旧 DTO、旧 handler、旧 client 方法、旧测试
-
-这样如果第一阶段实际联调发现平台差异问题，回滚成本更低。
-
-## 10. 后续可扩展项
-
-在一阶段稳定后，再评估以下优化：
+后续仍值得继续追踪的传输相关事项，例如：
 
 - Android `MethodChannel` 写入去 base64
-- 小文件批量或有限并发传输
-- 上传吞吐统计与日志埋点
-- 可选的压缩策略
-- 断点续传或失败重试策略
-- 若未来要做会话级 prepare/cancel，也可再演进为“轻量元数据准备 + 单文件流上传”的混合模型
+- 取消时主动中断正在进行的 HTTP 上传
+- 吞吐统计与诊断日志
+- 小文件有限并发
 
-这些都不应和本次协议重构绑定在同一个实现批次内。
+统一收敛到主文档 [`implementation-plan.md`](/C:/Users/x1852/.codex/worktrees/a543/MusicSync/docs/implementation-plan.md) 的 `第一版 TODO` 中维护，不再在本方案文档里重复展开。
 
 ## 11. 本方案的边界
 

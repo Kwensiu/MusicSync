@@ -19,10 +19,13 @@ typedef EntryDetailHandler =
     Future<DiffEntryDetailViewData> Function(String entryId);
 typedef SyncSessionStateHandler =
     Future<void> Function(SyncSessionStateRequestDto request);
-typedef BeginCopyHandler = Future<void> Function(BeginCopyRequestDto request);
-typedef WriteChunkHandler = Future<void> Function(WriteChunkRequestDto request);
-typedef FinishCopyHandler = Future<void> Function(FinishCopyRequestDto request);
-typedef AbortCopyHandler = Future<void> Function(AbortCopyRequestDto request);
+typedef CopyFileStreamHandler =
+    Future<void> Function(
+      HttpRequest request,
+      String remoteRootId,
+      String relativePath,
+      int expectedBytes,
+    );
 typedef DeleteEntryHandler =
     Future<void> Function(DeleteEntryRequestDto request);
 
@@ -45,10 +48,7 @@ class HttpSyncServerService {
     required ScanHandler onScan,
     required EntryDetailHandler onEntryDetail,
     required SyncSessionStateHandler onSyncSessionState,
-    required BeginCopyHandler onBeginCopy,
-    required WriteChunkHandler onWriteChunk,
-    required FinishCopyHandler onFinishCopy,
-    required AbortCopyHandler onAbortCopy,
+    required CopyFileStreamHandler onCopyFileStream,
     required DeleteEntryHandler onDeleteEntry,
   }) async {
     await stop();
@@ -69,10 +69,7 @@ class HttpSyncServerService {
           onScan: onScan,
           onEntryDetail: onEntryDetail,
           onSyncSessionState: onSyncSessionState,
-          onBeginCopy: onBeginCopy,
-          onWriteChunk: onWriteChunk,
-          onFinishCopy: onFinishCopy,
-          onAbortCopy: onAbortCopy,
+          onCopyFileStream: onCopyFileStream,
           onDeleteEntry: onDeleteEntry,
         );
       } catch (error) {
@@ -100,10 +97,7 @@ class HttpSyncServerService {
     required ScanHandler onScan,
     required EntryDetailHandler onEntryDetail,
     required SyncSessionStateHandler onSyncSessionState,
-    required BeginCopyHandler onBeginCopy,
-    required WriteChunkHandler onWriteChunk,
-    required FinishCopyHandler onFinishCopy,
-    required AbortCopyHandler onAbortCopy,
+    required CopyFileStreamHandler onCopyFileStream,
     required DeleteEntryHandler onDeleteEntry,
   }) async {
     switch ('${request.method} ${request.uri.path}') {
@@ -146,24 +140,25 @@ class HttpSyncServerService {
         await onSyncSessionState(SyncSessionStateRequestDto.fromJson(payload));
         await _writeJson(request.response, const <String, Object?>{'ok': true});
         return;
-      case 'POST ${HttpSyncRoutes.beginCopy}':
-        final Map<String, Object?> payload = await _readJsonBody(request);
-        await onBeginCopy(BeginCopyRequestDto.fromJson(payload));
-        await _writeJson(request.response, const <String, Object?>{'ok': true});
-        return;
-      case 'POST ${HttpSyncRoutes.writeChunk}':
-        final Map<String, Object?> payload = await _readJsonBody(request);
-        await onWriteChunk(WriteChunkRequestDto.fromJson(payload));
-        await _writeJson(request.response, const <String, Object?>{'ok': true});
-        return;
-      case 'POST ${HttpSyncRoutes.finishCopy}':
-        final Map<String, Object?> payload = await _readJsonBody(request);
-        await onFinishCopy(FinishCopyRequestDto.fromJson(payload));
-        await _writeJson(request.response, const <String, Object?>{'ok': true});
-        return;
-      case 'POST ${HttpSyncRoutes.abortCopy}':
-        final Map<String, Object?> payload = await _readJsonBody(request);
-        await onAbortCopy(AbortCopyRequestDto.fromJson(payload));
+      case 'POST ${HttpSyncRoutes.copyFileStream}':
+        final String remoteRootId = _requireHeader(
+          request.headers,
+          'x-remote-root-id',
+        );
+        final String encodedRelativePath = _requireHeader(
+          request.headers,
+          'x-relative-path',
+        );
+        final int expectedBytes = _requireIntHeader(
+          request.headers,
+          'x-file-size',
+        );
+        await onCopyFileStream(
+          request,
+          remoteRootId,
+          Uri.decodeComponent(encodedRelativePath),
+          expectedBytes,
+        );
         await _writeJson(request.response, const <String, Object?>{'ok': true});
         return;
       case 'POST ${HttpSyncRoutes.deleteEntry}':
@@ -197,5 +192,21 @@ class HttpSyncServerService {
       ..headers.contentType = ContentType.json
       ..write(jsonEncode(payload));
     await response.close();
+  }
+
+  String _requireHeader(HttpHeaders headers, String name) {
+    final String? value = headers.value(name)?.trim();
+    if (value == null || value.isEmpty) {
+      throw FormatException('HTTP header "$name" is required.');
+    }
+    return value;
+  }
+
+  int _requireIntHeader(HttpHeaders headers, String name) {
+    final int? value = int.tryParse(_requireHeader(headers, name));
+    if (value == null || value < 0) {
+      throw FormatException('HTTP header "$name" is invalid.');
+    }
+    return value;
   }
 }
