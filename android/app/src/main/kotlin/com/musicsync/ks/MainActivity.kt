@@ -3,12 +3,13 @@ package com.musicsync.ks
 import android.app.Activity
 import android.content.Intent
 import android.database.Cursor
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
 import android.util.Base64
-import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.io.InputStream
@@ -27,31 +28,32 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
-            .setMethodCallHandler { call, result ->
-                when (call.method) {
-                    "pickDirectory" -> pickDirectory(result)
-                    "listChildren" -> listChildren(call, result)
-                    "stat" -> stat(call, result)
-                    "createDirectory" -> createDirectory(call, result)
-                    "openRead" -> openRead(call, result)
-                    "readChunk" -> readChunk(call, result)
-                    "closeReadSession" -> closeReadSession(call, result)
-                    "openWrite" -> openWrite(call, result)
-                    "writeChunk" -> writeChunk(call, result)
-                    "closeWriteSession" -> closeWriteSession(call, result)
-                    "renameEntry" -> renameEntry(call, result)
-                    "deleteEntry" -> deleteEntry(call, result)
-                    else -> result.notImplemented()
+                .setMethodCallHandler { call, result ->
+                    when (call.method) {
+                        "pickDirectory" -> pickDirectory(result)
+                        "listChildren" -> listChildren(call, result)
+                        "stat" -> stat(call, result)
+                        "createDirectory" -> createDirectory(call, result)
+                        "openRead" -> openRead(call, result)
+                        "readChunk" -> readChunk(call, result)
+                        "closeReadSession" -> closeReadSession(call, result)
+                        "openWrite" -> openWrite(call, result)
+                        "writeChunk" -> writeChunk(call, result)
+                        "closeWriteSession" -> closeWriteSession(call, result)
+                        "renameEntry" -> renameEntry(call, result)
+                        "deleteEntry" -> deleteEntry(call, result)
+                        "getAudioMetadata" -> getAudioMetadata(call, result)
+                        else -> result.notImplemented()
+                    }
                 }
-            }
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, runtimeChannelName)
-            .setMethodCallHandler { call, result ->
-                when (call.method) {
-                    "setKeepAliveEnabled" -> setKeepAliveEnabled(call, result)
-                    else -> result.notImplemented()
+                .setMethodCallHandler { call, result ->
+                    when (call.method) {
+                        "setKeepAliveEnabled" -> setKeepAliveEnabled(call, result)
+                        else -> result.notImplemented()
+                    }
                 }
-            }
     }
 
     private fun setKeepAliveEnabled(call: MethodCall, result: MethodChannel.Result) {
@@ -77,12 +79,13 @@ class MainActivity : FlutterActivity() {
         }
 
         pendingDirectoryResult = result
-        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-            addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
-            addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
-        }
+        val intent =
+                Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                    addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+                    addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
+                }
         startActivityForResult(intent, pickDirectoryRequestCode)
     }
 
@@ -112,17 +115,22 @@ class MainActivity : FlutterActivity() {
                 return
             }
 
-            val grantedFlags = (data.flags
-                and (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION))
+            val grantedFlags =
+                    (data.flags and
+                            (Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION))
             if (grantedFlags != 0) {
                 contentResolver.takePersistableUriPermission(treeUri, grantedFlags)
             }
 
             val documentId = DocumentsContract.getTreeDocumentId(treeUri)
-            val handle = hashMapOf<String, Any?>(
-                "entryId" to buildEntryId(treeUri, documentId),
-                "displayName" to (resolveDisplayName(treeUri, documentId) ?: documentId.substringAfterLast(':'))
-            )
+            val handle =
+                    hashMapOf<String, Any?>(
+                            "entryId" to buildEntryId(treeUri, documentId),
+                            "displayName" to
+                                    (resolveDisplayName(treeUri, documentId)
+                                            ?: documentId.substringAfterLast(':'))
+                    )
             pending.success(handle)
         } catch (error: Exception) {
             pending.error("pick_directory_failed", error.message, null)
@@ -131,32 +139,35 @@ class MainActivity : FlutterActivity() {
 
     private fun listChildren(call: MethodCall, result: MethodChannel.Result) {
         try {
-            val entryId = call.argument<String>("directoryId")
-                ?: throw IllegalArgumentException("directoryId is required.")
+            val entryId =
+                    call.argument<String>("directoryId")
+                            ?: throw IllegalArgumentException("directoryId is required.")
             val parsed = parseEntryId(entryId)
-            val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
-                parsed.treeUri,
-                parsed.documentId
-            )
+            val childrenUri =
+                    DocumentsContract.buildChildDocumentsUriUsingTree(
+                            parsed.treeUri,
+                            parsed.documentId
+                    )
             val children = mutableListOf<Map<String, Any?>>()
 
             contentResolver.query(
-                childrenUri,
-                arrayOf(
-                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-                    DocumentsContract.Document.COLUMN_MIME_TYPE,
-                    DocumentsContract.Document.COLUMN_SIZE,
-                    DocumentsContract.Document.COLUMN_LAST_MODIFIED
-                ),
-                null,
-                null,
-                null
-            )?.use { cursor ->
-                while (cursor.moveToNext()) {
-                    children.add(cursorToEntry(parsed.treeUri, cursor))
-                }
-            }
+                            childrenUri,
+                            arrayOf(
+                                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                                    DocumentsContract.Document.COLUMN_MIME_TYPE,
+                                    DocumentsContract.Document.COLUMN_SIZE,
+                                    DocumentsContract.Document.COLUMN_LAST_MODIFIED
+                            ),
+                            null,
+                            null,
+                            null
+                    )
+                    ?.use { cursor ->
+                        while (cursor.moveToNext()) {
+                            children.add(cursorToEntry(parsed.treeUri, cursor))
+                        }
+                    }
 
             result.success(children)
         } catch (error: Exception) {
@@ -166,32 +177,32 @@ class MainActivity : FlutterActivity() {
 
     private fun stat(call: MethodCall, result: MethodChannel.Result) {
         try {
-            val entryId = call.argument<String>("entryId")
-                ?: throw IllegalArgumentException("entryId is required.")
+            val entryId =
+                    call.argument<String>("entryId")
+                            ?: throw IllegalArgumentException("entryId is required.")
             val parsed = parseEntryId(entryId)
-            val documentUri = DocumentsContract.buildDocumentUriUsingTree(
-                parsed.treeUri,
-                parsed.documentId
-            )
+            val documentUri =
+                    DocumentsContract.buildDocumentUriUsingTree(parsed.treeUri, parsed.documentId)
 
             contentResolver.query(
-                documentUri,
-                arrayOf(
-                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-                    DocumentsContract.Document.COLUMN_MIME_TYPE,
-                    DocumentsContract.Document.COLUMN_SIZE,
-                    DocumentsContract.Document.COLUMN_LAST_MODIFIED
-                ),
-                null,
-                null,
-                null
-            )?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                    result.success(cursorToEntry(parsed.treeUri, cursor))
-                    return
-                }
-            }
+                            documentUri,
+                            arrayOf(
+                                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                                    DocumentsContract.Document.COLUMN_MIME_TYPE,
+                                    DocumentsContract.Document.COLUMN_SIZE,
+                                    DocumentsContract.Document.COLUMN_LAST_MODIFIED
+                            ),
+                            null,
+                            null,
+                            null
+                    )
+                    ?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            result.success(cursorToEntry(parsed.treeUri, cursor))
+                            return
+                        }
+                    }
 
             result.success(null)
         } catch (error: Exception) {
@@ -201,30 +212,36 @@ class MainActivity : FlutterActivity() {
 
     private fun createDirectory(call: MethodCall, result: MethodChannel.Result) {
         try {
-            val parentId = call.argument<String>("parentId")
-                ?: throw IllegalArgumentException("parentId is required.")
-            val name = call.argument<String>("name")
-                ?: throw IllegalArgumentException("name is required.")
+            val parentId =
+                    call.argument<String>("parentId")
+                            ?: throw IllegalArgumentException("parentId is required.")
+            val name =
+                    call.argument<String>("name")
+                            ?: throw IllegalArgumentException("name is required.")
             val parsed = parseEntryId(parentId)
-            val existing = findChildByName(
-                treeUri = parsed.treeUri,
-                parentDocumentId = parsed.documentId,
-                childName = name
-            )
+            val existing =
+                    findChildByName(
+                            treeUri = parsed.treeUri,
+                            parentDocumentId = parsed.documentId,
+                            childName = name
+                    )
             if (existing != null && existing.mimeType == DocumentsContract.Document.MIME_TYPE_DIR) {
                 result.success(buildEntryId(parsed.treeUri, existing.documentId))
                 return
             }
-            val createdUri = DocumentsContract.createDocument(
-                contentResolver,
-                DocumentsContract.buildDocumentUriUsingTree(parsed.treeUri, parsed.documentId),
-                DocumentsContract.Document.MIME_TYPE_DIR,
-                name
-            ) ?: throw IllegalStateException("Directory creation returned null.")
+            val createdUri =
+                    DocumentsContract.createDocument(
+                            contentResolver,
+                            DocumentsContract.buildDocumentUriUsingTree(
+                                    parsed.treeUri,
+                                    parsed.documentId
+                            ),
+                            DocumentsContract.Document.MIME_TYPE_DIR,
+                            name
+                    )
+                            ?: throw IllegalStateException("Directory creation returned null.")
 
-            result.success(
-                buildEntryId(createdUri, DocumentsContract.getDocumentId(createdUri))
-            )
+            result.success(buildEntryId(createdUri, DocumentsContract.getDocumentId(createdUri)))
         } catch (error: Exception) {
             result.error("create_directory_failed", error.message, null)
         }
@@ -232,15 +249,15 @@ class MainActivity : FlutterActivity() {
 
     private fun openRead(call: MethodCall, result: MethodChannel.Result) {
         try {
-            val entryId = call.argument<String>("entryId")
-                ?: throw IllegalArgumentException("entryId is required.")
+            val entryId =
+                    call.argument<String>("entryId")
+                            ?: throw IllegalArgumentException("entryId is required.")
             val parsed = parseEntryId(entryId)
-            val fileUri = DocumentsContract.buildDocumentUriUsingTree(
-                parsed.treeUri,
-                parsed.documentId
-            )
-            val stream = contentResolver.openInputStream(fileUri)
-                ?: throw IllegalStateException("Unable to open input stream.")
+            val fileUri =
+                    DocumentsContract.buildDocumentUriUsingTree(parsed.treeUri, parsed.documentId)
+            val stream =
+                    contentResolver.openInputStream(fileUri)
+                            ?: throw IllegalStateException("Unable to open input stream.")
             val sessionId = UUID.randomUUID().toString()
             readSessions[sessionId] = stream
             result.success(sessionId)
@@ -251,19 +268,19 @@ class MainActivity : FlutterActivity() {
 
     private fun readChunk(call: MethodCall, result: MethodChannel.Result) {
         try {
-            val sessionId = call.argument<String>("sessionId")
-                ?: throw IllegalArgumentException("sessionId is required.")
-            val stream = readSessions[sessionId]
-                ?: throw IllegalStateException("Read session not found.")
+            val sessionId =
+                    call.argument<String>("sessionId")
+                            ?: throw IllegalArgumentException("sessionId is required.")
+            val stream =
+                    readSessions[sessionId]
+                            ?: throw IllegalStateException("Read session not found.")
             val buffer = ByteArray(64 * 1024)
             val bytesRead = stream.read(buffer)
             if (bytesRead <= 0) {
                 result.success("")
                 return
             }
-            result.success(
-                Base64.encodeToString(buffer.copyOf(bytesRead), Base64.NO_WRAP)
-            )
+            result.success(Base64.encodeToString(buffer.copyOf(bytesRead), Base64.NO_WRAP))
         } catch (error: Exception) {
             result.error("read_chunk_failed", error.message, null)
         }
@@ -271,10 +288,12 @@ class MainActivity : FlutterActivity() {
 
     private fun closeReadSession(call: MethodCall, result: MethodChannel.Result) {
         try {
-            val sessionId = call.argument<String>("sessionId")
-                ?: throw IllegalArgumentException("sessionId is required.")
-            val stream = readSessions.remove(sessionId)
-                ?: throw IllegalStateException("Read session not found.")
+            val sessionId =
+                    call.argument<String>("sessionId")
+                            ?: throw IllegalArgumentException("sessionId is required.")
+            val stream =
+                    readSessions.remove(sessionId)
+                            ?: throw IllegalStateException("Read session not found.")
             stream.close()
             result.success(null)
         } catch (error: Exception) {
@@ -284,39 +303,39 @@ class MainActivity : FlutterActivity() {
 
     private fun openWrite(call: MethodCall, result: MethodChannel.Result) {
         try {
-            val parentId = call.argument<String>("parentId")
-                ?: throw IllegalArgumentException("parentId is required.")
-            val name = call.argument<String>("name")
-                ?: throw IllegalArgumentException("name is required.")
+            val parentId =
+                    call.argument<String>("parentId")
+                            ?: throw IllegalArgumentException("parentId is required.")
+            val name =
+                    call.argument<String>("name")
+                            ?: throw IllegalArgumentException("name is required.")
             val parsed = parseEntryId(parentId)
-            val parentUri = DocumentsContract.buildDocumentUriUsingTree(
-                parsed.treeUri,
-                parsed.documentId
-            )
+            val parentUri =
+                    DocumentsContract.buildDocumentUriUsingTree(parsed.treeUri, parsed.documentId)
             val mimeType = mimeTypeFor(name)
 
-            val existing = findChildByName(
-                treeUri = parsed.treeUri,
-                parentDocumentId = parsed.documentId,
-                childName = name
-            )
+            val existing =
+                    findChildByName(
+                            treeUri = parsed.treeUri,
+                            parentDocumentId = parsed.documentId,
+                            childName = name
+                    )
             if (existing != null && existing.mimeType != DocumentsContract.Document.MIME_TYPE_DIR) {
-                val existingUri = DocumentsContract.buildDocumentUriUsingTree(
-                    parsed.treeUri,
-                    existing.documentId
-                )
+                val existingUri =
+                        DocumentsContract.buildDocumentUriUsingTree(
+                                parsed.treeUri,
+                                existing.documentId
+                        )
                 DocumentsContract.deleteDocument(contentResolver, existingUri)
             }
 
-            val fileUri = DocumentsContract.createDocument(
-                contentResolver,
-                parentUri,
-                mimeType,
-                name
-            ) ?: throw IllegalStateException("File creation returned null.")
+            val fileUri =
+                    DocumentsContract.createDocument(contentResolver, parentUri, mimeType, name)
+                            ?: throw IllegalStateException("File creation returned null.")
 
-            val stream = contentResolver.openOutputStream(fileUri, "wt")
-                ?: throw IllegalStateException("Unable to open output stream.")
+            val stream =
+                    contentResolver.openOutputStream(fileUri, "wt")
+                            ?: throw IllegalStateException("Unable to open output stream.")
             val sessionId = UUID.randomUUID().toString()
             writeSessions[sessionId] = stream
             result.success(sessionId)
@@ -327,12 +346,15 @@ class MainActivity : FlutterActivity() {
 
     private fun writeChunk(call: MethodCall, result: MethodChannel.Result) {
         try {
-            val sessionId = call.argument<String>("sessionId")
-                ?: throw IllegalArgumentException("sessionId is required.")
-            val data = call.argument<String>("data")
-                ?: throw IllegalArgumentException("data is required.")
-            val stream = writeSessions[sessionId]
-                ?: throw IllegalStateException("Write session not found.")
+            val sessionId =
+                    call.argument<String>("sessionId")
+                            ?: throw IllegalArgumentException("sessionId is required.")
+            val data =
+                    call.argument<String>("data")
+                            ?: throw IllegalArgumentException("data is required.")
+            val stream =
+                    writeSessions[sessionId]
+                            ?: throw IllegalStateException("Write session not found.")
             stream.write(Base64.decode(data, Base64.DEFAULT))
             result.success(null)
         } catch (error: Exception) {
@@ -342,10 +364,12 @@ class MainActivity : FlutterActivity() {
 
     private fun closeWriteSession(call: MethodCall, result: MethodChannel.Result) {
         try {
-            val sessionId = call.argument<String>("sessionId")
-                ?: throw IllegalArgumentException("sessionId is required.")
-            val stream = writeSessions.remove(sessionId)
-                ?: throw IllegalStateException("Write session not found.")
+            val sessionId =
+                    call.argument<String>("sessionId")
+                            ?: throw IllegalArgumentException("sessionId is required.")
+            val stream =
+                    writeSessions.remove(sessionId)
+                            ?: throw IllegalStateException("Write session not found.")
             stream.flush()
             stream.close()
             result.success(null)
@@ -356,22 +380,20 @@ class MainActivity : FlutterActivity() {
 
     private fun renameEntry(call: MethodCall, result: MethodChannel.Result) {
         try {
-            val entryId = call.argument<String>("entryId")
-                ?: throw IllegalArgumentException("entryId is required.")
-            val newName = call.argument<String>("newName")
-                ?: throw IllegalArgumentException("newName is required.")
+            val entryId =
+                    call.argument<String>("entryId")
+                            ?: throw IllegalArgumentException("entryId is required.")
+            val newName =
+                    call.argument<String>("newName")
+                            ?: throw IllegalArgumentException("newName is required.")
             val parsed = parseEntryId(entryId)
-            val documentUri = DocumentsContract.buildDocumentUriUsingTree(
-                parsed.treeUri,
-                parsed.documentId
-            )
-            val renamedUri = DocumentsContract.renameDocument(
-                contentResolver,
-                documentUri,
-                newName
-            ) ?: throw IllegalStateException("Rename returned null.")
+            val documentUri =
+                    DocumentsContract.buildDocumentUriUsingTree(parsed.treeUri, parsed.documentId)
+            val renamedUri =
+                    DocumentsContract.renameDocument(contentResolver, documentUri, newName)
+                            ?: throw IllegalStateException("Rename returned null.")
             result.success(
-                buildEntryId(parsed.treeUri, DocumentsContract.getDocumentId(renamedUri))
+                    buildEntryId(parsed.treeUri, DocumentsContract.getDocumentId(renamedUri))
             )
         } catch (error: Exception) {
             result.error("rename_entry_failed", error.message, null)
@@ -380,13 +402,12 @@ class MainActivity : FlutterActivity() {
 
     private fun deleteEntry(call: MethodCall, result: MethodChannel.Result) {
         try {
-            val entryId = call.argument<String>("entryId")
-                ?: throw IllegalArgumentException("entryId is required.")
+            val entryId =
+                    call.argument<String>("entryId")
+                            ?: throw IllegalArgumentException("entryId is required.")
             val parsed = parseEntryId(entryId)
-            val documentUri = DocumentsContract.buildDocumentUriUsingTree(
-                parsed.treeUri,
-                parsed.documentId
-            )
+            val documentUri =
+                    DocumentsContract.buildDocumentUriUsingTree(parsed.treeUri, parsed.documentId)
             DocumentsContract.deleteDocument(contentResolver, documentUri)
             result.success(null)
         } catch (error: Exception) {
@@ -402,11 +423,11 @@ class MainActivity : FlutterActivity() {
         val modifiedTime = if (cursor.isNull(4)) 0L else cursor.getLong(4)
 
         return mapOf(
-            "entryId" to buildEntryId(treeUri, documentId),
-            "name" to displayName,
-            "isDirectory" to (mimeType == DocumentsContract.Document.MIME_TYPE_DIR),
-            "size" to size,
-            "modifiedTime" to modifiedTime
+                "entryId" to buildEntryId(treeUri, documentId),
+                "name" to displayName,
+                "isDirectory" to (mimeType == DocumentsContract.Document.MIME_TYPE_DIR),
+                "size" to size,
+                "modifiedTime" to modifiedTime
         )
     }
 
@@ -442,38 +463,82 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun findChildByName(
-        treeUri: Uri,
-        parentDocumentId: String,
-        childName: String
+            treeUri: Uri,
+            parentDocumentId: String,
+            childName: String
     ): ChildDocumentInfo? {
-        val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
-            treeUri,
-            parentDocumentId
-        )
+        val childrenUri =
+                DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentDocumentId)
         contentResolver.query(
-            childrenUri,
-            arrayOf(
-                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-                DocumentsContract.Document.COLUMN_MIME_TYPE
-            ),
-            null,
-            null,
-            null
-        )?.use { cursor ->
-            while (cursor.moveToNext()) {
-                val documentId = cursor.getString(0)
-                val displayName = cursor.getString(1)
-                val mimeType = cursor.getString(2)
-                if (displayName == childName) {
-                    return ChildDocumentInfo(
-                        documentId = documentId,
-                        mimeType = mimeType
-                    )
+                        childrenUri,
+                        arrayOf(
+                                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                                DocumentsContract.Document.COLUMN_MIME_TYPE
+                        ),
+                        null,
+                        null,
+                        null
+                )
+                ?.use { cursor ->
+                    while (cursor.moveToNext()) {
+                        val documentId = cursor.getString(0)
+                        val displayName = cursor.getString(1)
+                        val mimeType = cursor.getString(2)
+                        if (displayName == childName) {
+                            return ChildDocumentInfo(documentId = documentId, mimeType = mimeType)
+                        }
+                    }
                 }
-            }
-        }
         return null
+    }
+
+    private fun getAudioMetadata(call: MethodCall, result: MethodChannel.Result) {
+        try {
+            val entryId =
+                    call.argument<String>("entryId")
+                            ?: throw IllegalArgumentException("entryId is required.")
+            val parsed = parseEntryId(entryId)
+            val documentUri =
+                    DocumentsContract.buildDocumentUriUsingTree(parsed.treeUri, parsed.documentId)
+            val retriever = MediaMetadataRetriever()
+            try {
+                retriever.setDataSource(this, documentUri)
+                val metadata =
+                        mapOf<String, String?>(
+                                "title" to
+                                        retriever.extractMetadata(
+                                                MediaMetadataRetriever.METADATA_KEY_TITLE
+                                        ),
+                                "artist" to
+                                        retriever.extractMetadata(
+                                                MediaMetadataRetriever.METADATA_KEY_ARTIST
+                                        ),
+                                "album" to
+                                        retriever.extractMetadata(
+                                                MediaMetadataRetriever.METADATA_KEY_ALBUM
+                                        ),
+                                "composer" to
+                                        retriever.extractMetadata(
+                                                MediaMetadataRetriever.METADATA_KEY_COMPOSER
+                                        ),
+                                "trackNumber" to
+                                        retriever.extractMetadata(
+                                                MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER
+                                        ),
+                                "discNumber" to
+                                        retriever.extractMetadata(
+                                                MediaMetadataRetriever.METADATA_KEY_DISC_NUMBER
+                                        ),
+                                "lyrics" to null
+                        )
+                result.success(metadata)
+            } finally {
+                retriever.release()
+            }
+        } catch (error: Exception) {
+            result.error("get_audio_metadata_failed", error.message, null)
+        }
     }
 
     private fun parseEntryId(entryId: String): TreeEntryId {
@@ -482,13 +547,7 @@ class MainActivity : FlutterActivity() {
         return TreeEntryId(Uri.parse(parts[0]), parts[1])
     }
 
-    private data class TreeEntryId(
-        val treeUri: Uri,
-        val documentId: String
-    )
+    private data class TreeEntryId(val treeUri: Uri, val documentId: String)
 
-    private data class ChildDocumentInfo(
-        val documentId: String,
-        val mimeType: String?
-    )
+    private data class ChildDocumentInfo(val documentId: String, val mimeType: String?)
 }

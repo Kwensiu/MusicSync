@@ -133,6 +133,9 @@ class _FakeGateway implements FileAccessGateway {
   Future<FileAccessEntry> stat(String entryId) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<Map<String, String?>?> getAudioMetadata(String entryId) async => null;
 }
 
 FileAccessEntry _dir(String entryId, String name) {

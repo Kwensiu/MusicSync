@@ -236,6 +236,9 @@ class WindowsFileAccessGateway implements FileAccessGateway {
     return index >= 0 ? path.substring(index + 1) : path;
   }
 
+  @override
+  Future<Map<String, String?>?> getAudioMetadata(String entryId) async => null;
+
   String _childPath(String parent, String name) {
     return '$parent${Platform.pathSeparator}$name';
   }

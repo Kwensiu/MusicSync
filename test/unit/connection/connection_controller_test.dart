@@ -31,32 +31,37 @@ void main() {
   SharedPreferences.setMockInitialValues(<String, Object>{});
 
   group('ConnectionController (HTTP)', () {
-    test('connect succeeds even when remote shared directory is not selected yet', () async {
-      final _FakeHttpSyncClient client = _FakeHttpSyncClient(
-        helloResponse: const HelloResponseDto(
-          device: DeviceInfo(
-            deviceId: 'peer',
-            deviceName: 'Peer',
-            platform: 'android',
-            address: '',
-            port: 44888,
+    test(
+      'connect succeeds even when remote shared directory is not selected yet',
+      () async {
+        final _FakeHttpSyncClient client = _FakeHttpSyncClient(
+          helloResponse: const HelloResponseDto(
+            device: DeviceInfo(
+              deviceId: 'peer',
+              deviceName: 'Peer',
+              platform: 'android',
+              address: '',
+              port: 44888,
+            ),
+            directoryReady: false,
           ),
-          directoryReady: false,
-        ),
-      );
-      final ProviderContainer container = _container(client: client);
-      addTearDown(container.dispose);
+        );
+        final ProviderContainer container = _container(client: client);
+        addTearDown(container.dispose);
 
-      await container
-          .read(connectionControllerProvider.notifier)
-          .connect(address: '192.168.1.2', port: 44888);
+        await container
+            .read(connectionControllerProvider.notifier)
+            .connect(address: '192.168.1.2', port: 44888);
 
-      final ConnectionState state = container.read(connectionControllerProvider);
-      expect(state.status, ConnectionStatus.connected);
-      expect(state.peer?.address, '192.168.1.2');
-      expect(state.isRemoteDirectoryReady, isFalse);
-      expect(state.remoteSnapshot, isNull);
-    });
+        final ConnectionState state = container.read(
+          connectionControllerProvider,
+        );
+        expect(state.status, ConnectionStatus.connected);
+        expect(state.peer?.address, '192.168.1.2');
+        expect(state.isRemoteDirectoryReady, isFalse);
+        expect(state.remoteSnapshot, isNull);
+      },
+    );
 
     test('refreshRemoteSnapshot updates remote snapshot over HTTP', () async {
       final _FakeHttpSyncClient client = _FakeHttpSyncClient(
@@ -70,7 +75,9 @@ void main() {
           ),
           directoryReady: true,
         ),
-        directoryStatusResponse: const DirectoryStatusResponseDto(directoryReady: true),
+        directoryStatusResponse: const DirectoryStatusResponseDto(
+          directoryReady: true,
+        ),
         scanResponse: ScanResponseDto(snapshot: _remoteSnapshot('Remote A')),
       );
       final ProviderContainer container = _container(client: client);
@@ -85,40 +92,50 @@ void main() {
           .refreshRemoteSnapshot();
 
       expect(refreshed?.rootDisplayName, 'Remote A');
-      expect(container.read(connectionControllerProvider).isRemoteDirectoryReady, isTrue);
-    });
-
-    test('polling picks up remote directory after peer selects directory later', () async {
-      final _FakeHttpSyncClient client = _FakeHttpSyncClient(
-        helloResponse: const HelloResponseDto(
-          device: DeviceInfo(
-            deviceId: 'peer',
-            deviceName: 'Peer',
-            platform: 'android',
-            address: '',
-            port: 44888,
-          ),
-          directoryReady: false,
-        ),
-        directoryStatusSequence: <DirectoryStatusResponseDto>[
-          const DirectoryStatusResponseDto(directoryReady: false),
-          const DirectoryStatusResponseDto(directoryReady: true),
-        ],
-        scanResponse: ScanResponseDto(snapshot: _remoteSnapshot('Remote Later')),
+      expect(
+        container.read(connectionControllerProvider).isRemoteDirectoryReady,
+        isTrue,
       );
-      final ProviderContainer container = _container(client: client);
-      addTearDown(container.dispose);
-
-      await container
-          .read(connectionControllerProvider.notifier)
-          .connect(address: '192.168.1.2', port: 44888);
-
-      await Future<void>.delayed(const Duration(milliseconds: 4600));
-
-      final ConnectionState state = container.read(connectionControllerProvider);
-      expect(state.isRemoteDirectoryReady, isTrue);
-      expect(state.remoteSnapshot?.rootDisplayName, 'Remote Later');
     });
+
+    test(
+      'polling picks up remote directory after peer selects directory later',
+      () async {
+        final _FakeHttpSyncClient client = _FakeHttpSyncClient(
+          helloResponse: const HelloResponseDto(
+            device: DeviceInfo(
+              deviceId: 'peer',
+              deviceName: 'Peer',
+              platform: 'android',
+              address: '',
+              port: 44888,
+            ),
+            directoryReady: false,
+          ),
+          directoryStatusSequence: <DirectoryStatusResponseDto>[
+            const DirectoryStatusResponseDto(directoryReady: false),
+            const DirectoryStatusResponseDto(directoryReady: true),
+          ],
+          scanResponse: ScanResponseDto(
+            snapshot: _remoteSnapshot('Remote Later'),
+          ),
+        );
+        final ProviderContainer container = _container(client: client);
+        addTearDown(container.dispose);
+
+        await container
+            .read(connectionControllerProvider.notifier)
+            .connect(address: '192.168.1.2', port: 44888);
+
+        await Future<void>.delayed(const Duration(milliseconds: 4600));
+
+        final ConnectionState state = container.read(
+          connectionControllerProvider,
+        );
+        expect(state.isRemoteDirectoryReady, isTrue);
+        expect(state.remoteSnapshot?.rootDisplayName, 'Remote Later');
+      },
+    );
 
     test('requestRemoteEntryDetail uses HTTP control plane', () async {
       final _FakeHttpSyncClient client = _FakeHttpSyncClient(
@@ -161,35 +178,6 @@ void main() {
       expect(detail?.audioMetadata?.artist, 'Remote Artist');
     });
 
-<<<<<<< HEAD
-    test('connect records stream upload capability from hello response', () async {
-      final _FakeHttpSyncClient client = _FakeHttpSyncClient(
-        helloResponse: const HelloResponseDto(
-          device: DeviceInfo(
-            deviceId: 'peer',
-            deviceName: 'Peer',
-            platform: 'android',
-            address: '',
-            port: 44888,
-          ),
-          directoryReady: true,
-          transferProtocols: <String>['chunk-rpc', 'stream-v1'],
-        ),
-        scanResponse: ScanResponseDto(snapshot: _remoteSnapshot('Remote A')),
-      );
-      final ProviderContainer container = _container(client: client);
-      addTearDown(container.dispose);
-
-      await container
-          .read(connectionControllerProvider.notifier)
-          .connect(address: '192.168.1.2', port: 44888);
-
-      expect(
-        container.read(connectionControllerProvider.notifier).peerSupportsStreamUpload,
-        isTrue,
-      );
-    });
-=======
     test(
       'connect records stream upload capability from hello response',
       () async {
@@ -240,39 +228,28 @@ void main() {
       final ProviderContainer container = _container(client: client);
       addTearDown(container.dispose);
 
-      await container.read(connectionControllerProvider.notifier).startListening(port: 44888);
+      await container
+          .read(connectionControllerProvider.notifier)
+          .startListening(port: 44888);
       await container
           .read(connectionControllerProvider.notifier)
           .connect(address: '192.168.1.2', port: 44888);
 
-      container.read(executionControllerProvider.notifier).setTargetRoot('local-target');
+      container
+          .read(executionControllerProvider.notifier)
+          .setTargetRoot('local-target');
 
       await container.read(connectionControllerProvider.notifier).disconnect();
 
-      final ConnectionState state = container.read(connectionControllerProvider);
+      final ConnectionState state = container.read(
+        connectionControllerProvider,
+      );
       expect(state.status, ConnectionStatus.idle);
       expect(state.isListening, isTrue);
       expect(state.peer, isNull);
       expect(state.remoteSnapshot, isNull);
     });
 
-<<<<<<< HEAD
-    test('failed incoming stream upload clears incoming sync active state', () async {
-      final _CapturingHttpSyncServerService server = _CapturingHttpSyncServerService();
-      final ProviderContainer container = ProviderContainer(
-        overrides: [
-          httpSyncClientProvider.overrideWithValue(
-            _FakeHttpSyncClient(
-              helloResponse: const HelloResponseDto(
-                device: DeviceInfo(
-                  deviceId: 'peer',
-                  deviceName: 'Peer',
-                  platform: 'android',
-                  address: '',
-                  port: 44888,
-                ),
-                directoryReady: false,
-=======
     test(
       'failed incoming stream upload clears incoming sync active state',
       () async {
@@ -400,408 +377,350 @@ void main() {
                 platform: 'android',
                 address: '',
                 port: 44888,
->>>>>>> origin/main
               ),
+              directoryReady: false,
             ),
           ),
-          httpSyncServerServiceProvider.overrideWithValue(server),
-          discoveryServiceProvider.overrideWithValue(_FakeDiscoveryService()),
-          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
-          fileAccessGatewayProvider.overrideWithValue(_ThrowingFileAccessGateway()),
-        ],
-      );
-      addTearDown(container.dispose);
+        );
+        addTearDown(container.dispose);
 
-      await container.read(connectionControllerProvider.notifier).startListening(port: 44888);
-      container.read(connectionControllerProvider.notifier).state = const ConnectionState(
-        status: ConnectionStatus.connected,
-        isListening: true,
-        isIncomingSyncActive: true,
-      );
+        container.read(connectionControllerProvider.notifier).state =
+            const ConnectionState(status: ConnectionStatus.connecting);
 
-      final CopyFileStreamHandler handler =
-          server.onCopyFileStream ?? (throw StateError('Missing upload handler'));
-      final Object? error = await _postToCopyHandler(
-        handler: handler,
-        remoteRootId: 'root',
-        relativePath: 'song.mp3',
-        expectedBytes: 4,
-        body: <int>[1, 2, 3, 4],
-      );
+        await expectLater(
+          container
+              .read(connectionControllerProvider.notifier)
+              .resetNetworkStateForProtocolChange(),
+          throwsA(isA<StateError>()),
+        );
+      },
+    );
 
-      expect(error, isA<FileSystemException>());
-
-      expect(container.read(connectionControllerProvider).isIncomingSyncActive, isFalse);
-    });
-
-    test('incoming upload restores original file when replacement rename fails', () async {
-      final _CapturingHttpSyncServerService server = _CapturingHttpSyncServerService();
-      final _RecoveringFileAccessGateway gateway = _RecoveringFileAccessGateway();
-      final ProviderContainer container = ProviderContainer(
-        overrides: [
-          httpSyncClientProvider.overrideWithValue(
-            _FakeHttpSyncClient(
-              helloResponse: const HelloResponseDto(
-                device: DeviceInfo(
-                  deviceId: 'peer',
-                  deviceName: 'Peer',
-                  platform: 'android',
-                  address: '',
-                  port: 44888,
-                ),
-                directoryReady: false,
+    test(
+      'resetNetworkStateForProtocolChange rejects while remote sync is running',
+      () async {
+        final ProviderContainer container = _container(
+          client: _FakeHttpSyncClient(
+            helloResponse: const HelloResponseDto(
+              device: DeviceInfo(
+                deviceId: 'peer',
+                deviceName: 'Peer',
+                platform: 'android',
+                address: '',
+                port: 44888,
               ),
+              directoryReady: false,
             ),
           ),
-          httpSyncServerServiceProvider.overrideWithValue(server),
-          discoveryServiceProvider.overrideWithValue(_FakeDiscoveryService()),
-          recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
-          fileAccessGatewayProvider.overrideWithValue(gateway),
-        ],
-      );
-      addTearDown(container.dispose);
+        );
+        addTearDown(container.dispose);
 
-      await container.read(connectionControllerProvider.notifier).startListening(port: 44888);
+        container
+            .read(executionControllerProvider.notifier)
+            .state = ExecutionState(
+          status: ExecutionStatus.running,
+          progress: container.read(executionControllerProvider).progress,
+          result: const ExecutionResult.empty(),
+          mode: ExecutionMode.remote,
+          targetRoot: 'remote-root',
+        );
 
-      final CopyFileStreamHandler handler =
-          server.onCopyFileStream ?? (throw StateError('Missing upload handler'));
-      final Object? error = await _postToCopyHandler(
-        handler: handler,
-        remoteRootId: 'root',
-        relativePath: 'song.mp3',
-        expectedBytes: 4,
-        body: <int>[1, 2, 3, 4],
-      );
+        await expectLater(
+          container
+              .read(connectionControllerProvider.notifier)
+              .resetNetworkStateForProtocolChange(),
+          throwsA(isA<StateError>()),
+        );
+      },
+    );
 
-      expect(error, isA<FileSystemException>());
+    test(
+      'discovery keeps multiple same-name devices as separate cards',
+      () async {
+        final _FakeDiscoveryService discovery = _FakeDiscoveryService();
+        final ProviderContainer container = _container(
+          client: _FakeHttpSyncClient(
+            helloResponse: const HelloResponseDto(
+              device: DeviceInfo(
+                deviceId: 'peer',
+                deviceName: 'Peer',
+                platform: 'android',
+                address: '',
+                port: 44888,
+              ),
+              directoryReady: false,
+            ),
+          ),
+          discovery: discovery,
+        );
+        addTearDown(container.dispose);
 
-      expect(gateway.restoreAttempted, isTrue);
-      expect(gateway.deletedBackup, isFalse);
-    });
-
-    test('resetNetworkStateForProtocolChange rejects while connecting', () async {
-      final ProviderContainer container = _container(
-        client: _FakeHttpSyncClient(
-          helloResponse: const HelloResponseDto(
+        container.read(connectionControllerProvider);
+        await Future<void>.delayed(Duration.zero);
+        discovery.emit(
+          const DiscoveryEvent(
+            type: DiscoveryEventType.announce,
             device: DeviceInfo(
-              deviceId: 'peer',
-              deviceName: 'Peer',
+              deviceId: 'stable-a',
+              deviceName: 'Windows',
+              platform: 'windows',
+              address: '192.168.1.10',
+              port: 44888,
+            ),
+          ),
+        );
+        discovery.emit(
+          const DiscoveryEvent(
+            type: DiscoveryEventType.announce,
+            device: DeviceInfo(
+              deviceId: 'stable-b',
+              deviceName: 'Windows',
+              platform: 'windows',
+              address: '192.168.1.11',
+              port: 44888,
+            ),
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        final List<DeviceInfo> devices = container
+            .read(connectionControllerProvider)
+            .discoveredDevices;
+        expect(devices, hasLength(2));
+        expect(
+          devices.map((DeviceInfo device) => device.deviceId).toSet(),
+          <String>{'stable-a', 'stable-b'},
+        );
+      },
+    );
+
+    test(
+      'discovery keeps primary address stable for the same device',
+      () async {
+        final _FakeDiscoveryService discovery = _FakeDiscoveryService();
+        final ProviderContainer container = _container(
+          client: _FakeHttpSyncClient(
+            helloResponse: const HelloResponseDto(
+              device: DeviceInfo(
+                deviceId: 'peer',
+                deviceName: 'Peer',
+                platform: 'android',
+                address: '',
+                port: 44888,
+              ),
+              directoryReady: false,
+            ),
+          ),
+          discovery: discovery,
+        );
+        addTearDown(container.dispose);
+
+        container.read(connectionControllerProvider);
+        await Future<void>.delayed(Duration.zero);
+        discovery.emit(
+          const DiscoveryEvent(
+            type: DiscoveryEventType.announce,
+            device: DeviceInfo(
+              deviceId: 'stable-peer',
+              deviceName: 'Phone',
               platform: 'android',
+              address: '192.168.1.20',
+              port: 44888,
+            ),
+          ),
+        );
+        discovery.emit(
+          const DiscoveryEvent(
+            type: DiscoveryEventType.announce,
+            device: DeviceInfo(
+              deviceId: 'stable-peer',
+              deviceName: 'Phone',
+              platform: 'android',
+              address: '192.168.1.21',
+              port: 44888,
+            ),
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        final DeviceInfo device = container
+            .read(connectionControllerProvider)
+            .discoveredDevices
+            .single;
+        expect(device.address, '192.168.1.20');
+      },
+    );
+
+    test(
+      'discovery order stays stable when old devices broadcast again',
+      () async {
+        final _FakeDiscoveryService discovery = _FakeDiscoveryService();
+        final ProviderContainer container = _container(
+          client: _FakeHttpSyncClient(
+            helloResponse: const HelloResponseDto(
+              device: DeviceInfo(
+                deviceId: 'peer',
+                deviceName: 'Peer',
+                platform: 'android',
+                address: '',
+                port: 44888,
+              ),
+              directoryReady: false,
+            ),
+          ),
+          discovery: discovery,
+        );
+        addTearDown(container.dispose);
+
+        container.read(connectionControllerProvider);
+        await Future<void>.delayed(Duration.zero);
+
+        discovery.emit(
+          const DiscoveryEvent(
+            type: DiscoveryEventType.announce,
+            device: DeviceInfo(
+              deviceId: 'stable-a',
+              deviceName: 'Alpha',
+              platform: 'windows',
+              address: '192.168.1.10',
+              port: 44888,
+            ),
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 2));
+        discovery.emit(
+          const DiscoveryEvent(
+            type: DiscoveryEventType.announce,
+            device: DeviceInfo(
+              deviceId: 'stable-b',
+              deviceName: 'Beta',
+              platform: 'windows',
+              address: '192.168.1.11',
+              port: 44888,
+            ),
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        List<DeviceInfo> devices = container
+            .read(connectionControllerProvider)
+            .discoveredDevices;
+        expect(
+          devices.map((DeviceInfo device) => device.deviceId).toList(),
+          <String>['stable-a', 'stable-b'],
+        );
+
+        discovery.emit(
+          const DiscoveryEvent(
+            type: DiscoveryEventType.announce,
+            device: DeviceInfo(
+              deviceId: 'stable-a',
+              deviceName: 'Alpha',
+              platform: 'windows',
+              address: '192.168.1.12',
+              port: 44888,
+            ),
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        devices = container
+            .read(connectionControllerProvider)
+            .discoveredDevices;
+        expect(
+          devices.map((DeviceInfo device) => device.deviceId).toList(),
+          <String>['stable-a', 'stable-b'],
+        );
+      },
+    );
+
+    test(
+      'passive hello immediately moves connected peer card to the top',
+      () async {
+        final _FakeDiscoveryService discovery = _FakeDiscoveryService();
+        final _FakeHttpSyncServerService server = _FakeHttpSyncServerService();
+        final ProviderContainer container = _container(
+          client: _FakeHttpSyncClient(
+            helloResponse: const HelloResponseDto(
+              device: DeviceInfo(
+                deviceId: 'peer',
+                deviceName: 'Peer',
+                platform: 'android',
+                address: '',
+                port: 44888,
+              ),
+              directoryReady: false,
+            ),
+          ),
+          discovery: discovery,
+          server: server,
+        );
+        addTearDown(container.dispose);
+
+        container.read(connectionControllerProvider);
+        await container
+            .read(connectionControllerProvider.notifier)
+            .startListening(port: 44888);
+        await Future<void>.delayed(Duration.zero);
+
+        discovery.emit(
+          const DiscoveryEvent(
+            type: DiscoveryEventType.announce,
+            device: DeviceInfo(
+              deviceId: 'stable-a',
+              deviceName: 'Alpha',
+              platform: 'windows',
+              address: '192.168.1.10',
+              port: 44888,
+            ),
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 2));
+        discovery.emit(
+          const DiscoveryEvent(
+            type: DiscoveryEventType.announce,
+            device: DeviceInfo(
+              deviceId: 'stable-b',
+              deviceName: 'Beta',
+              platform: 'windows',
+              address: '192.168.1.11',
+              port: 44888,
+            ),
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        List<DeviceInfo> devices = container
+            .read(connectionControllerProvider)
+            .discoveredDevices;
+        expect(
+          devices.map((DeviceInfo device) => device.deviceId).toList(),
+          <String>['stable-a', 'stable-b'],
+        );
+
+        await server.simulateHello(
+          const HelloRequestDto(
+            device: DeviceInfo(
+              deviceId: 'stable-b',
+              deviceName: 'Beta',
+              platform: 'windows',
               address: '',
               port: 44888,
             ),
             directoryReady: false,
           ),
-        ),
-      );
-      addTearDown(container.dispose);
+          remoteAddress: '192.168.1.11',
+        );
 
-      container.read(connectionControllerProvider.notifier).state = const ConnectionState(
-        status: ConnectionStatus.connecting,
-      );
-
-      await expectLater(
-        container.read(connectionControllerProvider.notifier).resetNetworkStateForProtocolChange(),
-        throwsA(isA<StateError>()),
-      );
-    });
-
-    test('resetNetworkStateForProtocolChange rejects while remote sync is running', () async {
-      final ProviderContainer container = _container(
-        client: _FakeHttpSyncClient(
-          helloResponse: const HelloResponseDto(
-            device: DeviceInfo(
-              deviceId: 'peer',
-              deviceName: 'Peer',
-              platform: 'android',
-              address: '',
-              port: 44888,
-            ),
-            directoryReady: false,
-          ),
-        ),
-      );
-      addTearDown(container.dispose);
-
-      container.read(executionControllerProvider.notifier).state = ExecutionState(
-        status: ExecutionStatus.running,
-        progress: container.read(executionControllerProvider).progress,
-        result: const ExecutionResult.empty(),
-        mode: ExecutionMode.remote,
-        targetRoot: 'remote-root',
-      );
-
-      await expectLater(
-        container.read(connectionControllerProvider.notifier).resetNetworkStateForProtocolChange(),
-        throwsA(isA<StateError>()),
-      );
-    });
-
-    test('discovery keeps multiple same-name devices as separate cards', () async {
-      final _FakeDiscoveryService discovery = _FakeDiscoveryService();
-      final ProviderContainer container = _container(
-        client: _FakeHttpSyncClient(
-          helloResponse: const HelloResponseDto(
-            device: DeviceInfo(
-              deviceId: 'peer',
-              deviceName: 'Peer',
-              platform: 'android',
-              address: '',
-              port: 44888,
-            ),
-            directoryReady: false,
-          ),
-        ),
-        discovery: discovery,
-      );
-      addTearDown(container.dispose);
-
-      container.read(connectionControllerProvider);
-      await Future<void>.delayed(Duration.zero);
-      discovery.emit(
-        const DiscoveryEvent(
-          type: DiscoveryEventType.announce,
-          device: DeviceInfo(
-            deviceId: 'stable-a',
-            deviceName: 'Windows',
-            platform: 'windows',
-            address: '192.168.1.10',
-            port: 44888,
-          ),
-        ),
-      );
-      discovery.emit(
-        const DiscoveryEvent(
-          type: DiscoveryEventType.announce,
-          device: DeviceInfo(
-            deviceId: 'stable-b',
-            deviceName: 'Windows',
-            platform: 'windows',
-            address: '192.168.1.11',
-            port: 44888,
-          ),
-        ),
-      );
-      await Future<void>.delayed(Duration.zero);
-
-      final List<DeviceInfo> devices = container
-          .read(connectionControllerProvider)
-          .discoveredDevices;
-      expect(devices, hasLength(2));
-      expect(devices.map((DeviceInfo device) => device.deviceId).toSet(), <String>{
-        'stable-a',
-        'stable-b',
-      });
-    });
-
-    test('discovery keeps primary address stable for the same device', () async {
-      final _FakeDiscoveryService discovery = _FakeDiscoveryService();
-      final ProviderContainer container = _container(
-        client: _FakeHttpSyncClient(
-          helloResponse: const HelloResponseDto(
-            device: DeviceInfo(
-              deviceId: 'peer',
-              deviceName: 'Peer',
-              platform: 'android',
-              address: '',
-              port: 44888,
-            ),
-            directoryReady: false,
-          ),
-        ),
-        discovery: discovery,
-      );
-      addTearDown(container.dispose);
-
-      container.read(connectionControllerProvider);
-      await Future<void>.delayed(Duration.zero);
-      discovery.emit(
-        const DiscoveryEvent(
-          type: DiscoveryEventType.announce,
-          device: DeviceInfo(
-            deviceId: 'stable-peer',
-            deviceName: 'Phone',
-            platform: 'android',
-            address: '192.168.1.20',
-            port: 44888,
-          ),
-        ),
-      );
-      discovery.emit(
-        const DiscoveryEvent(
-          type: DiscoveryEventType.announce,
-          device: DeviceInfo(
-            deviceId: 'stable-peer',
-            deviceName: 'Phone',
-            platform: 'android',
-            address: '192.168.1.21',
-            port: 44888,
-          ),
-        ),
-      );
-      await Future<void>.delayed(Duration.zero);
-
-      final DeviceInfo device = container
-          .read(connectionControllerProvider)
-          .discoveredDevices
-          .single;
-      expect(device.address, '192.168.1.20');
-    });
-
-    test('discovery order stays stable when old devices broadcast again', () async {
-      final _FakeDiscoveryService discovery = _FakeDiscoveryService();
-      final ProviderContainer container = _container(
-        client: _FakeHttpSyncClient(
-          helloResponse: const HelloResponseDto(
-            device: DeviceInfo(
-              deviceId: 'peer',
-              deviceName: 'Peer',
-              platform: 'android',
-              address: '',
-              port: 44888,
-            ),
-            directoryReady: false,
-          ),
-        ),
-        discovery: discovery,
-      );
-      addTearDown(container.dispose);
-
-      container.read(connectionControllerProvider);
-      await Future<void>.delayed(Duration.zero);
-
-      discovery.emit(
-        const DiscoveryEvent(
-          type: DiscoveryEventType.announce,
-          device: DeviceInfo(
-            deviceId: 'stable-a',
-            deviceName: 'Alpha',
-            platform: 'windows',
-            address: '192.168.1.10',
-            port: 44888,
-          ),
-        ),
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 2));
-      discovery.emit(
-        const DiscoveryEvent(
-          type: DiscoveryEventType.announce,
-          device: DeviceInfo(
-            deviceId: 'stable-b',
-            deviceName: 'Beta',
-            platform: 'windows',
-            address: '192.168.1.11',
-            port: 44888,
-          ),
-        ),
-      );
-      await Future<void>.delayed(Duration.zero);
-
-      List<DeviceInfo> devices = container.read(connectionControllerProvider).discoveredDevices;
-      expect(devices.map((DeviceInfo device) => device.deviceId).toList(), <String>[
-        'stable-a',
-        'stable-b',
-      ]);
-
-      discovery.emit(
-        const DiscoveryEvent(
-          type: DiscoveryEventType.announce,
-          device: DeviceInfo(
-            deviceId: 'stable-a',
-            deviceName: 'Alpha',
-            platform: 'windows',
-            address: '192.168.1.12',
-            port: 44888,
-          ),
-        ),
-      );
-      await Future<void>.delayed(Duration.zero);
-
-      devices = container.read(connectionControllerProvider).discoveredDevices;
-      expect(devices.map((DeviceInfo device) => device.deviceId).toList(), <String>[
-        'stable-a',
-        'stable-b',
-      ]);
-    });
-
-    test('passive hello immediately moves connected peer card to the top', () async {
-      final _FakeDiscoveryService discovery = _FakeDiscoveryService();
-      final _FakeHttpSyncServerService server = _FakeHttpSyncServerService();
-      final ProviderContainer container = _container(
-        client: _FakeHttpSyncClient(
-          helloResponse: const HelloResponseDto(
-            device: DeviceInfo(
-              deviceId: 'peer',
-              deviceName: 'Peer',
-              platform: 'android',
-              address: '',
-              port: 44888,
-            ),
-            directoryReady: false,
-          ),
-        ),
-        discovery: discovery,
-        server: server,
-      );
-      addTearDown(container.dispose);
-
-      container.read(connectionControllerProvider);
-      await container.read(connectionControllerProvider.notifier).startListening(port: 44888);
-      await Future<void>.delayed(Duration.zero);
-
-      discovery.emit(
-        const DiscoveryEvent(
-          type: DiscoveryEventType.announce,
-          device: DeviceInfo(
-            deviceId: 'stable-a',
-            deviceName: 'Alpha',
-            platform: 'windows',
-            address: '192.168.1.10',
-            port: 44888,
-          ),
-        ),
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 2));
-      discovery.emit(
-        const DiscoveryEvent(
-          type: DiscoveryEventType.announce,
-          device: DeviceInfo(
-            deviceId: 'stable-b',
-            deviceName: 'Beta',
-            platform: 'windows',
-            address: '192.168.1.11',
-            port: 44888,
-          ),
-        ),
-      );
-      await Future<void>.delayed(Duration.zero);
-
-      List<DeviceInfo> devices = container.read(connectionControllerProvider).discoveredDevices;
-      expect(devices.map((DeviceInfo device) => device.deviceId).toList(), <String>[
-        'stable-a',
-        'stable-b',
-      ]);
-
-      await server.simulateHello(
-        const HelloRequestDto(
-          device: DeviceInfo(
-            deviceId: 'stable-b',
-            deviceName: 'Beta',
-            platform: 'windows',
-            address: '',
-            port: 44888,
-          ),
-          directoryReady: false,
-        ),
-        remoteAddress: '192.168.1.11',
-      );
-
-      devices = container.read(connectionControllerProvider).discoveredDevices;
-      expect(devices.map((DeviceInfo device) => device.deviceId).toList(), <String>[
-        'stable-b',
-        'stable-a',
-      ]);
-    });
+        devices = container
+            .read(connectionControllerProvider)
+            .discoveredDevices;
+        expect(
+          devices.map((DeviceInfo device) => device.deviceId).toList(),
+          <String>['stable-b', 'stable-a'],
+        );
+      },
+    );
   });
 }
 
@@ -813,8 +732,12 @@ ProviderContainer _container({
   return ProviderContainer(
     overrides: [
       httpSyncClientProvider.overrideWithValue(client),
-      httpSyncServerServiceProvider.overrideWithValue(server ?? _FakeHttpSyncServerService()),
-      discoveryServiceProvider.overrideWithValue(discovery ?? _FakeDiscoveryService()),
+      httpSyncServerServiceProvider.overrideWithValue(
+        server ?? _FakeHttpSyncServerService(),
+      ),
+      discoveryServiceProvider.overrideWithValue(
+        discovery ?? _FakeDiscoveryService(),
+      ),
       recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
       fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
       settingsStoreProvider.overrideWithValue(
@@ -827,7 +750,9 @@ ProviderContainer _container({
 class _FakeHttpSyncClient extends HttpSyncClient {
   _FakeHttpSyncClient({
     required this.helloResponse,
-    this.directoryStatusResponse = const DirectoryStatusResponseDto(directoryReady: true),
+    this.directoryStatusResponse = const DirectoryStatusResponseDto(
+      directoryReady: true,
+    ),
     this.directoryStatusSequence,
     this.scanResponse,
     this.entryDetailResponse,
@@ -921,7 +846,8 @@ class _FakeHttpSyncServerService extends HttpSyncServerService {
     HelloRequestDto request, {
     required String remoteAddress,
   }) async {
-    final HelloHandler handler = _onHello ?? (throw StateError('Hello handler not registered.'));
+    final HelloHandler handler =
+        _onHello ?? (throw StateError('Hello handler not registered.'));
     return handler(request, remoteAddress);
   }
 }
@@ -981,7 +907,8 @@ class _FakeRecentItemsStore extends RecentItemsStore {
   Future<List<String>> loadRecentAddresses() async => _addresses;
 
   @override
-  Future<List<DirectoryHandle>> loadRecentDirectories() async => const <DirectoryHandle>[];
+  Future<List<DirectoryHandle>> loadRecentDirectories() async =>
+      const <DirectoryHandle>[];
 
   @override
   Future<void> saveRecentAddress(String address) async {
@@ -1002,7 +929,8 @@ class _FakeFileAccessGateway implements FileAccessGateway {
   Future<void> deleteEntry(String entryId) async {}
 
   @override
-  Future<List<FileAccessEntry>> listChildren(String directoryId) async => const <FileAccessEntry>[];
+  Future<List<FileAccessEntry>> listChildren(String directoryId) async =>
+      const <FileAccessEntry>[];
 
   @override
   Stream<List<int>> openRead(String entryId) async* {}
@@ -1022,6 +950,9 @@ class _FakeFileAccessGateway implements FileAccessGateway {
   Future<FileAccessEntry> stat(String entryId) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<Map<String, String?>?> getAudioMetadata(String entryId) async => null;
 }
 
 class _FakeSettingsStore extends SettingsStore {

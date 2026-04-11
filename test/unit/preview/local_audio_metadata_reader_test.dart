@@ -239,6 +239,106 @@ void main() {
     expect(metadata?.lyrics, 'M4A Lyrics');
   });
 
+  test(
+    'uses native metadata and supplements with Dart when native has key fields',
+    () async {
+      final Uint8List flacBytes = _buildFlacBytes(<String, String>{
+        'TITLE': 'Dart Title',
+        'ARTIST': 'Dart Artist',
+        'ALBUM': 'Dart Album',
+        'LYRICS': 'Dart Lyrics',
+      });
+      final AudioMetadataReader reader = AudioMetadataReader(
+        _NativeFakeGateway(
+          dartBytes: flacBytes,
+          nativeMetadata: const <String, String?>{
+            'title': 'Native Title',
+            'artist': 'Native Artist',
+            'album': null,
+            'composer': 'Native Composer',
+            'trackNumber': null,
+            'discNumber': null,
+            'lyrics': null,
+          },
+        ),
+        isAndroid: true,
+      );
+
+      final metadata = await reader.read('entry');
+
+      expect(metadata?.title, 'Native Title');
+      expect(metadata?.artist, 'Native Artist');
+      expect(metadata?.album, 'Dart Album');
+      expect(metadata?.composer, 'Native Composer');
+      expect(metadata?.lyrics, 'Dart Lyrics');
+    },
+  );
+
+  test('falls back to Dart when native metadata is all null', () async {
+    final Uint8List flacBytes = _buildFlacBytes(<String, String>{
+      'TITLE': 'Dart Title',
+      'ARTIST': 'Dart Artist',
+      'ALBUM': 'Dart Album',
+    });
+    final AudioMetadataReader reader = AudioMetadataReader(
+      _NativeFakeGateway(
+        dartBytes: flacBytes,
+        nativeMetadata: const <String, String?>{
+          'title': null,
+          'artist': null,
+          'album': null,
+          'composer': null,
+          'trackNumber': null,
+          'discNumber': null,
+          'lyrics': null,
+        },
+      ),
+      isAndroid: true,
+    );
+
+    final metadata = await reader.read('entry');
+
+    expect(metadata?.title, 'Dart Title');
+    expect(metadata?.artist, 'Dart Artist');
+    expect(metadata?.album, 'Dart Album');
+  });
+
+  test('falls back to Dart when native metadata throws', () async {
+    final Uint8List flacBytes = _buildFlacBytes(<String, String>{
+      'TITLE': 'Dart Title',
+      'ARTIST': 'Dart Artist',
+      'ALBUM': 'Dart Album',
+    });
+    final AudioMetadataReader reader = AudioMetadataReader(
+      _NativeThrowingGateway(dartBytes: flacBytes),
+      isAndroid: true,
+    );
+
+    final metadata = await reader.read('entry');
+
+    expect(metadata?.title, 'Dart Title');
+    expect(metadata?.artist, 'Dart Artist');
+    expect(metadata?.album, 'Dart Album');
+  });
+
+  test('falls back to Dart when native returns null map', () async {
+    final Uint8List flacBytes = _buildFlacBytes(<String, String>{
+      'TITLE': 'Dart Title',
+      'ARTIST': 'Dart Artist',
+      'ALBUM': 'Dart Album',
+    });
+    final AudioMetadataReader reader = AudioMetadataReader(
+      _NativeFakeGateway(dartBytes: flacBytes, nativeMetadata: null),
+      isAndroid: true,
+    );
+
+    final metadata = await reader.read('entry');
+
+    expect(metadata?.title, 'Dart Title');
+    expect(metadata?.artist, 'Dart Artist');
+    expect(metadata?.album, 'Dart Album');
+  });
+
   test('reads APEv2 footer metadata', () async {
     final AudioMetadataReader reader = AudioMetadataReader(
       _FakeGateway(
@@ -263,6 +363,531 @@ void main() {
     expect(metadata?.trackNumber, '4');
     expect(metadata?.discNumber, '1');
     expect(metadata?.lyrics, 'APE Lyrics');
+  });
+
+  group('regression: FLAC native field coverage', () {
+    test('native hits all key fields, Dart supplements lyrics', () async {
+      final Uint8List flacBytes = _buildFlacBytes(<String, String>{
+        'TITLE': 'Dart Title',
+        'ARTIST': 'Dart Artist',
+        'ALBUM': 'Dart Album',
+        'COMPOSER': 'Dart Composer',
+        'TRACKNUMBER': '3',
+        'DISCNUMBER': '1',
+        'LYRICS': 'Dart Lyrics',
+      });
+      final AudioMetadataReader reader = AudioMetadataReader(
+        _NativeFakeGateway(
+          dartBytes: flacBytes,
+          nativeMetadata: const <String, String?>{
+            'title': 'Native Title',
+            'artist': 'Native Artist',
+            'album': 'Native Album',
+            'composer': 'Native Composer',
+            'trackNumber': '3',
+            'discNumber': '1',
+            'lyrics': null,
+          },
+        ),
+        isAndroid: true,
+      );
+
+      final metadata = await reader.read('entry');
+
+      expect(metadata?.title, 'Native Title');
+      expect(metadata?.artist, 'Native Artist');
+      expect(metadata?.album, 'Native Album');
+      expect(metadata?.composer, 'Native Composer');
+      expect(metadata?.trackNumber, '3');
+      expect(metadata?.discNumber, '1');
+      expect(metadata?.lyrics, 'Dart Lyrics');
+    });
+
+    test(
+      'native hits title/artist only, Dart supplements album/composer/track/disc/lyrics',
+      () async {
+        final Uint8List flacBytes = _buildFlacBytes(<String, String>{
+          'TITLE': 'Dart Title',
+          'ARTIST': 'Dart Artist',
+          'ALBUM': 'Dart Album',
+          'COMPOSER': 'Dart Composer',
+          'TRACKNUMBER': '5',
+          'DISCNUMBER': '2',
+          'LYRICS': 'Dart Lyrics',
+        });
+        final AudioMetadataReader reader = AudioMetadataReader(
+          _NativeFakeGateway(
+            dartBytes: flacBytes,
+            nativeMetadata: const <String, String?>{
+              'title': 'Native Title',
+              'artist': 'Native Artist',
+              'album': null,
+              'composer': null,
+              'trackNumber': null,
+              'discNumber': null,
+              'lyrics': null,
+            },
+          ),
+          isAndroid: true,
+        );
+
+        final metadata = await reader.read('entry');
+
+        expect(metadata?.title, 'Native Title');
+        expect(metadata?.artist, 'Native Artist');
+        expect(metadata?.album, 'Dart Album');
+        expect(metadata?.composer, 'Dart Composer');
+        expect(metadata?.trackNumber, '5');
+        expect(metadata?.discNumber, '2');
+        expect(metadata?.lyrics, 'Dart Lyrics');
+      },
+    );
+
+    test('non-Android skips native, pure Dart FLAC parsing', () async {
+      final Uint8List flacBytes = _buildFlacBytes(<String, String>{
+        'TITLE': 'Flac Title',
+        'ARTIST': 'Flac Artist',
+        'ALBUM': 'Flac Album',
+        'LYRICS': 'Flac Lyrics',
+      });
+      final AudioMetadataReader reader = AudioMetadataReader(
+        _NativeFakeGateway(
+          dartBytes: flacBytes,
+          nativeMetadata: const <String, String?>{
+            'title': 'Should Not Appear',
+            'artist': 'Should Not Appear',
+            'album': null,
+            'composer': null,
+            'trackNumber': null,
+            'discNumber': null,
+            'lyrics': null,
+          },
+        ),
+        isAndroid: false,
+      );
+
+      final metadata = await reader.read('entry');
+
+      expect(metadata?.title, 'Flac Title');
+      expect(metadata?.artist, 'Flac Artist');
+      expect(metadata?.album, 'Flac Album');
+      expect(metadata?.lyrics, 'Flac Lyrics');
+    });
+  });
+
+  group('regression: MP3 native field coverage', () {
+    test('native hits all key fields, Dart supplements lyrics', () async {
+      final Tag id3v2 = Tag()
+        ..type = 'ID3'
+        ..version = '2.4'
+        ..tags = <String, dynamic>{
+          'title': 'Dart Title',
+          'artist': 'Dart Artist',
+          'album': 'Dart Album',
+          'composer': 'Dart Composer',
+          'track': '7',
+          'disc': '1',
+        };
+      final List<int> bytes = await TagProcessor().putTagsToByteArray(
+        Future<List<int>?>.value(List<int>.filled(32, 0)),
+        <Tag>[id3v2],
+      );
+      final AudioMetadataReader reader = AudioMetadataReader(
+        _NativeFakeGateway(
+          dartBytes: Uint8List.fromList(bytes),
+          nativeMetadata: const <String, String?>{
+            'title': 'Native Title',
+            'artist': 'Native Artist',
+            'album': 'Native Album',
+            'composer': 'Native Composer',
+            'trackNumber': '7',
+            'discNumber': '1',
+            'lyrics': null,
+          },
+        ),
+        isAndroid: true,
+      );
+
+      final metadata = await reader.read('entry');
+
+      expect(metadata?.title, 'Native Title');
+      expect(metadata?.artist, 'Native Artist');
+      expect(metadata?.album, 'Native Album');
+      expect(metadata?.composer, 'Native Composer');
+      expect(metadata?.trackNumber, '7');
+      expect(metadata?.discNumber, '1');
+      // lyrics not tested for MP3: dart_tags requires UnSyncLyric object for ID3v2 USLT
+    });
+
+    test('native hits title only, Dart supplements rest', () async {
+      final Tag id3v2 = Tag()
+        ..type = 'ID3'
+        ..version = '2.4'
+        ..tags = <String, dynamic>{
+          'title': 'Dart Title',
+          'artist': 'Dart Artist',
+          'album': 'Dart Album',
+          'track': '2',
+        };
+      final List<int> bytes = await TagProcessor().putTagsToByteArray(
+        Future<List<int>?>.value(List<int>.filled(32, 0)),
+        <Tag>[id3v2],
+      );
+      final AudioMetadataReader reader = AudioMetadataReader(
+        _NativeFakeGateway(
+          dartBytes: Uint8List.fromList(bytes),
+          nativeMetadata: const <String, String?>{
+            'title': 'Native Title',
+            'artist': null,
+            'album': null,
+            'composer': null,
+            'trackNumber': null,
+            'discNumber': null,
+            'lyrics': null,
+          },
+        ),
+        isAndroid: true,
+      );
+
+      final metadata = await reader.read('entry');
+
+      expect(metadata?.title, 'Native Title');
+      expect(metadata?.artist, 'Dart Artist');
+      expect(metadata?.album, 'Dart Album');
+      expect(metadata?.trackNumber, '2');
+      // lyrics not tested for MP3: dart_tags requires UnSyncLyric object for ID3v2 USLT
+    });
+
+    test('non-Android skips native, pure Dart MP3 parsing', () async {
+      final Tag id3v2 = Tag()
+        ..type = 'ID3'
+        ..version = '2.4'
+        ..tags = <String, dynamic>{
+          'title': 'MP3 Title',
+          'artist': 'MP3 Artist',
+          'album': 'MP3 Album',
+        };
+      final List<int> bytes = await TagProcessor().putTagsToByteArray(
+        Future<List<int>?>.value(List<int>.filled(32, 0)),
+        <Tag>[id3v2],
+      );
+      final AudioMetadataReader reader = AudioMetadataReader(
+        _NativeFakeGateway(
+          dartBytes: Uint8List.fromList(bytes),
+          nativeMetadata: const <String, String?>{
+            'title': 'Should Not Appear',
+            'artist': null,
+            'album': null,
+            'composer': null,
+            'trackNumber': null,
+            'discNumber': null,
+            'lyrics': null,
+          },
+        ),
+        isAndroid: false,
+      );
+
+      final metadata = await reader.read('entry');
+
+      expect(metadata?.title, 'MP3 Title');
+      expect(metadata?.artist, 'MP3 Artist');
+      expect(metadata?.album, 'MP3 Album');
+    });
+  });
+
+  group('regression: Ogg Vorbis native field coverage', () {
+    test('native hits all key fields, Dart supplements lyrics', () async {
+      final Uint8List oggBytes = _buildOggVorbisBytes(<String, String>{
+        'TITLE': 'Dart Title',
+        'ARTIST': 'Dart Artist',
+        'ALBUM': 'Dart Album',
+        'COMPOSER': 'Dart Composer',
+        'TRACKNUMBER': '3',
+        'DISCNUMBER': '1',
+        'LYRICS': 'Dart Lyrics',
+      });
+      final AudioMetadataReader reader = AudioMetadataReader(
+        _NativeFakeGateway(
+          dartBytes: oggBytes,
+          nativeMetadata: const <String, String?>{
+            'title': 'Native Title',
+            'artist': 'Native Artist',
+            'album': 'Native Album',
+            'composer': 'Native Composer',
+            'trackNumber': '3',
+            'discNumber': '1',
+            'lyrics': null,
+          },
+        ),
+        isAndroid: true,
+      );
+
+      final metadata = await reader.read('entry');
+
+      expect(metadata?.title, 'Native Title');
+      expect(metadata?.artist, 'Native Artist');
+      expect(metadata?.album, 'Native Album');
+      expect(metadata?.composer, 'Native Composer');
+      expect(metadata?.trackNumber, '3');
+      expect(metadata?.discNumber, '1');
+      expect(metadata?.lyrics, 'Dart Lyrics');
+    });
+
+    test('native hits title/artist only, Dart supplements rest', () async {
+      final Uint8List oggBytes = _buildOggVorbisBytes(<String, String>{
+        'TITLE': 'Dart Title',
+        'ARTIST': 'Dart Artist',
+        'ALBUM': 'Dart Album',
+        'LYRICS': 'Dart Lyrics',
+      });
+      final AudioMetadataReader reader = AudioMetadataReader(
+        _NativeFakeGateway(
+          dartBytes: oggBytes,
+          nativeMetadata: const <String, String?>{
+            'title': 'Native Title',
+            'artist': 'Native Artist',
+            'album': null,
+            'composer': null,
+            'trackNumber': null,
+            'discNumber': null,
+            'lyrics': null,
+          },
+        ),
+        isAndroid: true,
+      );
+
+      final metadata = await reader.read('entry');
+
+      expect(metadata?.title, 'Native Title');
+      expect(metadata?.artist, 'Native Artist');
+      expect(metadata?.album, 'Dart Album');
+      expect(metadata?.lyrics, 'Dart Lyrics');
+    });
+
+    test('non-Android skips native, pure Dart Ogg parsing', () async {
+      final Uint8List oggBytes = _buildOggVorbisBytes(<String, String>{
+        'TITLE': 'Ogg Title',
+        'ARTIST': 'Ogg Artist',
+        'ALBUM': 'Ogg Album',
+      });
+      final AudioMetadataReader reader = AudioMetadataReader(
+        _NativeFakeGateway(
+          dartBytes: oggBytes,
+          nativeMetadata: const <String, String?>{
+            'title': 'Should Not Appear',
+            'artist': 'Should Not Appear',
+            'album': null,
+            'composer': null,
+            'trackNumber': null,
+            'discNumber': null,
+            'lyrics': null,
+          },
+        ),
+        isAndroid: false,
+      );
+
+      final metadata = await reader.read('entry');
+
+      expect(metadata?.title, 'Ogg Title');
+      expect(metadata?.artist, 'Ogg Artist');
+      expect(metadata?.album, 'Ogg Album');
+    });
+  });
+
+  group('regression: M4A/MP4 native field coverage', () {
+    test('native hits all key fields, Dart supplements lyrics', () async {
+      final Uint8List mp4Bytes = _buildMp4Bytes(<String, String>{
+        '\u00a9nam': 'Dart Title',
+        '\u00a9ART': 'Dart Artist',
+        '\u00a9alb': 'Dart Album',
+        '\u00a9wrt': 'Dart Composer',
+        'trkn': '3/10',
+        'disk': '1/2',
+      });
+      final AudioMetadataReader reader = AudioMetadataReader(
+        _NativeFakeGateway(
+          dartBytes: mp4Bytes,
+          nativeMetadata: const <String, String?>{
+            'title': 'Native Title',
+            'artist': 'Native Artist',
+            'album': 'Native Album',
+            'composer': 'Native Composer',
+            'trackNumber': '3',
+            'discNumber': '1',
+            'lyrics': null,
+          },
+        ),
+        isAndroid: true,
+      );
+
+      final metadata = await reader.read('entry');
+
+      expect(metadata?.title, 'Native Title');
+      expect(metadata?.artist, 'Native Artist');
+      expect(metadata?.album, 'Native Album');
+      expect(metadata?.composer, 'Native Composer');
+      expect(metadata?.trackNumber, '3');
+      expect(metadata?.discNumber, '1');
+    });
+
+    test('native hits title only, Dart supplements rest', () async {
+      final Uint8List mp4Bytes = _buildMp4Bytes(<String, String>{
+        '\u00a9nam': 'Dart Title',
+        '\u00a9ART': 'Dart Artist',
+        '\u00a9alb': 'Dart Album',
+        'trkn': '5/12',
+      });
+      final AudioMetadataReader reader = AudioMetadataReader(
+        _NativeFakeGateway(
+          dartBytes: mp4Bytes,
+          nativeMetadata: const <String, String?>{
+            'title': 'Native Title',
+            'artist': null,
+            'album': null,
+            'composer': null,
+            'trackNumber': null,
+            'discNumber': null,
+            'lyrics': null,
+          },
+        ),
+        isAndroid: true,
+      );
+
+      final metadata = await reader.read('entry');
+
+      expect(metadata?.title, 'Native Title');
+      expect(metadata?.artist, 'Dart Artist');
+      expect(metadata?.album, 'Dart Album');
+      expect(metadata?.trackNumber, '5/12');
+    });
+
+    test('non-Android skips native, pure Dart M4A parsing', () async {
+      final Uint8List mp4Bytes = _buildMp4Bytes(<String, String>{
+        '\u00a9nam': 'M4A Title',
+        '\u00a9ART': 'M4A Artist',
+        '\u00a9alb': 'M4A Album',
+      });
+      final AudioMetadataReader reader = AudioMetadataReader(
+        _NativeFakeGateway(
+          dartBytes: mp4Bytes,
+          nativeMetadata: const <String, String?>{
+            'title': 'Should Not Appear',
+            'artist': null,
+            'album': null,
+            'composer': null,
+            'trackNumber': null,
+            'discNumber': null,
+            'lyrics': null,
+          },
+        ),
+        isAndroid: false,
+      );
+
+      final metadata = await reader.read('entry');
+
+      expect(metadata?.title, 'M4A Title');
+      expect(metadata?.artist, 'M4A Artist');
+      expect(metadata?.album, 'M4A Album');
+    });
+  });
+
+  group('regression: APE native field coverage', () {
+    test('native hits all key fields, Dart supplements lyrics', () async {
+      final Uint8List apeBytes = _buildApeBytes(<String, String>{
+        'TITLE': 'Dart Title',
+        'ARTIST': 'Dart Artist',
+        'ALBUM': 'Dart Album',
+        'COMPOSER': 'Dart Composer',
+        'TRACK': '3',
+        'DISC': '1',
+        'LYRICS': 'Dart Lyrics',
+      });
+      final AudioMetadataReader reader = AudioMetadataReader(
+        _NativeFakeGateway(
+          dartBytes: apeBytes,
+          nativeMetadata: const <String, String?>{
+            'title': 'Native Title',
+            'artist': 'Native Artist',
+            'album': 'Native Album',
+            'composer': 'Native Composer',
+            'trackNumber': '3',
+            'discNumber': '1',
+            'lyrics': null,
+          },
+        ),
+        isAndroid: true,
+      );
+
+      final metadata = await reader.read('entry');
+
+      expect(metadata?.title, 'Native Title');
+      expect(metadata?.artist, 'Native Artist');
+      expect(metadata?.album, 'Native Album');
+      expect(metadata?.composer, 'Native Composer');
+      expect(metadata?.trackNumber, '3');
+      expect(metadata?.discNumber, '1');
+      expect(metadata?.lyrics, 'Dart Lyrics');
+    });
+
+    test('native hits title/artist only, Dart supplements rest', () async {
+      final Uint8List apeBytes = _buildApeBytes(<String, String>{
+        'TITLE': 'Dart Title',
+        'ARTIST': 'Dart Artist',
+        'ALBUM': 'Dart Album',
+        'LYRICS': 'Dart Lyrics',
+      });
+      final AudioMetadataReader reader = AudioMetadataReader(
+        _NativeFakeGateway(
+          dartBytes: apeBytes,
+          nativeMetadata: const <String, String?>{
+            'title': 'Native Title',
+            'artist': 'Native Artist',
+            'album': null,
+            'composer': null,
+            'trackNumber': null,
+            'discNumber': null,
+            'lyrics': null,
+          },
+        ),
+        isAndroid: true,
+      );
+
+      final metadata = await reader.read('entry');
+
+      expect(metadata?.title, 'Native Title');
+      expect(metadata?.artist, 'Native Artist');
+      expect(metadata?.album, 'Dart Album');
+      expect(metadata?.lyrics, 'Dart Lyrics');
+    });
+
+    test('non-Android skips native, pure Dart APE parsing', () async {
+      final Uint8List apeBytes = _buildApeBytes(<String, String>{
+        'TITLE': 'APE Title',
+        'ARTIST': 'APE Artist',
+        'ALBUM': 'APE Album',
+      });
+      final AudioMetadataReader reader = AudioMetadataReader(
+        _NativeFakeGateway(
+          dartBytes: apeBytes,
+          nativeMetadata: const <String, String?>{
+            'title': 'Should Not Appear',
+            'artist': 'Should Not Appear',
+            'album': null,
+            'composer': null,
+            'trackNumber': null,
+            'discNumber': null,
+            'lyrics': null,
+          },
+        ),
+        isAndroid: false,
+      );
+
+      final metadata = await reader.read('entry');
+
+      expect(metadata?.title, 'APE Title');
+      expect(metadata?.artist, 'APE Artist');
+      expect(metadata?.album, 'APE Album');
+    });
   });
 }
 
@@ -548,6 +1173,107 @@ class _FakeGateway implements FileAccessGateway {
   Future<FileAccessEntry> stat(String entryId) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<Map<String, String?>?> getAudioMetadata(String entryId) async => null;
+}
+
+class _NativeFakeGateway implements FileAccessGateway {
+  _NativeFakeGateway({required this.dartBytes, required this.nativeMetadata});
+
+  final Uint8List dartBytes;
+  final Map<String, String?>? nativeMetadata;
+
+  @override
+  Future<String> createDirectory(String parentId, String name) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> deleteEntry(String entryId) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<FileAccessEntry>> listChildren(String directoryId) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Stream<List<int>> openRead(String entryId) async* {
+    yield dartBytes;
+  }
+
+  @override
+  Future<FileWriteSession> openWrite(String parentId, String name) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<DirectoryHandle?> pickDirectory() async => null;
+
+  @override
+  Future<String> renameEntry(String entryId, String newName) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<FileAccessEntry> stat(String entryId) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Map<String, String?>?> getAudioMetadata(String entryId) async =>
+      nativeMetadata;
+}
+
+class _NativeThrowingGateway implements FileAccessGateway {
+  _NativeThrowingGateway({required this.dartBytes});
+
+  final Uint8List dartBytes;
+
+  @override
+  Future<String> createDirectory(String parentId, String name) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> deleteEntry(String entryId) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<FileAccessEntry>> listChildren(String directoryId) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Stream<List<int>> openRead(String entryId) async* {
+    yield dartBytes;
+  }
+
+  @override
+  Future<FileWriteSession> openWrite(String parentId, String name) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<DirectoryHandle?> pickDirectory() async => null;
+
+  @override
+  Future<String> renameEntry(String entryId, String newName) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<FileAccessEntry> stat(String entryId) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Map<String, String?>?> getAudioMetadata(String entryId) {
+    throw Exception('Native metadata read failed');
+  }
 }
 
 class _StalledGateway implements FileAccessGateway {
@@ -589,4 +1315,7 @@ class _StalledGateway implements FileAccessGateway {
   Future<FileAccessEntry> stat(String entryId) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<Map<String, String?>?> getAudioMetadata(String entryId) async => null;
 }

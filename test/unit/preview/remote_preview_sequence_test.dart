@@ -289,6 +289,9 @@ class _PreviewFakeFileAccessGateway implements FileAccessGateway {
   Future<FileAccessEntry> stat(String entryId) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<Map<String, String?>?> getAudioMetadata(String entryId) async => null;
 }
 
 ScanSnapshot _remoteSnapshot(String name) {

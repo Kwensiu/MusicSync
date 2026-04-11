@@ -24,7 +24,8 @@ class RemoteSyncExecutor {
     required RemoteProgressCallback onProgress,
     SyncCancelToken? cancelToken,
   }) async {
-    final DeviceInfo peer = _getPeer() ?? (throw const FormatException('Remote peer unavailable.'));
+    final DeviceInfo peer =
+        _getPeer() ?? (throw const FormatException('Remote peer unavailable.'));
     await _httpClient.notifySyncSessionState(
       address: peer.address,
       port: peer.port,
@@ -78,23 +79,23 @@ class RemoteSyncExecutor {
           cancelToken?.throwIfCancelled();
           // TODO(transfer-cancel): actively tear down the in-flight HTTP upload
           // when cancellation happens, instead of only stopping future reads.
-          final Stream<List<int>> source = _fileAccessGateway.openRead(sourceEntryId).map((
-            List<int> chunk,
-          ) {
-            cancelToken?.throwIfCancelled();
-            processedBytes += chunk.length;
-            onProgress(
-              TransferProgress(
-                stage: SyncStage.copying,
-                processedFiles: processedFiles,
-                totalFiles: totalFiles,
-                processedBytes: processedBytes,
-                totalBytes: totalBytes,
-                currentPath: item.relativePath,
-              ),
-            );
-            return chunk;
-          });
+          final Stream<List<int>> source = _fileAccessGateway
+              .openRead(sourceEntryId)
+              .map((List<int> chunk) {
+                cancelToken?.throwIfCancelled();
+                processedBytes += chunk.length;
+                onProgress(
+                  TransferProgress(
+                    stage: SyncStage.copying,
+                    processedFiles: processedFiles,
+                    totalFiles: totalFiles,
+                    processedBytes: processedBytes,
+                    totalBytes: totalBytes,
+                    currentPath: item.relativePath,
+                  ),
+                );
+                return chunk;
+              });
           await _httpClient.copyFileStream(
             address: peer.address,
             port: peer.port,

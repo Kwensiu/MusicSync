@@ -1,115 +1,191 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dart_tags/dart_tags.dart';
+import 'package:music_sync/core/logging/app_logger.dart';
 import 'package:music_sync/features/preview/models/diff_item_detail_view_data.dart';
 import 'package:music_sync/services/file_access/file_access_gateway.dart';
 
 class AudioMetadataReader {
-  AudioMetadataReader(this._gateway);
+  AudioMetadataReader(this._gateway, {bool? isAndroid})
+    : _isAndroid = isAndroid ?? Platform.isAndroid;
 
   static const int _fastReadLimit = 512 * 1024;
   static const Duration _readTimeout = Duration(seconds: 2);
 
   final FileAccessGateway _gateway;
+  final bool _isAndroid;
   final TagProcessor _processor = TagProcessor();
 
   Future<AudioMetadataViewData?> read(String entryId) async {
-    try {
-      final Uint8List prefixBytes = await _readPrefix(
-        entryId,
-        _fastReadLimit,
-      ).timeout(_readTimeout);
-      if (prefixBytes.isEmpty) {
-        return null;
-      }
-
-      final _AudioContainerKind kind = _detectContainer(prefixBytes);
-      switch (kind) {
-        case _AudioContainerKind.flac:
-          final AudioMetadataViewData? flacMetadata = _readFlacMetadata(
-            prefixBytes,
-          );
-          if (flacMetadata != null) {
-            return flacMetadata;
-          }
-          final Uint8List fullFlacBytes = await _readAll(
-            entryId,
-          ).timeout(_readTimeout);
-          final AudioMetadataViewData? fullFlacMetadata = _readFlacMetadata(
-            fullFlacBytes,
-          );
-          if (fullFlacMetadata != null) {
-            return fullFlacMetadata;
-          }
-        case _AudioContainerKind.ogg:
-          final AudioMetadataViewData? oggMetadata = _readOggMetadata(
-            prefixBytes,
-          );
-          if (oggMetadata != null) {
-            return oggMetadata;
-          }
-          final Uint8List fullOggBytes = await _readAll(
-            entryId,
-          ).timeout(_readTimeout);
-          final AudioMetadataViewData? fullOggMetadata = _readOggMetadata(
-            fullOggBytes,
-          );
-          if (fullOggMetadata != null) {
-            return fullOggMetadata;
-          }
-        case _AudioContainerKind.mp4:
-          final AudioMetadataViewData? mp4Metadata = _readMp4Metadata(
-            prefixBytes,
-          );
-          if (mp4Metadata != null) {
-            return mp4Metadata;
-          }
-          final Uint8List fullMp4Bytes = await _readAll(
-            entryId,
-          ).timeout(_readTimeout);
-          final AudioMetadataViewData? fullMp4Metadata = _readMp4Metadata(
-            fullMp4Bytes,
-          );
-          if (fullMp4Metadata != null) {
-            return fullMp4Metadata;
-          }
-        case _AudioContainerKind.id3OrUnknown:
-          break;
-      }
-
-      Tag? tagWithValues = await _readPreferredTag(prefixBytes);
-      if (tagWithValues == null) {
-        final Uint8List fullBytes = await _readAll(
+    if (_isAndroid) {
+      try {
+        final AudioMetadataViewData? nativeMetadata = await _tryNativeMetadata(
           entryId,
-        ).timeout(_readTimeout);
-        if (fullBytes.isEmpty) {
-          return null;
+        );
+        if (nativeMetadata != null && nativeMetadata.hasAnyKeyField) {
+          final AudioMetadataViewData? dartMetadata = await _readDartMetadata(
+            entryId,
+          );
+          return _mergeMetadata(nativeMetadata, dartMetadata);
         }
-        final AudioMetadataViewData? apeMetadata = _readApeMetadata(fullBytes);
-        if (apeMetadata != null) {
-          return apeMetadata;
-        }
-        tagWithValues = await _readFallbackTag(fullBytes);
+      } catch (error) {
+        AppLogger.warning(
+          'Android native metadata read failed, falling back to Dart: $error',
+        );
       }
-      if (tagWithValues == null) {
-        return null;
-      }
+    }
 
-      final Map<String, dynamic> values = tagWithValues.tags;
-      final AudioMetadataViewData metadata = AudioMetadataViewData(
-        title: _stringValue(values['title']),
-        artist: _stringValue(values['artist']),
-        album: _stringValue(values['album']),
-        composer: _stringValue(values['composer'] ?? values['writer']),
-        trackNumber: _stringValue(values['track']),
-        discNumber: _stringValue(values['disc']),
-        lyrics: _lyricsValue(values['lyrics']),
-      );
-      return metadata.hasAnyValue ? metadata : null;
+    try {
+      return await _readDartMetadata(entryId);
     } catch (_) {
       return null;
     }
+  }
+
+  Future<AudioMetadataViewData?> _tryNativeMetadata(String entryId) async {
+    try {
+      final Map<String, String?>? nativeMap = await _gateway
+          .getAudioMetadata(entryId)
+          .timeout(_readTimeout);
+      if (nativeMap == null) {
+        return null;
+      }
+      final AudioMetadataViewData metadata = AudioMetadataViewData(
+        title: _trimOrNull(nativeMap['title']),
+        artist: _trimOrNull(nativeMap['artist']),
+        album: _trimOrNull(nativeMap['album']),
+        composer: _trimOrNull(nativeMap['composer']),
+        trackNumber: _trimOrNull(nativeMap['trackNumber']),
+        discNumber: _trimOrNull(nativeMap['discNumber']),
+        lyrics: _trimOrNull(nativeMap['lyrics']),
+      );
+      if (!metadata.hasAnyValue) {
+        return null;
+      }
+      AppLogger.fine('Android native metadata read succeeded for $entryId');
+      return metadata;
+    } catch (error) {
+      AppLogger.fine('Android native metadata read skipped: $error');
+      return null;
+    }
+  }
+
+  Future<AudioMetadataViewData?> _readDartMetadata(String entryId) async {
+    final Uint8List prefixBytes = await _readPrefix(
+      entryId,
+      _fastReadLimit,
+    ).timeout(_readTimeout);
+    if (prefixBytes.isEmpty) {
+      return null;
+    }
+
+    final _AudioContainerKind kind = _detectContainer(prefixBytes);
+    switch (kind) {
+      case _AudioContainerKind.flac:
+        final AudioMetadataViewData? flacMetadata = _readFlacMetadata(
+          prefixBytes,
+        );
+        if (flacMetadata != null) {
+          return flacMetadata;
+        }
+        final Uint8List fullFlacBytes = await _readAll(
+          entryId,
+        ).timeout(_readTimeout);
+        final AudioMetadataViewData? fullFlacMetadata = _readFlacMetadata(
+          fullFlacBytes,
+        );
+        if (fullFlacMetadata != null) {
+          return fullFlacMetadata;
+        }
+      case _AudioContainerKind.ogg:
+        final AudioMetadataViewData? oggMetadata = _readOggMetadata(
+          prefixBytes,
+        );
+        if (oggMetadata != null) {
+          return oggMetadata;
+        }
+        final Uint8List fullOggBytes = await _readAll(
+          entryId,
+        ).timeout(_readTimeout);
+        final AudioMetadataViewData? fullOggMetadata = _readOggMetadata(
+          fullOggBytes,
+        );
+        if (fullOggMetadata != null) {
+          return fullOggMetadata;
+        }
+      case _AudioContainerKind.mp4:
+        final AudioMetadataViewData? mp4Metadata = _readMp4Metadata(
+          prefixBytes,
+        );
+        if (mp4Metadata != null) {
+          return mp4Metadata;
+        }
+        final Uint8List fullMp4Bytes = await _readAll(
+          entryId,
+        ).timeout(_readTimeout);
+        final AudioMetadataViewData? fullMp4Metadata = _readMp4Metadata(
+          fullMp4Bytes,
+        );
+        if (fullMp4Metadata != null) {
+          return fullMp4Metadata;
+        }
+      case _AudioContainerKind.id3OrUnknown:
+        break;
+    }
+
+    Tag? tagWithValues = await _readPreferredTag(prefixBytes);
+    if (tagWithValues == null) {
+      final Uint8List fullBytes = await _readAll(entryId).timeout(_readTimeout);
+      if (fullBytes.isEmpty) {
+        return null;
+      }
+      final AudioMetadataViewData? apeMetadata = _readApeMetadata(fullBytes);
+      if (apeMetadata != null) {
+        return apeMetadata;
+      }
+      tagWithValues = await _readFallbackTag(fullBytes);
+    }
+    if (tagWithValues == null) {
+      return null;
+    }
+
+    final Map<String, dynamic> values = tagWithValues.tags;
+    final AudioMetadataViewData metadata = AudioMetadataViewData(
+      title: _stringValue(values['title']),
+      artist: _stringValue(values['artist']),
+      album: _stringValue(values['album']),
+      composer: _stringValue(values['composer'] ?? values['writer']),
+      trackNumber: _stringValue(values['track']),
+      discNumber: _stringValue(values['disc']),
+      lyrics: _lyricsValue(values['lyrics']),
+    );
+    return metadata.hasAnyValue ? metadata : null;
+  }
+
+  static AudioMetadataViewData _mergeMetadata(
+    AudioMetadataViewData native,
+    AudioMetadataViewData? dart,
+  ) {
+    if (dart == null) {
+      return native;
+    }
+    return AudioMetadataViewData(
+      title: native.title ?? dart.title,
+      artist: native.artist ?? dart.artist,
+      album: native.album ?? dart.album,
+      composer: native.composer ?? dart.composer,
+      trackNumber: native.trackNumber ?? dart.trackNumber,
+      discNumber: native.discNumber ?? dart.discNumber,
+      lyrics: native.lyrics ?? dart.lyrics,
+    );
+  }
+
+  static String? _trimOrNull(String? value) {
+    if (value == null) return null;
+    final String trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
   }
 
   Future<Tag?> _readPreferredTag(Uint8List bytes) async {
