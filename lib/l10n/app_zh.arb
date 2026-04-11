@@ -281,6 +281,18 @@
   "previewFilterMore": "更多",
   "previewFilterCollapse": "收起",
   "previewFilterTitle": "文件类型",
+  "previewExtensionExcluded": "已排除 .{ext}",
+  "@previewExtensionExcluded": {
+    "placeholders": {
+      "ext": {}
+    }
+  },
+  "previewExtensionRestored": "已恢复 .{ext}",
+  "@previewExtensionRestored": {
+    "placeholders": {
+      "ext": {}
+    }
+  },
   "previewStalePlan": "已切换目录，请重新生成预览。",
   "previewSectionTitle": "分组",
   "previewSectionCount": "当前分组条目数：{count}",

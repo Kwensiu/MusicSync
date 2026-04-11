@@ -539,6 +539,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get previewFilterTitle => 'File Type';
 
   @override
+  String previewExtensionExcluded(Object ext) {
+    return 'Excluded .$ext';
+  }
+
+  @override
+  String previewExtensionRestored(Object ext) {
+    return 'Restored .$ext';
+  }
+
+  @override
   String get previewStalePlan =>
       'The selected directory changed. Rebuild preview.';
 

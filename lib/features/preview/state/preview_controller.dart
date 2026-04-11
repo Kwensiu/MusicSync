@@ -1,10 +1,10 @@
-import 'package:music_sync/core/utils/extension_normalizer.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:music_sync/core/utils/extension_normalizer.dart';
 import 'package:music_sync/features/preview/state/preview_state.dart';
 import 'package:music_sync/models/scan_snapshot.dart';
+import 'package:music_sync/services/diff/diff_engine.dart';
 import 'package:music_sync/services/file_access/file_access_entry.dart';
 import 'package:music_sync/services/file_access/file_access_provider.dart';
-import 'package:music_sync/services/diff/diff_engine.dart';
 import 'package:music_sync/services/scanning/directory_scanner.dart';
 import 'package:music_sync/services/scanning/scan_cache_service.dart';
 
@@ -54,6 +54,7 @@ class PreviewController extends Notifier<PreviewState> {
         targetSnapshot: target,
         deleteEnabled: deleteEnabled,
         ignoredExtensions: ignoredExtensions,
+        excludedExtensions: state.excludedExtensions,
       );
     } catch (error) {
       state = PreviewState(
@@ -66,6 +67,7 @@ class PreviewController extends Notifier<PreviewState> {
         targetSnapshot: target,
         deleteEnabled: deleteEnabled,
         ignoredExtensions: ignoredExtensions,
+        excludedExtensions: state.excludedExtensions,
         sourceRootId: state.sourceRootId,
         errorMessage: PreviewState.localizeErrorMessage(error.toString()),
       );
@@ -82,6 +84,7 @@ class PreviewController extends Notifier<PreviewState> {
     required bool deleteEnabled,
     String extensionFilter = '*',
     List<String> ignoredExtensions = const <String>[],
+    Set<String> excludedExtensions = const <String>{},
   }) async {
     state = PreviewState(status: PreviewStatus.loading, plan: state.plan);
 
@@ -106,8 +109,16 @@ class PreviewController extends Notifier<PreviewState> {
         baseSource,
         baseTarget,
       );
-      final ScanSnapshot source = _filterSnapshot(baseSource, extensionFilter);
-      final ScanSnapshot target = _filterSnapshot(baseTarget, extensionFilter);
+      final ScanSnapshot source = _applyPlanFilters(
+        baseSource,
+        activeExtension: extensionFilter,
+        excludedExtensions: excludedExtensions,
+      );
+      final ScanSnapshot target = _applyPlanFilters(
+        baseTarget,
+        activeExtension: extensionFilter,
+        excludedExtensions: excludedExtensions,
+      );
 
       final plan = _diffEngine.buildPlan(
         source: source,
@@ -124,6 +135,7 @@ class PreviewController extends Notifier<PreviewState> {
         targetSnapshot: baseTarget,
         deleteEnabled: deleteEnabled,
         ignoredExtensions: ignoredExtensions,
+        excludedExtensions: excludedExtensions,
         sourceRootId: sourceRoot.entryId,
       );
     } catch (error) {
@@ -137,6 +149,7 @@ class PreviewController extends Notifier<PreviewState> {
         targetSnapshot: state.targetSnapshot,
         deleteEnabled: deleteEnabled,
         ignoredExtensions: ignoredExtensions,
+        excludedExtensions: excludedExtensions,
         sourceRootId: sourceRoot.entryId,
         errorMessage: PreviewState.localizeErrorMessage(error.toString()),
       );
@@ -149,6 +162,7 @@ class PreviewController extends Notifier<PreviewState> {
     required bool deleteEnabled,
     String extensionFilter = '*',
     List<String> ignoredExtensions = const <String>[],
+    Set<String> excludedExtensions = const <String>{},
     String? sourceRootId,
   }) async {
     state = PreviewState(status: PreviewStatus.loading, plan: state.plan);
@@ -160,13 +174,15 @@ class PreviewController extends Notifier<PreviewState> {
         baseSource,
         baseTarget,
       );
-      final ScanSnapshot filteredSource = _filterSnapshot(
+      final ScanSnapshot filteredSource = _applyPlanFilters(
         baseSource,
-        extensionFilter,
+        activeExtension: extensionFilter,
+        excludedExtensions: excludedExtensions,
       );
-      final ScanSnapshot filteredTarget = _filterSnapshot(
+      final ScanSnapshot filteredTarget = _applyPlanFilters(
         baseTarget,
-        extensionFilter,
+        activeExtension: extensionFilter,
+        excludedExtensions: excludedExtensions,
       );
       final plan = _diffEngine.buildPlan(
         source: filteredSource,
@@ -183,6 +199,7 @@ class PreviewController extends Notifier<PreviewState> {
         targetSnapshot: baseTarget,
         deleteEnabled: deleteEnabled,
         ignoredExtensions: ignoredExtensions,
+        excludedExtensions: excludedExtensions,
         sourceRootId: sourceRootId ?? source.rootId,
       );
     } catch (error) {
@@ -196,6 +213,7 @@ class PreviewController extends Notifier<PreviewState> {
         targetSnapshot: state.targetSnapshot ?? target,
         deleteEnabled: deleteEnabled,
         ignoredExtensions: ignoredExtensions,
+        excludedExtensions: excludedExtensions,
         sourceRootId: sourceRootId ?? source.rootId,
         errorMessage: PreviewState.localizeErrorMessage(error.toString()),
       );
@@ -216,6 +234,7 @@ class PreviewController extends Notifier<PreviewState> {
         targetSnapshot: state.targetSnapshot,
         deleteEnabled: state.deleteEnabled,
         ignoredExtensions: state.ignoredExtensions,
+        excludedExtensions: state.excludedExtensions,
         sourceRootId: state.sourceRootId,
         errorMessage: state.errorMessage,
       );
@@ -223,8 +242,16 @@ class PreviewController extends Notifier<PreviewState> {
     }
 
     try {
-      final ScanSnapshot source = _filterSnapshot(rawSource, extensionFilter);
-      final ScanSnapshot target = _filterSnapshot(rawTarget, extensionFilter);
+      final ScanSnapshot source = _applyPlanFilters(
+        rawSource,
+        activeExtension: extensionFilter,
+        excludedExtensions: state.excludedExtensions,
+      );
+      final ScanSnapshot target = _applyPlanFilters(
+        rawTarget,
+        activeExtension: extensionFilter,
+        excludedExtensions: state.excludedExtensions,
+      );
       final plan = _diffEngine.buildPlan(
         source: source,
         target: target,
@@ -240,6 +267,7 @@ class PreviewController extends Notifier<PreviewState> {
         targetSnapshot: rawTarget,
         deleteEnabled: state.deleteEnabled,
         ignoredExtensions: state.ignoredExtensions,
+        excludedExtensions: state.excludedExtensions,
         sourceRootId: state.sourceRootId,
       );
     } catch (error) {
@@ -253,6 +281,71 @@ class PreviewController extends Notifier<PreviewState> {
         targetSnapshot: rawTarget,
         deleteEnabled: state.deleteEnabled,
         ignoredExtensions: state.ignoredExtensions,
+        excludedExtensions: state.excludedExtensions,
+        sourceRootId: state.sourceRootId,
+        errorMessage: PreviewState.localizeErrorMessage(error.toString()),
+      );
+    }
+  }
+
+  void toggleExcludedExtension(String extension) {
+    if (extension == '*') {
+      return;
+    }
+    final ScanSnapshot? rawSource = state.sourceSnapshot;
+    final ScanSnapshot? rawTarget = state.targetSnapshot;
+    if (rawSource == null || rawTarget == null) {
+      return;
+    }
+
+    final Set<String> nextExcluded = <String>{...state.excludedExtensions};
+    if (nextExcluded.contains(extension)) {
+      nextExcluded.remove(extension);
+    } else {
+      nextExcluded.add(extension);
+    }
+
+    try {
+      final ScanSnapshot source = _applyPlanFilters(
+        rawSource,
+        activeExtension: state.activeExtension,
+        excludedExtensions: nextExcluded,
+      );
+      final ScanSnapshot target = _applyPlanFilters(
+        rawTarget,
+        activeExtension: state.activeExtension,
+        excludedExtensions: nextExcluded,
+      );
+      final plan = _diffEngine.buildPlan(
+        source: source,
+        target: target,
+        deleteEnabled: state.deleteEnabled,
+      );
+      state = PreviewState(
+        status: PreviewStatus.loaded,
+        plan: plan,
+        mode: state.mode,
+        availableExtensions: state.availableExtensions,
+        activeExtension: state.activeExtension,
+        sourceSnapshot: rawSource,
+        targetSnapshot: rawTarget,
+        deleteEnabled: state.deleteEnabled,
+        ignoredExtensions: state.ignoredExtensions,
+        excludedExtensions: nextExcluded,
+        sourceRootId: state.sourceRootId,
+      );
+    } catch (error) {
+      state = PreviewState(
+        status: PreviewStatus.failed,
+        plan: state.plan,
+        mode: state.mode,
+        availableExtensions: state.availableExtensions,
+        activeExtension: state.activeExtension,
+        sourceSnapshot: rawSource,
+        targetSnapshot: rawTarget,
+        deleteEnabled: state.deleteEnabled,
+        ignoredExtensions: state.ignoredExtensions,
+        excludedExtensions: nextExcluded,
         sourceRootId: state.sourceRootId,
         errorMessage: PreviewState.localizeErrorMessage(error.toString()),
       );
@@ -294,6 +387,41 @@ class PreviewController extends Notifier<PreviewState> {
       }).toList(),
       cacheVersion: snapshot.cacheVersion,
     );
+  }
+
+  ScanSnapshot _filterExcluded(
+    ScanSnapshot snapshot,
+    Set<String> excludedExtensions,
+  ) {
+    if (excludedExtensions.isEmpty) {
+      return snapshot;
+    }
+    return ScanSnapshot(
+      rootId: snapshot.rootId,
+      rootDisplayName: snapshot.rootDisplayName,
+      deviceId: snapshot.deviceId,
+      scannedAt: snapshot.scannedAt,
+      entries: snapshot.entries.where((entry) {
+        if (entry.isDirectory) {
+          return true;
+        }
+        return !excludedExtensions.contains(_extensionOf(entry.relativePath));
+      }).toList(),
+      cacheVersion: snapshot.cacheVersion,
+      warnings: snapshot.warnings,
+    );
+  }
+
+  ScanSnapshot _applyPlanFilters(
+    ScanSnapshot snapshot, {
+    required String activeExtension,
+    required Set<String> excludedExtensions,
+  }) {
+    final ScanSnapshot afterExcluded = _filterExcluded(
+      snapshot,
+      excludedExtensions,
+    );
+    return _filterSnapshot(afterExcluded, activeExtension);
   }
 
   ScanSnapshot _filterIgnored(

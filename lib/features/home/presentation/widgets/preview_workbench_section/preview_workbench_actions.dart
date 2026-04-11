@@ -177,6 +177,7 @@ class PreviewWorkbenchActions {
             ignoredExtensions: ref
                 .read(settingsControllerProvider)
                 .ignoredExtensions,
+            excludedExtensions: previewState.excludedExtensions,
           );
       return;
     }
@@ -202,6 +203,7 @@ class PreviewWorkbenchActions {
             ignoredExtensions: ref
                 .read(settingsControllerProvider)
                 .ignoredExtensions,
+            excludedExtensions: previewState.excludedExtensions,
             sourceRootId: sourceRoot.entryId,
           );
       return;
