@@ -8,6 +8,7 @@ abstract final class SettingsUiScale {
   static const double rowMinHeight = 60;
   static const double iconSize = 24;
   static const double iconToText = 16;
+  static const double titleToSubtitle = 6;
   static const double trailingGap = 8;
   static const double trailingSlotHeight = 32;
   static const double dividerStart = 20;
@@ -95,14 +96,14 @@ class SettingsActionRow extends StatelessWidget {
                           forceStrutHeight: true,
                         ),
                       ),
+                      const SizedBox(height: SettingsUiScale.titleToSubtitle),
                       Text(
                         subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: scheme.onSurfaceVariant,
                           height: 1.2,
                         ),
+                        softWrap: true,
                         strutStyle: const StrutStyle(
                           height: 1.2,
                           forceStrutHeight: true,

@@ -1,8 +1,8 @@
 import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:music_sync/features/connection/state/connection_controller.dart';
 import 'package:music_sync/features/settings/state/settings_state.dart';
+import 'package:music_sync/services/platform/device_display_info_service.dart';
 import 'package:music_sync/services/storage/settings_store.dart';
 
 final Provider<SettingsStore> settingsStoreProvider = Provider<SettingsStore>(
@@ -15,6 +15,8 @@ settingsControllerProvider =
 
 class SettingsController extends Notifier<SettingsState> {
   SettingsStore get _store => ref.read(settingsStoreProvider);
+  DeviceDisplayInfoService get _deviceDisplayInfo =>
+      ref.read(deviceDisplayInfoServiceProvider);
 
   @override
   SettingsState build() {
@@ -25,6 +27,17 @@ class SettingsController extends Notifier<SettingsState> {
   Future<void> load() async {
     final SettingsStore store = _store;
     state = state.copyWith(isLoading: true);
+    final String defaultAlias = await _deviceDisplayInfo.defaultAlias();
+    if (!ref.mounted) {
+      return;
+    }
+    final String deviceAlias = await store.loadDeviceAlias();
+    if (!ref.mounted) {
+      return;
+    }
+    final String deviceDisplayName = deviceAlias.isNotEmpty
+        ? deviceAlias
+        : defaultAlias;
     final bool autoStartListening = await store.loadAutoStartListening();
     if (!ref.mounted) {
       return;
@@ -47,6 +60,8 @@ class SettingsController extends Notifier<SettingsState> {
     }
     state = state.copyWith(
       isLoading: false,
+      deviceAlias: deviceAlias,
+      deviceDisplayName: deviceDisplayName,
       autoStartListening: autoStartListening,
       httpEncryptionEnabled: httpEncryptionEnabled,
       ignoredExtensions: ignoredExtensions,
@@ -59,6 +74,29 @@ class SettingsController extends Notifier<SettingsState> {
     state = state.copyWith(isLoading: true, autoStartListening: value);
     await _store.saveAutoStartListening(value);
     state = state.copyWith(isLoading: false, autoStartListening: value);
+  }
+
+  Future<void> setDeviceAlias(String value) async {
+    final String normalized = value.trim();
+    final String defaultAlias = await _deviceDisplayInfo.defaultAlias();
+    final String nextDisplayName = normalized.isNotEmpty
+        ? normalized
+        : defaultAlias;
+    state = state.copyWith(
+      isLoading: true,
+      deviceAlias: normalized,
+      deviceDisplayName: nextDisplayName,
+    );
+    await _store.saveDeviceAlias(normalized);
+    if (!ref.mounted) {
+      return;
+    }
+    state = state.copyWith(
+      isLoading: false,
+      deviceAlias: normalized,
+      deviceDisplayName: nextDisplayName,
+    );
+    await ref.read(connectionControllerProvider.notifier).refreshPresence();
   }
 
   Future<void> setHttpEncryptionEnabled(bool value) async {

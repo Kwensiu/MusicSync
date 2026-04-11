@@ -5,6 +5,8 @@ enum AppPaletteSetting { neutral, expressive, tonalSpot }
 class SettingsState {
   const SettingsState({
     this.isLoading = false,
+    this.deviceAlias = '',
+    this.deviceDisplayName = '',
     this.autoStartListening = false,
     this.httpEncryptionEnabled = true,
     this.ignoredExtensions = const <String>[],
@@ -13,6 +15,8 @@ class SettingsState {
   });
 
   final bool isLoading;
+  final String deviceAlias;
+  final String deviceDisplayName;
   final bool autoStartListening;
   final bool httpEncryptionEnabled;
   final List<String> ignoredExtensions;
@@ -21,6 +25,8 @@ class SettingsState {
 
   SettingsState copyWith({
     bool? isLoading,
+    String? deviceAlias,
+    String? deviceDisplayName,
     bool? autoStartListening,
     bool? httpEncryptionEnabled,
     List<String>? ignoredExtensions,
@@ -29,6 +35,8 @@ class SettingsState {
   }) {
     return SettingsState(
       isLoading: isLoading ?? this.isLoading,
+      deviceAlias: deviceAlias ?? this.deviceAlias,
+      deviceDisplayName: deviceDisplayName ?? this.deviceDisplayName,
       autoStartListening: autoStartListening ?? this.autoStartListening,
       httpEncryptionEnabled:
           httpEncryptionEnabled ?? this.httpEncryptionEnabled,

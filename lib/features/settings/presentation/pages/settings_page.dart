@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:music_sync/features/settings/presentation/widgets/device_alias_dialog.dart';
 import 'package:music_sync/features/settings/presentation/widgets/ignored_file_types_dialog.dart';
 import 'package:music_sync/features/settings/presentation/widgets/palette_dialog.dart';
 import 'package:music_sync/features/settings/presentation/widgets/settings_group.dart';
@@ -88,6 +89,20 @@ class SettingsPage extends ConsumerWidget {
             const SizedBox(height: _sectionToGroupGap),
             SettingsJoinedGroup(
               children: <Widget>[
+                SettingsActionRow(
+                  icon: Icons.badge_outlined,
+                  title: context.l10n.settingsDeviceAliasTitle,
+                  subtitle: settingsState.deviceDisplayName,
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: settingsState.isLoading
+                      ? null
+                      : () => showDeviceAliasDialog(
+                          context: context,
+                          ref: ref,
+                          initialValue: settingsState.deviceAlias,
+                        ),
+                ),
+                SettingsGroupDivider(color: scheme.outlineVariant),
                 SettingsActionRow(
                   icon: Icons.wifi_tethering_rounded,
                   title: context.l10n.settingsAutoStartListeningTitle,
