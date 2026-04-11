@@ -281,6 +281,18 @@
   "previewFilterMore": "More",
   "previewFilterCollapse": "Less",
   "previewFilterTitle": "File Type",
+  "previewExtensionExcluded": "Excluded .{ext}",
+  "@previewExtensionExcluded": {
+    "placeholders": {
+      "ext": {}
+    }
+  },
+  "previewExtensionRestored": "Restored .{ext}",
+  "@previewExtensionRestored": {
+    "placeholders": {
+      "ext": {}
+    }
+  },
   "previewStalePlan": "The selected directory changed. Rebuild preview.",
   "previewSectionTitle": "Category",
   "previewSectionCount": "Items in current section: {count}",

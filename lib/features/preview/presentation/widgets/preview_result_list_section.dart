@@ -13,6 +13,7 @@ class PreviewResultListSection extends StatelessWidget {
     required this.activeItems,
     required this.extensionOptions,
     required this.ignoredExtensions,
+    required this.excludedExtensions,
     required this.isAllExtensionsSelected,
     required this.selectAllSections,
     required this.selectedSections,
@@ -21,6 +22,7 @@ class PreviewResultListSection extends StatelessWidget {
     required this.previewMode,
     required this.onToggleSection,
     required this.onToggleExtension,
+    required this.onLongPressExtension,
   });
 
   final List<DiffItem> filteredCopyItems;
@@ -29,6 +31,7 @@ class PreviewResultListSection extends StatelessWidget {
   final List<DiffItem> activeItems;
   final List<String> extensionOptions;
   final List<String> ignoredExtensions;
+  final Set<String> excludedExtensions;
   final bool isAllExtensionsSelected;
   final bool selectAllSections;
   final Set<DiffType> selectedSections;
@@ -37,6 +40,7 @@ class PreviewResultListSection extends StatelessWidget {
   final PreviewMode previewMode;
   final ValueChanged<DiffType?> onToggleSection;
   final ValueChanged<String> onToggleExtension;
+  final ValueChanged<String> onLongPressExtension;
 
   @override
   Widget build(BuildContext context) {
@@ -89,17 +93,25 @@ class PreviewResultListSection extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: extensionOptions.map((String extension) {
+                  final bool excluded = excludedExtensions.contains(extension);
                   final bool selected = extension == '*'
                       ? isAllExtensionsSelected
-                      : selectedExtensions.contains(extension);
+                      : (!excluded && selectedExtensions.contains(extension));
                   return _CompactFilterChip(
+                    chipKey: ValueKey<String>(
+                      'preview-extension-chip-$extension',
+                    ),
                     label: extension == '*'
                         ? context.l10n.previewFilterAll
                         : extension,
                     selected: selected,
-                    onSelected: isBusy
+                    excluded: excluded,
+                    onSelected: isBusy || excluded
                         ? null
                         : (_) => onToggleExtension(extension),
+                    onLongPress: extension == '*' || isBusy
+                        ? null
+                        : () => onLongPressExtension(extension),
                   );
                 }).toList(),
               )
@@ -202,27 +214,68 @@ class _FilterHeader extends StatelessWidget {
 
 class _CompactFilterChip extends StatelessWidget {
   const _CompactFilterChip({
+    this.chipKey,
     required this.label,
     required this.selected,
+    this.excluded = false,
     required this.onSelected,
+    this.onLongPress,
   });
 
+  final Key? chipKey;
   final String label;
   final bool selected;
+  final bool excluded;
   final ValueChanged<bool>? onSelected;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
-    return FilterChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: onSelected,
-      visualDensity: VisualDensity.compact,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      labelPadding: const EdgeInsets.symmetric(horizontal: 2),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-      side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+
+    if (excluded) {
+      return GestureDetector(
+        key: chipKey,
+        onLongPress: onLongPress,
+        child: InputChip(
+          label: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(Icons.block, size: 14, color: scheme.error),
+              const SizedBox(width: 4),
+              Text(label),
+            ],
+          ),
+          selected: false,
+          onPressed: null,
+          visualDensity: VisualDensity.compact,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          labelPadding: const EdgeInsets.symmetric(horizontal: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+          side: BorderSide(color: scheme.error),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          labelStyle: TextStyle(color: scheme.error),
+          disabledColor: scheme.surfaceContainerHighest,
+        ),
+      );
+    }
+
+    return GestureDetector(
+      key: chipKey,
+      onLongPress: onLongPress,
+      child: FilterChip(
+        label: Text(label),
+        selected: selected,
+        onSelected: onSelected,
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        labelPadding: const EdgeInsets.symmetric(horizontal: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+        side: BorderSide(color: scheme.outlineVariant),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
     );
   }
 }

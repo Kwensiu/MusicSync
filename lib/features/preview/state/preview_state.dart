@@ -1,6 +1,6 @@
 import 'package:music_sync/core/errors/app_error_localizer.dart';
-import 'package:music_sync/models/sync_plan.dart';
 import 'package:music_sync/models/scan_snapshot.dart';
+import 'package:music_sync/models/sync_plan.dart';
 
 enum PreviewStatus { idle, loading, loaded, failed }
 
@@ -17,6 +17,7 @@ class PreviewState {
     this.targetSnapshot,
     this.deleteEnabled = false,
     this.ignoredExtensions = const <String>[],
+    this.excludedExtensions = const <String>{},
     this.sourceRootId,
     this.errorMessage,
   });
@@ -30,6 +31,7 @@ class PreviewState {
   final ScanSnapshot? targetSnapshot;
   final bool deleteEnabled;
   final List<String> ignoredExtensions;
+  final Set<String> excludedExtensions;
   final String? sourceRootId;
   final String? errorMessage;
 

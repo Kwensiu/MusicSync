@@ -522,6 +522,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get previewFilterTitle => '文件类型';
 
   @override
+  String previewExtensionExcluded(Object ext) {
+    return '已排除 .$ext';
+  }
+
+  @override
+  String previewExtensionRestored(Object ext) {
+    return '已恢复 .$ext';
+  }
+
+  @override
   String get previewStalePlan => '已切换目录，请重新生成预览。';
 
   @override

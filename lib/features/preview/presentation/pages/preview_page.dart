@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:music_sync/app/widgets/app_confirm_dialog.dart';
 import 'package:music_sync/app/widgets/app_page_content.dart';
@@ -18,8 +19,8 @@ import 'package:music_sync/features/execution/state/execution_controller.dart';
 import 'package:music_sync/features/execution/state/execution_state.dart';
 import 'package:music_sync/features/home/presentation/widgets/preview_workbench_section/preview_workbench_actions.dart';
 import 'package:music_sync/features/home/presentation/widgets/preview_workbench_section/preview_workbench_section.dart';
-import 'package:music_sync/features/preview/state/preview_controller.dart';
 import 'package:music_sync/features/preview/presentation/widgets/preview_result_list_section.dart';
+import 'package:music_sync/features/preview/state/preview_controller.dart';
 import 'package:music_sync/features/preview/state/preview_state.dart';
 import 'package:music_sync/features/settings/state/settings_controller.dart';
 import 'package:music_sync/features/settings/state/settings_state.dart';
@@ -122,7 +123,6 @@ class _PreviewPageState extends ConsumerState<PreviewPage>
     final bool isStalePlan =
         previewState.sourceRootId != null &&
         previewState.sourceRootId != directoryState.handle?.entryId;
-    final SyncPlanSummary planSummary = previewState.plan.summary;
     final List<String> extensionOptions = previewState.availableExtensions;
     final List<DiffItem> filteredCopyItems =
         PreviewWorkbenchActions.filterItemsByExtensions(
@@ -147,6 +147,13 @@ class _PreviewPageState extends ConsumerState<PreviewPage>
       if (_selectAllSections || _selectedSections.contains(DiffType.delete))
         ...filteredDeleteItems,
     ];
+    final SyncPlanSummary planSummary = _buildVisibleSummary(
+      filteredCopyItems: filteredCopyItems,
+      filteredDeleteItems: filteredDeleteItems,
+      filteredConflictItems: filteredConflictItems,
+      selectAllSections: _selectAllSections,
+      selectedSections: _selectedSections,
+    );
     final bool hasExecutableItems =
         previewState.plan.copyItems.isNotEmpty ||
         previewState.plan.deleteItems.isNotEmpty;
@@ -267,6 +274,7 @@ class _PreviewPageState extends ConsumerState<PreviewPage>
                         activeItems: activeItems,
                         extensionOptions: extensionOptions,
                         ignoredExtensions: ignoredExtensions,
+                        excludedExtensions: previewState.excludedExtensions,
                         isAllExtensionsSelected: isAllExtensionsSelected,
                         selectAllSections: _selectAllSections,
                         selectedSections: _selectedSections,
@@ -310,6 +318,33 @@ class _PreviewPageState extends ConsumerState<PreviewPage>
                                   selected: !selected,
                                 );
                           });
+                        },
+                        onLongPressExtension: (String extension) {
+                          HapticFeedback.mediumImpact();
+                          final bool wasExcluded = previewState
+                              .excludedExtensions
+                              .contains(extension);
+                          ref
+                              .read(previewControllerProvider.notifier)
+                              .toggleExcludedExtension(extension);
+                          setState(() {
+                            if (!wasExcluded) {
+                              _selectedExtensions = _selectedExtensions
+                                ..remove(extension);
+                              if (_selectedExtensions.isEmpty) {
+                                _selectedExtensions = <String>{'*'};
+                              }
+                            }
+                          });
+                          if (!mounted) return;
+                          final String message = wasExcluded
+                              ? context.l10n.previewExtensionRestored(extension)
+                              : context.l10n.previewExtensionExcluded(
+                                  extension,
+                                );
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text(message)));
                         },
                       ),
                     ),
@@ -361,6 +396,33 @@ class _PreviewPageState extends ConsumerState<PreviewPage>
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  SyncPlanSummary _buildVisibleSummary({
+    required List<DiffItem> filteredCopyItems,
+    required List<DiffItem> filteredDeleteItems,
+    required List<DiffItem> filteredConflictItems,
+    required bool selectAllSections,
+    required Set<DiffType> selectedSections,
+  }) {
+    final List<DiffItem> visibleCopyItems =
+        selectAllSections || selectedSections.contains(DiffType.copy)
+        ? filteredCopyItems
+        : const <DiffItem>[];
+    final List<DiffItem> visibleDeleteItems =
+        selectAllSections || selectedSections.contains(DiffType.delete)
+        ? filteredDeleteItems
+        : const <DiffItem>[];
+
+    return SyncPlanSummary(
+      copyCount: visibleCopyItems.length,
+      deleteCount: visibleDeleteItems.length,
+      conflictCount: filteredConflictItems.length,
+      copyBytes: visibleCopyItems.fold<int>(
+        0,
+        (int total, DiffItem item) => total + (item.source?.size ?? 0),
       ),
     );
   }

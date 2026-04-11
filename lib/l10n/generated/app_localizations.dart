@@ -1038,6 +1038,18 @@ abstract class AppLocalizations {
   /// **'File Type'**
   String get previewFilterTitle;
 
+  /// No description provided for @previewExtensionExcluded.
+  ///
+  /// In en, this message translates to:
+  /// **'Excluded .{ext}'**
+  String previewExtensionExcluded(Object ext);
+
+  /// No description provided for @previewExtensionRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Restored .{ext}'**
+  String previewExtensionRestored(Object ext);
+
   /// No description provided for @previewStalePlan.
   ///
   /// In en, this message translates to:
