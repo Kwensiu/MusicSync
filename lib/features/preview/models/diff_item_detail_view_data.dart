@@ -107,4 +107,9 @@ class AudioMetadataViewData {
       (trackNumber != null && trackNumber!.isNotEmpty) ||
       (discNumber != null && discNumber!.isNotEmpty) ||
       (lyrics != null && lyrics!.isNotEmpty);
+
+  bool get hasAnyKeyField =>
+      (title != null && title!.isNotEmpty) ||
+      (artist != null && artist!.isNotEmpty) ||
+      (album != null && album!.isNotEmpty);
 }

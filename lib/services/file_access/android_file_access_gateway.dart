@@ -224,6 +224,28 @@ class AndroidFileAccessGateway implements FileAccessGateway {
     }
   }
 
+  @override
+  Future<Map<String, String?>?> getAudioMetadata(String entryId) async {
+    try {
+      final Map<Object?, Object?>? rawMap = await _channel
+          .invokeMethod<Map<Object?, Object?>>(
+            'getAudioMetadata',
+            <String, Object?>{'entryId': entryId},
+          );
+      if (rawMap == null) {
+        return null;
+      }
+      return rawMap.map(
+        (Object? key, Object? value) =>
+            MapEntry(key.toString(), value as String?),
+      );
+    } on PlatformException catch (error) {
+      throw FileAccessException(
+        error.message ?? 'Android audio metadata read failed.',
+      );
+    }
+  }
+
   FileAccessEntry _toEntry(Map<Object?, Object?> rawEntry) {
     final Map<String, Object?> entry = rawEntry.map(
       (Object? key, Object? value) => MapEntry(key.toString(), value),

@@ -14,4 +14,5 @@ abstract class FileAccessGateway {
   Future<String> createDirectory(String parentId, String name);
   Future<String> renameEntry(String entryId, String newName);
   Future<void> deleteEntry(String entryId);
+  Future<Map<String, String?>?> getAudioMetadata(String entryId);
 }

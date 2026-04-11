@@ -3,10 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:music_sync/features/directory/state/directory_controller.dart';
 import 'package:music_sync/features/directory/state/directory_state.dart';
 import 'package:music_sync/features/preview/state/preview_controller.dart';
+import 'package:music_sync/services/diff/diff_engine.dart';
 import 'package:music_sync/services/file_access/file_access_entry.dart';
 import 'package:music_sync/services/file_access/file_access_gateway.dart';
 import 'package:music_sync/services/file_access/file_access_provider.dart';
-import 'package:music_sync/services/diff/diff_engine.dart';
 import 'package:music_sync/services/scanning/directory_scanner.dart';
 import 'package:music_sync/services/scanning/scan_cache_service.dart';
 import 'package:music_sync/services/scanning/temp_file_cleanup_service.dart';
@@ -74,6 +74,9 @@ class _FakeFileAccessGateway implements FileAccessGateway {
   Future<FileAccessEntry> stat(String entryId) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<Map<String, String?>?> getAudioMetadata(String entryId) async => null;
 }
 
 class _FakePreflightGateway extends _FakeFileAccessGateway {

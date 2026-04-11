@@ -5,9 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:music_sync/core/errors/app_error_localizer.dart';
 import 'package:music_sync/features/execution/state/execution_controller.dart';
 import 'package:music_sync/features/execution/state/execution_state.dart';
-import 'package:music_sync/models/execution_result.dart';
 import 'package:music_sync/models/device_info.dart';
 import 'package:music_sync/models/diff_item.dart';
+import 'package:music_sync/models/execution_result.dart';
 import 'package:music_sync/models/file_entry.dart';
 import 'package:music_sync/models/sync_plan.dart';
 import 'package:music_sync/models/transfer_progress.dart';
@@ -563,4 +563,7 @@ class _NoopFileAccessGateway implements FileAccessGateway {
   Future<FileAccessEntry> stat(String entryId) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<Map<String, String?>?> getAudioMetadata(String entryId) async => null;
 }
