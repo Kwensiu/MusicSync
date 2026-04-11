@@ -6,6 +6,7 @@ import 'package:music_sync/features/directory/state/directory_controller.dart';
 import 'package:music_sync/features/execution/state/execution_controller.dart';
 import 'package:music_sync/features/execution/state/execution_state.dart';
 import 'package:music_sync/features/preview/models/diff_item_detail_view_data.dart';
+import 'package:music_sync/features/settings/state/settings_controller.dart';
 import 'package:music_sync/models/device_info.dart';
 import 'package:music_sync/models/execution_result.dart';
 import 'package:music_sync/models/file_entry.dart';
@@ -18,6 +19,7 @@ import 'package:music_sync/services/network/http/http_sync_client.dart';
 import 'package:music_sync/services/network/http/http_sync_dto.dart';
 import 'package:music_sync/services/network/http/http_sync_server_service.dart';
 import 'package:music_sync/services/storage/recent_items_store.dart';
+import 'package:music_sync/services/storage/settings_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -279,19 +281,316 @@ void main() {
         );
       },
     );
+
+    test(
+      'discovery keeps multiple same-name devices as separate cards',
+      () async {
+        final _FakeDiscoveryService discovery = _FakeDiscoveryService();
+        final ProviderContainer container = _container(
+          client: _FakeHttpSyncClient(
+            helloResponse: const HelloResponseDto(
+              device: DeviceInfo(
+                deviceId: 'peer',
+                deviceName: 'Peer',
+                platform: 'android',
+                address: '',
+                port: 44888,
+              ),
+              directoryReady: false,
+            ),
+          ),
+          discovery: discovery,
+        );
+        addTearDown(container.dispose);
+
+        container.read(connectionControllerProvider);
+        await Future<void>.delayed(Duration.zero);
+        discovery.emit(
+          const DiscoveryEvent(
+            type: DiscoveryEventType.announce,
+            device: DeviceInfo(
+              deviceId: 'stable-a',
+              deviceName: 'Windows',
+              platform: 'windows',
+              address: '192.168.1.10',
+              port: 44888,
+            ),
+          ),
+        );
+        discovery.emit(
+          const DiscoveryEvent(
+            type: DiscoveryEventType.announce,
+            device: DeviceInfo(
+              deviceId: 'stable-b',
+              deviceName: 'Windows',
+              platform: 'windows',
+              address: '192.168.1.11',
+              port: 44888,
+            ),
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        final List<DeviceInfo> devices = container
+            .read(connectionControllerProvider)
+            .discoveredDevices;
+        expect(devices, hasLength(2));
+        expect(
+          devices.map((DeviceInfo device) => device.deviceId).toSet(),
+          <String>{'stable-a', 'stable-b'},
+        );
+      },
+    );
+
+    test(
+      'discovery keeps primary address stable for the same device',
+      () async {
+        final _FakeDiscoveryService discovery = _FakeDiscoveryService();
+        final ProviderContainer container = _container(
+          client: _FakeHttpSyncClient(
+            helloResponse: const HelloResponseDto(
+              device: DeviceInfo(
+                deviceId: 'peer',
+                deviceName: 'Peer',
+                platform: 'android',
+                address: '',
+                port: 44888,
+              ),
+              directoryReady: false,
+            ),
+          ),
+          discovery: discovery,
+        );
+        addTearDown(container.dispose);
+
+        container.read(connectionControllerProvider);
+        await Future<void>.delayed(Duration.zero);
+        discovery.emit(
+          const DiscoveryEvent(
+            type: DiscoveryEventType.announce,
+            device: DeviceInfo(
+              deviceId: 'stable-peer',
+              deviceName: 'Phone',
+              platform: 'android',
+              address: '192.168.1.20',
+              port: 44888,
+            ),
+          ),
+        );
+        discovery.emit(
+          const DiscoveryEvent(
+            type: DiscoveryEventType.announce,
+            device: DeviceInfo(
+              deviceId: 'stable-peer',
+              deviceName: 'Phone',
+              platform: 'android',
+              address: '192.168.1.21',
+              port: 44888,
+            ),
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        final DeviceInfo device = container
+            .read(connectionControllerProvider)
+            .discoveredDevices
+            .single;
+        expect(device.address, '192.168.1.20');
+      },
+    );
+
+    test(
+      'discovery order stays stable when old devices broadcast again',
+      () async {
+        final _FakeDiscoveryService discovery = _FakeDiscoveryService();
+        final ProviderContainer container = _container(
+          client: _FakeHttpSyncClient(
+            helloResponse: const HelloResponseDto(
+              device: DeviceInfo(
+                deviceId: 'peer',
+                deviceName: 'Peer',
+                platform: 'android',
+                address: '',
+                port: 44888,
+              ),
+              directoryReady: false,
+            ),
+          ),
+          discovery: discovery,
+        );
+        addTearDown(container.dispose);
+
+        container.read(connectionControllerProvider);
+        await Future<void>.delayed(Duration.zero);
+
+        discovery.emit(
+          const DiscoveryEvent(
+            type: DiscoveryEventType.announce,
+            device: DeviceInfo(
+              deviceId: 'stable-a',
+              deviceName: 'Alpha',
+              platform: 'windows',
+              address: '192.168.1.10',
+              port: 44888,
+            ),
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 2));
+        discovery.emit(
+          const DiscoveryEvent(
+            type: DiscoveryEventType.announce,
+            device: DeviceInfo(
+              deviceId: 'stable-b',
+              deviceName: 'Beta',
+              platform: 'windows',
+              address: '192.168.1.11',
+              port: 44888,
+            ),
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        List<DeviceInfo> devices = container
+            .read(connectionControllerProvider)
+            .discoveredDevices;
+        expect(
+          devices.map((DeviceInfo device) => device.deviceId).toList(),
+          <String>['stable-a', 'stable-b'],
+        );
+
+        discovery.emit(
+          const DiscoveryEvent(
+            type: DiscoveryEventType.announce,
+            device: DeviceInfo(
+              deviceId: 'stable-a',
+              deviceName: 'Alpha',
+              platform: 'windows',
+              address: '192.168.1.12',
+              port: 44888,
+            ),
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        devices = container
+            .read(connectionControllerProvider)
+            .discoveredDevices;
+        expect(
+          devices.map((DeviceInfo device) => device.deviceId).toList(),
+          <String>['stable-a', 'stable-b'],
+        );
+      },
+    );
+
+    test(
+      'passive hello immediately moves connected peer card to the top',
+      () async {
+        final _FakeDiscoveryService discovery = _FakeDiscoveryService();
+        final _FakeHttpSyncServerService server = _FakeHttpSyncServerService();
+        final ProviderContainer container = _container(
+          client: _FakeHttpSyncClient(
+            helloResponse: const HelloResponseDto(
+              device: DeviceInfo(
+                deviceId: 'peer',
+                deviceName: 'Peer',
+                platform: 'android',
+                address: '',
+                port: 44888,
+              ),
+              directoryReady: false,
+            ),
+          ),
+          discovery: discovery,
+          server: server,
+        );
+        addTearDown(container.dispose);
+
+        container.read(connectionControllerProvider);
+        await container
+            .read(connectionControllerProvider.notifier)
+            .startListening(port: 44888);
+        await Future<void>.delayed(Duration.zero);
+
+        discovery.emit(
+          const DiscoveryEvent(
+            type: DiscoveryEventType.announce,
+            device: DeviceInfo(
+              deviceId: 'stable-a',
+              deviceName: 'Alpha',
+              platform: 'windows',
+              address: '192.168.1.10',
+              port: 44888,
+            ),
+          ),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 2));
+        discovery.emit(
+          const DiscoveryEvent(
+            type: DiscoveryEventType.announce,
+            device: DeviceInfo(
+              deviceId: 'stable-b',
+              deviceName: 'Beta',
+              platform: 'windows',
+              address: '192.168.1.11',
+              port: 44888,
+            ),
+          ),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        List<DeviceInfo> devices = container
+            .read(connectionControllerProvider)
+            .discoveredDevices;
+        expect(
+          devices.map((DeviceInfo device) => device.deviceId).toList(),
+          <String>['stable-a', 'stable-b'],
+        );
+
+        await server.simulateHello(
+          const HelloRequestDto(
+            device: DeviceInfo(
+              deviceId: 'stable-b',
+              deviceName: 'Beta',
+              platform: 'windows',
+              address: '',
+              port: 44888,
+            ),
+            directoryReady: false,
+          ),
+          remoteAddress: '192.168.1.11',
+        );
+
+        devices = container
+            .read(connectionControllerProvider)
+            .discoveredDevices;
+        expect(
+          devices.map((DeviceInfo device) => device.deviceId).toList(),
+          <String>['stable-b', 'stable-a'],
+        );
+      },
+    );
   });
 }
 
-ProviderContainer _container({required _FakeHttpSyncClient client}) {
+ProviderContainer _container({
+  required _FakeHttpSyncClient client,
+  _FakeDiscoveryService? discovery,
+  _FakeHttpSyncServerService? server,
+}) {
   return ProviderContainer(
     overrides: [
       httpSyncClientProvider.overrideWithValue(client),
       httpSyncServerServiceProvider.overrideWithValue(
-        _FakeHttpSyncServerService(),
+        server ?? _FakeHttpSyncServerService(),
       ),
-      discoveryServiceProvider.overrideWithValue(_FakeDiscoveryService()),
+      discoveryServiceProvider.overrideWithValue(
+        discovery ?? _FakeDiscoveryService(),
+      ),
       recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
       fileAccessGatewayProvider.overrideWithValue(_FakeFileAccessGateway()),
+      settingsStoreProvider.overrideWithValue(
+        _FakeSettingsStore(deviceIdentity: 'local-stable-device'),
+      ),
     ],
   );
 }
@@ -370,6 +669,8 @@ class _FakeHttpSyncClient extends HttpSyncClient {
 }
 
 class _FakeHttpSyncServerService extends HttpSyncServerService {
+  HelloHandler? _onHello;
+
   @override
   Future<void> start({
     required int port,
@@ -385,15 +686,30 @@ class _FakeHttpSyncServerService extends HttpSyncServerService {
     required FinishCopyHandler onFinishCopy,
     required AbortCopyHandler onAbortCopy,
     required DeleteEntryHandler onDeleteEntry,
-  }) async {}
+  }) async {
+    _onHello = onHello;
+  }
 
   @override
   Future<void> stop() async {}
+
+  Future<HelloResponseDto> simulateHello(
+    HelloRequestDto request, {
+    required String remoteAddress,
+  }) async {
+    final HelloHandler handler =
+        _onHello ?? (throw StateError('Hello handler not registered.'));
+    return handler(request, remoteAddress);
+  }
 }
 
 class _FakeDiscoveryService extends DiscoveryService {
+  DiscoveryCallback? _callback;
+
   @override
-  Future<void> startReceiving({required DiscoveryCallback onDevice}) async {}
+  Future<void> startReceiving({required DiscoveryCallback onDevice}) async {
+    _callback = onDevice;
+  }
 
   @override
   Future<void> startBroadcasting(DeviceInfo device) async {}
@@ -406,6 +722,10 @@ class _FakeDiscoveryService extends DiscoveryService {
 
   @override
   Future<void> dispose() async {}
+
+  void emit(DiscoveryEvent event) {
+    _callback?.call(event);
+  }
 }
 
 class _FakeRecentItemsStore extends RecentItemsStore {
@@ -458,6 +778,15 @@ class _FakeFileAccessGateway implements FileAccessGateway {
   Future<FileAccessEntry> stat(String entryId) {
     throw UnimplementedError();
   }
+}
+
+class _FakeSettingsStore extends SettingsStore {
+  _FakeSettingsStore({required this.deviceIdentity});
+
+  final String deviceIdentity;
+
+  @override
+  Future<String> loadOrCreateDeviceIdentity() async => deviceIdentity;
 }
 
 ScanSnapshot _remoteSnapshot(String name) {
