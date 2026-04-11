@@ -19,6 +19,9 @@ class TransferProgress {
     required this.totalFiles,
     required this.processedBytes,
     required this.totalBytes,
+    this.copiedCount = 0,
+    this.deletedCount = 0,
+    this.failedCount = 0,
     this.currentPath,
   });
 
@@ -27,5 +30,8 @@ class TransferProgress {
   final int totalFiles;
   final int processedBytes;
   final int totalBytes;
+  final int copiedCount;
+  final int deletedCount;
+  final int failedCount;
   final String? currentPath;
 }

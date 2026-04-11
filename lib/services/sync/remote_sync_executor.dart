@@ -48,6 +48,20 @@ class RemoteSyncExecutor {
         final String? sourceEntryId = item.source?.entryId;
         if (sourceEntryId == null) {
           failedCount++;
+          processedFiles++;
+          onProgress(
+            TransferProgress(
+              stage: SyncStage.copying,
+              processedFiles: processedFiles,
+              totalFiles: totalFiles,
+              processedBytes: processedBytes,
+              totalBytes: totalBytes,
+              copiedCount: copiedCount,
+              deletedCount: deletedCount,
+              failedCount: failedCount,
+              currentPath: item.relativePath,
+            ),
+          );
           continue;
         }
 
@@ -82,6 +96,9 @@ class RemoteSyncExecutor {
                 totalFiles: totalFiles,
                 processedBytes: processedBytes,
                 totalBytes: totalBytes,
+                copiedCount: copiedCount,
+                deletedCount: deletedCount,
+                failedCount: failedCount,
                 currentPath: item.relativePath,
               ),
             );
@@ -102,6 +119,9 @@ class RemoteSyncExecutor {
               totalFiles: totalFiles,
               processedBytes: processedBytes,
               totalBytes: totalBytes,
+              copiedCount: copiedCount,
+              deletedCount: deletedCount,
+              failedCount: failedCount,
               currentPath: item.relativePath,
             ),
           );
@@ -122,6 +142,19 @@ class RemoteSyncExecutor {
           failedCount++;
           processedFiles++;
           lastError = error.toString();
+          onProgress(
+            TransferProgress(
+              stage: SyncStage.copying,
+              processedFiles: processedFiles,
+              totalFiles: totalFiles,
+              processedBytes: processedBytes,
+              totalBytes: totalBytes,
+              copiedCount: copiedCount,
+              deletedCount: deletedCount,
+              failedCount: failedCount,
+              currentPath: item.relativePath,
+            ),
+          );
           try {
             await _httpClient.abortCopy(
               address: peer.address,
@@ -154,6 +187,9 @@ class RemoteSyncExecutor {
               totalFiles: totalFiles,
               processedBytes: processedBytes,
               totalBytes: totalBytes,
+              copiedCount: copiedCount,
+              deletedCount: deletedCount,
+              failedCount: failedCount,
               currentPath: item.relativePath,
             ),
           );
@@ -161,6 +197,19 @@ class RemoteSyncExecutor {
           failedCount++;
           processedFiles++;
           lastError = error.toString();
+          onProgress(
+            TransferProgress(
+              stage: SyncStage.deleting,
+              processedFiles: processedFiles,
+              totalFiles: totalFiles,
+              processedBytes: processedBytes,
+              totalBytes: totalBytes,
+              copiedCount: copiedCount,
+              deletedCount: deletedCount,
+              failedCount: failedCount,
+              currentPath: item.relativePath,
+            ),
+          );
         }
       }
 
@@ -171,6 +220,9 @@ class RemoteSyncExecutor {
           totalFiles: totalFiles,
           processedBytes: processedBytes,
           totalBytes: totalBytes,
+          copiedCount: copiedCount,
+          deletedCount: deletedCount,
+          failedCount: failedCount,
         ),
       );
 

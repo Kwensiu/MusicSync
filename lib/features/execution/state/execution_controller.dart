@@ -30,6 +30,21 @@ class ExecutionController extends Notifier<ExecutionState> {
   @override
   ExecutionState build() => ExecutionState.initial();
 
+  ExecutionResult _resultFromProgress(
+    TransferProgress progress, {
+    required String targetRoot,
+    String? lastError,
+  }) {
+    return ExecutionResult(
+      copiedCount: progress.copiedCount,
+      deletedCount: progress.deletedCount,
+      failedCount: progress.failedCount,
+      totalBytes: progress.processedBytes,
+      targetRoot: targetRoot,
+      lastError: lastError,
+    );
+  }
+
   void _cancelActiveExecution() {
     _cancelToken?.cancel();
     _cancelToken = null;
@@ -82,14 +97,14 @@ class ExecutionController extends Notifier<ExecutionState> {
     _cancelToken = cancelToken;
     state = ExecutionState(
       status: ExecutionStatus.running,
-      progress: const TransferProgress(
+      progress: TransferProgress(
         stage: SyncStage.copying,
         processedFiles: 0,
-        totalFiles: 0,
+        totalFiles: plan.copyItems.length + plan.deleteItems.length,
         processedBytes: 0,
-        totalBytes: 0,
+        totalBytes: plan.summary.copyBytes,
       ),
-      result: state.result,
+      result: const ExecutionResult.empty(),
       mode: ExecutionMode.local,
       targetRoot: targetRoot,
     );
@@ -106,7 +121,11 @@ class ExecutionController extends Notifier<ExecutionState> {
           state = ExecutionState(
             status: ExecutionStatus.running,
             progress: progress,
-            result: state.result,
+            result: _resultFromProgress(
+              progress,
+              targetRoot: targetRoot,
+              lastError: state.result.lastError,
+            ),
             mode: ExecutionMode.local,
             targetRoot: targetRoot,
           );
@@ -121,10 +140,14 @@ class ExecutionController extends Notifier<ExecutionState> {
         status: ExecutionStatus.completed,
         progress: TransferProgress(
           stage: SyncStage.completed,
-          processedFiles: plan.copyItems.length + plan.deleteItems.length,
+          processedFiles:
+              result.copiedCount + result.deletedCount + result.failedCount,
           totalFiles: plan.copyItems.length + plan.deleteItems.length,
           processedBytes: result.totalBytes,
           totalBytes: plan.summary.copyBytes,
+          copiedCount: result.copiedCount,
+          deletedCount: result.deletedCount,
+          failedCount: result.failedCount,
         ),
         result: result,
         mode: ExecutionMode.local,
@@ -147,6 +170,9 @@ class ExecutionController extends Notifier<ExecutionState> {
             totalFiles: state.progress.totalFiles,
             processedBytes: state.progress.processedBytes,
             totalBytes: state.progress.totalBytes,
+            copiedCount: state.progress.copiedCount,
+            deletedCount: state.progress.deletedCount,
+            failedCount: state.progress.failedCount,
             currentPath: state.progress.currentPath,
           ),
           result: state.result,
@@ -175,14 +201,14 @@ class ExecutionController extends Notifier<ExecutionState> {
     _cancelToken = cancelToken;
     state = ExecutionState(
       status: ExecutionStatus.running,
-      progress: const TransferProgress(
+      progress: TransferProgress(
         stage: SyncStage.copying,
         processedFiles: 0,
-        totalFiles: 0,
+        totalFiles: plan.copyItems.length + plan.deleteItems.length,
         processedBytes: 0,
-        totalBytes: 0,
+        totalBytes: plan.summary.copyBytes,
       ),
-      result: state.result,
+      result: const ExecutionResult.empty(),
       mode: ExecutionMode.remote,
       targetRoot: remoteRootId,
     );
@@ -199,7 +225,11 @@ class ExecutionController extends Notifier<ExecutionState> {
           state = ExecutionState(
             status: ExecutionStatus.running,
             progress: progress,
-            result: state.result,
+            result: _resultFromProgress(
+              progress,
+              targetRoot: remoteRootId,
+              lastError: state.result.lastError,
+            ),
             mode: ExecutionMode.remote,
             targetRoot: remoteRootId,
           );
@@ -214,10 +244,14 @@ class ExecutionController extends Notifier<ExecutionState> {
         status: ExecutionStatus.completed,
         progress: TransferProgress(
           stage: SyncStage.completed,
-          processedFiles: plan.copyItems.length + plan.deleteItems.length,
+          processedFiles:
+              result.copiedCount + result.deletedCount + result.failedCount,
           totalFiles: plan.copyItems.length + plan.deleteItems.length,
           processedBytes: result.totalBytes,
           totalBytes: plan.summary.copyBytes,
+          copiedCount: result.copiedCount,
+          deletedCount: result.deletedCount,
+          failedCount: result.failedCount,
         ),
         result: result,
         mode: ExecutionMode.remote,
@@ -240,6 +274,9 @@ class ExecutionController extends Notifier<ExecutionState> {
             totalFiles: state.progress.totalFiles,
             processedBytes: state.progress.processedBytes,
             totalBytes: state.progress.totalBytes,
+            copiedCount: state.progress.copiedCount,
+            deletedCount: state.progress.deletedCount,
+            failedCount: state.progress.failedCount,
             currentPath: state.progress.currentPath,
           ),
           result: state.result,
@@ -279,6 +316,9 @@ class ExecutionController extends Notifier<ExecutionState> {
         totalFiles: state.progress.totalFiles,
         processedBytes: state.progress.processedBytes,
         totalBytes: state.progress.totalBytes,
+        copiedCount: state.progress.copiedCount,
+        deletedCount: state.progress.deletedCount,
+        failedCount: state.progress.failedCount,
         currentPath: state.progress.currentPath,
       ),
       result: state.result,
@@ -303,6 +343,9 @@ class ExecutionController extends Notifier<ExecutionState> {
         totalFiles: state.progress.totalFiles,
         processedBytes: state.progress.processedBytes,
         totalBytes: state.progress.totalBytes,
+        copiedCount: state.progress.copiedCount,
+        deletedCount: state.progress.deletedCount,
+        failedCount: state.progress.failedCount,
         currentPath: state.progress.currentPath,
       ),
       result: state.result,

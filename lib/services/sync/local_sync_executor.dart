@@ -33,6 +33,20 @@ class LocalSyncExecutor {
       final String? sourcePath = item.source?.entryId;
       if (sourcePath == null) {
         failedCount++;
+        processedFiles++;
+        onProgress(
+          TransferProgress(
+            stage: SyncStage.copying,
+            processedFiles: processedFiles,
+            totalFiles: totalFiles,
+            processedBytes: processedBytes,
+            totalBytes: totalBytes,
+            copiedCount: copiedCount,
+            deletedCount: deletedCount,
+            failedCount: failedCount,
+            currentPath: item.relativePath,
+          ),
+        );
         continue;
       }
 
@@ -61,6 +75,9 @@ class LocalSyncExecutor {
                 totalFiles: totalFiles,
                 processedBytes: processedBytes,
                 totalBytes: totalBytes,
+                copiedCount: copiedCount,
+                deletedCount: deletedCount,
+                failedCount: failedCount,
                 currentPath: item.relativePath,
               ),
             );
@@ -95,6 +112,9 @@ class LocalSyncExecutor {
             totalFiles: totalFiles,
             processedBytes: processedBytes,
             totalBytes: totalBytes,
+            copiedCount: copiedCount,
+            deletedCount: deletedCount,
+            failedCount: failedCount,
             currentPath: item.relativePath,
           ),
         );
@@ -112,6 +132,9 @@ class LocalSyncExecutor {
             totalFiles: totalFiles,
             processedBytes: processedBytes,
             totalBytes: totalBytes,
+            copiedCount: copiedCount,
+            deletedCount: deletedCount,
+            failedCount: failedCount,
             currentPath: item.relativePath,
           ),
         );
@@ -148,6 +171,9 @@ class LocalSyncExecutor {
             totalFiles: totalFiles,
             processedBytes: processedBytes,
             totalBytes: totalBytes,
+            copiedCount: copiedCount,
+            deletedCount: deletedCount,
+            failedCount: failedCount,
             currentPath: item.relativePath,
           ),
         );
@@ -165,6 +191,9 @@ class LocalSyncExecutor {
             totalFiles: totalFiles,
             processedBytes: processedBytes,
             totalBytes: totalBytes,
+            copiedCount: copiedCount,
+            deletedCount: deletedCount,
+            failedCount: failedCount,
             currentPath: item.relativePath,
           ),
         );
@@ -178,6 +207,9 @@ class LocalSyncExecutor {
         totalFiles: totalFiles,
         processedBytes: processedBytes,
         totalBytes: totalBytes,
+        copiedCount: copiedCount,
+        deletedCount: deletedCount,
+        failedCount: failedCount,
       ),
     );
 
