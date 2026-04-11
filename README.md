@@ -38,7 +38,10 @@ The repository also contains:
 
 The workflow at `.github/workflows/build-installers.yml` builds:
 
-- signed Android `app-release.apk`
+- verified Flutter release inputs via `flutter analyze` and `flutter test`
+- signed Android `app-armeabi-v7a-release.apk`
+- signed Android `app-arm64-v8a-release.apk`
+- signed Android `app-release.aab`
 - Windows portable bundle `.zip`
 - Windows Inno Setup installer `.exe`
 

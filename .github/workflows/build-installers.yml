@@ -3,6 +3,16 @@ name: Build Installers
 on:
   workflow_dispatch:
 
+env:
+  FLUTTER_VERSION: 3.41.6
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   metadata:
     runs-on: ubuntu-latest
@@ -20,9 +30,35 @@ jobs:
           echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
           echo "version_full=$VERSION_LINE" >> "$GITHUB_OUTPUT"
 
-  build_android:
-    needs: metadata
+  verify:
     runs-on: ubuntu-latest
+    env:
+      PUB_CACHE: ~/.pub-cache
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Restore packages
+        run: flutter pub get --enforce-lockfile
+
+      - name: Analyze project
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+  build_android:
+    needs:
+      - metadata
+      - verify
+    runs-on: ubuntu-latest
+    env:
+      PUB_CACHE: ~/.pub-cache
     steps:
       - uses: actions/checkout@v4
 
@@ -43,15 +79,24 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+          cache: gradle
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PUB_CACHE }}
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
       - name: Restore packages
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Decode Android keystore
         env:
@@ -69,36 +114,62 @@ jobs:
           storePassword=$ANDROID_KEYSTORE_PASSWORD
           keyPassword=$ANDROID_KEY_PASSWORD
           keyAlias=$ANDROID_KEY_ALIAS
-          storeFile=upload-keystore.jks
+          storeFile=../upload-keystore.jks
           EOF
 
-      - name: Build Android APK
-        run: flutter build apk --release
+      - name: Build Android APKs
+        run: flutter build apk --release --split-per-abi
 
-      - name: Upload Android artifact
+      - name: Build Android App Bundle
+        run: flutter build appbundle --release
+
+      - name: Upload Android APK artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: MusicSync-${{ needs.metadata.outputs.version_full }}-android-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: MusicSync-${{ needs.metadata.outputs.version_full }}-android-apk-split-abi
+          path: |
+            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Upload Android app bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MusicSync-${{ needs.metadata.outputs.version_full }}-android-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 14
           if-no-files-found: error
 
   build_windows:
-    needs: metadata
+    needs:
+      - metadata
+      - verify
     runs-on: windows-latest
+    env:
+      PUB_CACHE: ~\AppData\Local\Pub\Cache
     steps:
       - uses: actions/checkout@v4
 
       - name: Enable long paths
         run: git config --system core.longpaths true
 
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PUB_CACHE }}
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
       - name: Restore packages
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Build Windows bundle
         run: flutter build windows --release
@@ -117,6 +188,7 @@ jobs:
         with:
           name: MusicSync-${{ needs.metadata.outputs.version_full }}-windows-bundle
           path: build/windows/x64/runner/MusicSync-${{ needs.metadata.outputs.version_full }}-windows-x64.zip
+          retention-days: 14
           if-no-files-found: error
 
       - name: Upload Windows installer artifact
@@ -124,4 +196,5 @@ jobs:
         with:
           name: MusicSync-${{ needs.metadata.outputs.version_full }}-windows-installer
           path: windows/inno-output/MusicSync-${{ needs.metadata.outputs.version_name }}-windows-x64-setup.exe
+          retention-days: 14
           if-no-files-found: error

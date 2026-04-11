@@ -1,0 +1,158 @@
+name: Android Debug APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - lib/**
+      - android/**
+      - windows/**
+      - scripts/**
+      - pubspec.yaml
+      - pubspec.lock
+      - analysis_options.yaml
+      - l10n.yaml
+      - .github/workflows/debug-build.yml
+      - .github/workflows/build-installers.yml
+  pull_request:
+    paths:
+      - lib/**
+      - android/**
+      - windows/**
+      - scripts/**
+      - pubspec.yaml
+      - pubspec.lock
+      - analysis_options.yaml
+      - l10n.yaml
+      - .github/workflows/debug-build.yml
+      - .github/workflows/build-installers.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  metadata:
+    runs-on: ubuntu-latest
+    outputs:
+      version_name: ${{ steps.version.outputs.version_name }}
+      version_full: ${{ steps.version.outputs.version_full }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version from pubspec
+        id: version
+        run: |
+          VERSION_LINE=$(sed -n 's/^version: //p' pubspec.yaml)
+          VERSION_NAME=${VERSION_LINE%%+*}
+          echo "version_name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
+          echo "version_full=$VERSION_LINE" >> "$GITHUB_OUTPUT"
+
+  build_android_debug:
+    needs: metadata
+    runs-on: ubuntu-latest
+    env:
+      PUB_CACHE: ~/.pub-cache
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PUB_CACHE }}
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build debug APKs (split per ABI)
+        run: flutter build apk --debug --split-per-abi
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: MusicSync-${{ needs.metadata.outputs.version_full }}-android-debug-apk-split-abi
+          path: |
+            build/app/outputs/flutter-apk/app-armeabi-v7a-debug.apk
+            build/app/outputs/flutter-apk/app-arm64-v8a-debug.apk
+          retention-days: 14
+          if-no-files-found: error
+
+  build_windows_debug:
+    needs: metadata
+    runs-on: windows-latest
+    env:
+      PUB_CACHE: ~\AppData\Local\Pub\Cache
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable long paths
+        run: git config --system core.longpaths true
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PUB_CACHE }}
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Restore packages
+        run: flutter pub get
+
+      - name: Build Windows bundle (debug)
+        run: flutter build windows --debug
+
+      - name: Archive Windows bundle
+        run: Compress-Archive -Path build/windows/x64/runner/Debug/* -DestinationPath build/windows/x64/runner/MusicSync-${{ needs.metadata.outputs.version_full }}-windows-x64-debug.zip
+
+      - name: Build Windows debug installer
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        with:
+          path: scripts/windows/installer.iss
+          options: /DMyAppVersion=${{ needs.metadata.outputs.version_name }}-debug /DMySourceDir=..\..\build\windows\x64\runner\Debug /O+
+
+      - name: Upload Windows bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MusicSync-${{ needs.metadata.outputs.version_full }}-windows-bundle-debug
+          path: build/windows/x64/runner/MusicSync-${{ needs.metadata.outputs.version_full }}-windows-x64-debug.zip
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Upload Windows installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MusicSync-${{ needs.metadata.outputs.version_full }}-windows-installer-debug
+          path: windows/inno-output/MusicSync-${{ needs.metadata.outputs.version_name }}-debug-windows-x64-setup.exe
+          retention-days: 14
+          if-no-files-found: error
