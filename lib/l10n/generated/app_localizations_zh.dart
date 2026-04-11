@@ -12,6 +12,62 @@ class AppLocalizationsZh extends AppLocalizations {
   String get appTitle => 'MusicSync';
 
   @override
+  String get homeOverviewTitle => '概览';
+
+  @override
+  String get homeOverviewHeadline => '从这里进入传输工作台';
+
+  @override
+  String get homeOverviewBody => '首页只负责概览和入口。设备连接、源目录选择、预览和同步执行统一放到传输页处理。';
+
+  @override
+  String get homeOpenTransferPage => '进入传输页';
+
+  @override
+  String get homeOverviewStatusTitle => '当前状态';
+
+  @override
+  String get homeOverviewConnectionLabel => '设备会话';
+
+  @override
+  String get homeOverviewSourceLabel => '源目录';
+
+  @override
+  String get homeOverviewPreviewLabel => '预览';
+
+  @override
+  String get homeOverviewNextTitle => '下一步';
+
+  @override
+  String get homeOverviewNextConnect => '先进入传输页，建立设备连接。';
+
+  @override
+  String get homeOverviewNextPickSource => '设备已连通，接下来在传输页选择本地源目录。';
+
+  @override
+  String get homeOverviewNextBuildPreview => '源目录已就绪，下一步是在传输页生成预览。';
+
+  @override
+  String get homeOverviewNextOpenTransfer => '已经具备继续传输的条件，可以直接进入传输页。';
+
+  @override
+  String get homeOverviewPreviewPending => '尚未生成预览';
+
+  @override
+  String homeOverviewPreviewReady(int count) {
+    return '预览已就绪，共 $count 项';
+  }
+
+  @override
+  String get homeSourceStateReady => '已选择源目录';
+
+  @override
+  String get homeSourceStatePending => '尚未选择源目录';
+
+  @override
+  String get transferTitle => '传输';
+
+  @override
   String get homeStepConnectionTitle => '步骤 1：建立设备会话';
 
   @override
@@ -78,6 +134,18 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get homeStepPreviewHint => '目录就绪后会自动分析；如需重扫目标端，可手动刷新索引。';
+
+  @override
+  String get homeOpenPreviewWorkspace => '打开预览工作台';
+
+  @override
+  String get homeViewPreviewList => '查看预览列表';
+
+  @override
+  String get homePreviewStateReady => '预览已就绪';
+
+  @override
+  String get homePreviewStatePending => '尚未生成预览';
 
   @override
   String get homeAdvancedTitle => '高级与调试';
@@ -624,7 +692,30 @@ class AppLocalizationsZh extends AppLocalizations {
   String get executionStop => '停止同步';
 
   @override
-  String get executionCancelled => '同步已手动停止。未完成的临时文件已尽量清理。';
+  String get executionResultDone => '已完成';
+
+  @override
+  String get executionResultPartialDone => '部分完成';
+
+  @override
+  String get executionResultFailed => '同步失败';
+
+  @override
+  String executionResultProcessed(int done, int total) {
+    return '已处理：$done / $total';
+  }
+
+  @override
+  String get executionMetricCopy => '复制';
+
+  @override
+  String get executionMetricDelete => '删除';
+
+  @override
+  String get executionMetricFailed => '失败';
+
+  @override
+  String get executionCancelled => '同步被提前结束，已尝试清理同步临时文件。';
 
   @override
   String executionCurrentFile(Object path) {
@@ -749,6 +840,19 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsRulesTitle => '规则';
+
+  @override
+  String get settingsDeviceAliasTitle => '设备名称';
+
+  @override
+  String get settingsDeviceAliasDescription =>
+      '留空时会自动使用设备型号名；如果拿不到型号名，再回退到设备类型。';
+
+  @override
+  String get settingsDeviceAliasField => '设备名称';
+
+  @override
+  String get settingsDeviceAliasHint => '例如 卧室平板 或 我的 Windows';
 
   @override
   String get settingsAutoStartListeningTitle => '启动时自动监听';

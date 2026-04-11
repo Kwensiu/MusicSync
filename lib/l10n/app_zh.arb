@@ -1,6 +1,31 @@
 {
   "@@locale": "zh",
   "appTitle": "MusicSync",
+  "homeOverviewTitle": "概览",
+  "homeOverviewHeadline": "从这里进入传输工作台",
+  "homeOverviewBody": "首页只负责概览和入口。设备连接、源目录选择、预览和同步执行统一放到传输页处理。",
+  "homeOpenTransferPage": "进入传输页",
+  "homeOverviewStatusTitle": "当前状态",
+  "homeOverviewConnectionLabel": "设备会话",
+  "homeOverviewSourceLabel": "源目录",
+  "homeOverviewPreviewLabel": "预览",
+  "homeOverviewNextTitle": "下一步",
+  "homeOverviewNextConnect": "先进入传输页，建立设备连接。",
+  "homeOverviewNextPickSource": "设备已连通，接下来在传输页选择本地源目录。",
+  "homeOverviewNextBuildPreview": "源目录已就绪，下一步是在传输页生成预览。",
+  "homeOverviewNextOpenTransfer": "已经具备继续传输的条件，可以直接进入传输页。",
+  "homeOverviewPreviewPending": "尚未生成预览",
+  "homeOverviewPreviewReady": "预览已就绪，共 {count} 项",
+  "@homeOverviewPreviewReady": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeSourceStateReady": "已选择源目录",
+  "homeSourceStatePending": "尚未选择源目录",
+  "transferTitle": "传输",
   "homeStepConnectionTitle": "步骤 1：建立设备会话",
   "homeConnectionStateIdle": "未监听",
   "homeConnectionStateConnecting": "连接中",
@@ -30,6 +55,10 @@
   "homeSourcePendingBecauseRemoteReady": "目标端目录已经准备好，现在只差选择本地源目录。",
   "homeStepPreviewTitle": "步骤 3：检查并同步",
   "homeStepPreviewHint": "目录就绪后会自动分析；如需重扫目标端，可手动刷新索引。",
+  "homeOpenPreviewWorkspace": "打开预览工作台",
+  "homeViewPreviewList": "查看预览列表",
+  "homePreviewStateReady": "预览已就绪",
+  "homePreviewStatePending": "尚未生成预览",
   "homeAdvancedTitle": "高级与调试",
   "homeConnectionHelpersTitle": "连接辅助",
   "homeConnectionActionsTitle": "连接操作",
@@ -335,7 +364,24 @@
   "executionRunLocalDebug": "执行本地调试复制",
   "executionRunRemote": "开始同步",
   "executionStop": "停止同步",
-  "executionCancelled": "同步已手动停止。未完成的临时文件已尽量清理。",
+  "executionResultDone": "已完成",
+  "executionResultPartialDone": "部分完成",
+  "executionResultFailed": "同步失败",
+  "executionResultProcessed": "已处理：{done} / {total}",
+  "@executionResultProcessed": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "executionMetricCopy": "复制",
+  "executionMetricDelete": "删除",
+  "executionMetricFailed": "失败",
+  "executionCancelled": "同步被提前结束，已尝试清理同步临时文件。",
   "executionCurrentFile": "当前文件：{path}",
   "@executionCurrentFile": {
     "placeholders": {
@@ -442,6 +488,10 @@
   "settingsDefaultsTitle": "默认值",
   "settingsDefaultsPlaceholder": "项目级设置会放在这里。",
   "settingsRulesTitle": "规则",
+  "settingsDeviceAliasTitle": "设备名称",
+  "settingsDeviceAliasDescription": "留空时会自动使用设备型号名；如果拿不到型号名，再回退到设备类型。",
+  "settingsDeviceAliasField": "设备名称",
+  "settingsDeviceAliasHint": "例如 卧室平板 或 我的 Windows",
   "settingsAutoStartListeningTitle": "启动时自动监听",
   "settingsAutoStartListeningDescription": "开启后，MusicSync 启动时会自动进入监听状态",
   "settingsIgnoredExtensionsTitle": "忽略文件类型",

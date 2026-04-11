@@ -104,6 +104,114 @@ abstract class AppLocalizations {
   /// **'MusicSync'**
   String get appTitle;
 
+  /// No description provided for @homeOverviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get homeOverviewTitle;
+
+  /// No description provided for @homeOverviewHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the transfer workspace from here'**
+  String get homeOverviewHeadline;
+
+  /// No description provided for @homeOverviewBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The home page now focuses on overview and entry points. Device session, source selection, preview, and sync execution all live in the transfer page.'**
+  String get homeOverviewBody;
+
+  /// No description provided for @homeOpenTransferPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Transfer Page'**
+  String get homeOpenTransferPage;
+
+  /// No description provided for @homeOverviewStatusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Status'**
+  String get homeOverviewStatusTitle;
+
+  /// No description provided for @homeOverviewConnectionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Device Session'**
+  String get homeOverviewConnectionLabel;
+
+  /// No description provided for @homeOverviewSourceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Source Directory'**
+  String get homeOverviewSourceLabel;
+
+  /// No description provided for @homeOverviewPreviewLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get homeOverviewPreviewLabel;
+
+  /// No description provided for @homeOverviewNextTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Next Step'**
+  String get homeOverviewNextTitle;
+
+  /// No description provided for @homeOverviewNextConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the transfer page first and establish a device session.'**
+  String get homeOverviewNextConnect;
+
+  /// No description provided for @homeOverviewNextPickSource.
+  ///
+  /// In en, this message translates to:
+  /// **'The device session is ready. Next, pick a local source directory in the transfer page.'**
+  String get homeOverviewNextPickSource;
+
+  /// No description provided for @homeOverviewNextBuildPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'The source directory is ready. Next, build a preview in the transfer page.'**
+  String get homeOverviewNextBuildPreview;
+
+  /// No description provided for @homeOverviewNextOpenTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything needed to continue is ready. Open the transfer page.'**
+  String get homeOverviewNextOpenTransfer;
+
+  /// No description provided for @homeOverviewPreviewPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview not built'**
+  String get homeOverviewPreviewPending;
+
+  /// No description provided for @homeOverviewPreviewReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview ready, {count} item(s)'**
+  String homeOverviewPreviewReady(int count);
+
+  /// No description provided for @homeSourceStateReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Source directory selected'**
+  String get homeSourceStateReady;
+
+  /// No description provided for @homeSourceStatePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Source directory not selected'**
+  String get homeSourceStatePending;
+
+  /// No description provided for @transferTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer'**
+  String get transferTitle;
+
   /// No description provided for @homeStepConnectionTitle.
   ///
   /// In en, this message translates to:
@@ -235,6 +343,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Analysis starts automatically after both directories are ready. Refresh the target index only if needed.'**
   String get homeStepPreviewHint;
+
+  /// No description provided for @homeOpenPreviewWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Preview Workspace'**
+  String get homeOpenPreviewWorkspace;
+
+  /// No description provided for @homeViewPreviewList.
+  ///
+  /// In en, this message translates to:
+  /// **'View Preview List'**
+  String get homeViewPreviewList;
+
+  /// No description provided for @homePreviewStateReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview ready'**
+  String get homePreviewStateReady;
+
+  /// No description provided for @homePreviewStatePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview not built'**
+  String get homePreviewStatePending;
 
   /// No description provided for @homeAdvancedTitle.
   ///
@@ -1218,10 +1350,52 @@ abstract class AppLocalizations {
   /// **'Stop Sync'**
   String get executionStop;
 
+  /// No description provided for @executionResultDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get executionResultDone;
+
+  /// No description provided for @executionResultPartialDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Partially Completed'**
+  String get executionResultPartialDone;
+
+  /// No description provided for @executionResultFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Failed'**
+  String get executionResultFailed;
+
+  /// No description provided for @executionResultProcessed.
+  ///
+  /// In en, this message translates to:
+  /// **'Processed: {done} / {total}'**
+  String executionResultProcessed(int done, int total);
+
+  /// No description provided for @executionMetricCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy'**
+  String get executionMetricCopy;
+
+  /// No description provided for @executionMetricDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get executionMetricDelete;
+
+  /// No description provided for @executionMetricFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get executionMetricFailed;
+
   /// No description provided for @executionCancelled.
   ///
   /// In en, this message translates to:
-  /// **'Sync was stopped manually. Incomplete temporary files were cleaned when possible.'**
+  /// **'Sync ended early. Temporary sync files were cleaned when possible.'**
   String get executionCancelled;
 
   /// No description provided for @executionCurrentFile.
@@ -1427,6 +1601,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rules'**
   String get settingsRulesTitle;
+
+  /// No description provided for @settingsDeviceAliasTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Device Name'**
+  String get settingsDeviceAliasTitle;
+
+  /// No description provided for @settingsDeviceAliasDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave empty to use the device model automatically, then fall back to the device type if needed.'**
+  String get settingsDeviceAliasDescription;
+
+  /// No description provided for @settingsDeviceAliasField.
+  ///
+  /// In en, this message translates to:
+  /// **'Device Name'**
+  String get settingsDeviceAliasField;
+
+  /// No description provided for @settingsDeviceAliasHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example Bedroom Tablet or My Windows PC'**
+  String get settingsDeviceAliasHint;
 
   /// No description provided for @settingsAutoStartListeningTitle.
   ///
