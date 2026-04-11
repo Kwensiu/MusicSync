@@ -1400,6 +1400,34 @@
 - 下一步进入连接发现稳定性重构，重点处理：
   - 设备卡片地址闪烁
   - 发现列表的稳定聚合与去重策略
+
+## 39. Release 构建工作流预备收口
+
+这一轮没有接正式发布动作，而是先把 `build-installers.yml` 收到更接近 release 流水线的状态。
+
+已完成：
+
+- 固定 GitHub Actions 中的 Flutter 版本为当前项目本地使用的 `3.41.6`
+  - 避免 `stable` 漂移导致 release 构建结果不稳定
+- 新增独立 `verify` job
+  - 在打 Android / Windows 安装包前，先执行：
+    - `flutter analyze`
+    - `flutter test`
+- 依赖恢复改为 `flutter pub get --enforce-lockfile`
+  - 让 CI 依赖解析更接近可复现构建
+- Android release 构建补齐 `AAB`
+  - 当前会同时产出：
+    - `app-armeabi-v7a-release.apk`
+    - `app-arm64-v8a-release.apk`
+    - `app-release.aab`
+- README 中的 CI 产物说明已同步更新
+
+当前阶段的定位是：
+
+- workflow 结构已经更适合作为后续正式发布链路的基座
+- 但仍然只停留在"构建并产出 artifact"
+- 还没有接入 GitHub Release、商店发布或签名证书分发等真正发布动作
+
 ## 2026-04-11 Device Discovery Identity Refactor
 
 - 新增设备发现稳定身份决策文档：`docs/decisions/device-discovery-stable-identity.md`
