@@ -7,6 +7,8 @@ import 'package:music_sync/features/execution/state/execution_controller.dart';
 import 'package:music_sync/features/execution/state/execution_state.dart';
 import 'package:music_sync/models/execution_result.dart';
 import 'package:music_sync/models/device_info.dart';
+import 'package:music_sync/models/diff_item.dart';
+import 'package:music_sync/models/file_entry.dart';
 import 'package:music_sync/models/sync_plan.dart';
 import 'package:music_sync/models/transfer_progress.dart';
 import 'package:music_sync/services/file_access/file_access_entry.dart';
@@ -111,6 +113,87 @@ void main() {
       expect(controller.state.status, ExecutionStatus.cancelled);
       expect(controller.state.progress.stage, SyncStage.cancelled);
       expect(controller.state.errorMessage, AppErrorCode.syncCancelled);
+    });
+
+    test('cancel keeps partial transfer result from progress', () async {
+      final bundle = _createController(
+        localExecutor: _ProgressEmittingBlockingLocalSyncExecutor(),
+        remoteExecutor: _FakeRemoteSyncExecutor(),
+      );
+      addTearDown(bundle.container.dispose);
+      final controller = bundle.controller;
+
+      final Future<void> run = controller.execute(
+        plan: SyncPlan.empty(),
+        targetRoot: 'local-target',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      controller.cancel();
+      await run;
+
+      expect(controller.state.status, ExecutionStatus.cancelled);
+      expect(controller.state.result.copiedCount, 2);
+      expect(controller.state.result.deletedCount, 1);
+      expect(controller.state.result.failedCount, 1);
+      expect(controller.state.result.totalBytes, 512);
+    });
+
+    test('execute seeds plan totals before first progress event', () async {
+      final bundle = _createController(
+        localExecutor: _NeverCompletingLocalSyncExecutor(),
+        remoteExecutor: _FakeRemoteSyncExecutor(),
+      );
+      addTearDown(bundle.container.dispose);
+      final controller = bundle.controller;
+
+      final SyncPlan plan = SyncPlan(
+        copyItems: <DiffItem>[
+          DiffItem(
+            type: DiffType.copy,
+            relativePath: 'a.mp3',
+            source: FileEntry(
+              relativePath: 'a.mp3',
+              entryId: 'source-a',
+              sourceId: 'local-device',
+              isDirectory: false,
+              size: 512,
+              modifiedTime: DateTime.fromMillisecondsSinceEpoch(0),
+            ),
+          ),
+          DiffItem(
+            type: DiffType.copy,
+            relativePath: 'b.mp3',
+            source: FileEntry(
+              relativePath: 'b.mp3',
+              entryId: 'source-b',
+              sourceId: 'local-device',
+              isDirectory: false,
+              size: 512,
+              modifiedTime: DateTime.fromMillisecondsSinceEpoch(0),
+            ),
+          ),
+        ],
+        deleteItems: <DiffItem>[
+          const DiffItem(type: DiffType.delete, relativePath: 'c.mp3'),
+        ],
+        conflictItems: const [],
+        summary: const SyncPlanSummary(
+          copyCount: 2,
+          deleteCount: 1,
+          conflictCount: 0,
+          copyBytes: 1024,
+        ),
+        deleteEnabled: true,
+      );
+
+      unawaited(controller.execute(plan: plan, targetRoot: 'local-target'));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.state.status, ExecutionStatus.running);
+      expect(controller.state.progress.totalFiles, 3);
+      expect(controller.state.progress.totalBytes, 1024);
+
+      controller.cancel();
     });
 
     test('cancelled local execution can run again', () async {
@@ -325,6 +408,51 @@ class _BlockingLocalSyncExecutor extends LocalSyncExecutor {
     await Future<void>.delayed(const Duration(milliseconds: 10));
     cancelToken?.throwIfCancelled();
     return const ExecutionResult.empty();
+  }
+}
+
+class _NeverCompletingLocalSyncExecutor extends LocalSyncExecutor {
+  @override
+  Future<ExecutionResult> execute({
+    required SyncPlan plan,
+    required String targetRoot,
+    required ProgressCallback onProgress,
+    SyncCancelToken? cancelToken,
+  }) async {
+    await Completer<void>().future;
+    return const ExecutionResult.empty();
+  }
+}
+
+class _ProgressEmittingBlockingLocalSyncExecutor extends LocalSyncExecutor {
+  @override
+  Future<ExecutionResult> execute({
+    required SyncPlan plan,
+    required String targetRoot,
+    required ProgressCallback onProgress,
+    SyncCancelToken? cancelToken,
+  }) async {
+    onProgress(
+      const TransferProgress(
+        stage: SyncStage.copying,
+        processedFiles: 4,
+        totalFiles: 6,
+        processedBytes: 512,
+        totalBytes: 2048,
+        copiedCount: 2,
+        deletedCount: 1,
+        failedCount: 1,
+      ),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 60));
+    cancelToken?.throwIfCancelled();
+    return ExecutionResult(
+      copiedCount: 2,
+      deletedCount: 1,
+      failedCount: 1,
+      totalBytes: 512,
+      targetRoot: targetRoot,
+    );
   }
 }
 

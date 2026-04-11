@@ -12,6 +12,67 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'MusicSync';
 
   @override
+  String get homeOverviewTitle => 'Overview';
+
+  @override
+  String get homeOverviewHeadline => 'Enter the transfer workspace from here';
+
+  @override
+  String get homeOverviewBody =>
+      'The home page now focuses on overview and entry points. Device session, source selection, preview, and sync execution all live in the transfer page.';
+
+  @override
+  String get homeOpenTransferPage => 'Open Transfer Page';
+
+  @override
+  String get homeOverviewStatusTitle => 'Current Status';
+
+  @override
+  String get homeOverviewConnectionLabel => 'Device Session';
+
+  @override
+  String get homeOverviewSourceLabel => 'Source Directory';
+
+  @override
+  String get homeOverviewPreviewLabel => 'Preview';
+
+  @override
+  String get homeOverviewNextTitle => 'Next Step';
+
+  @override
+  String get homeOverviewNextConnect =>
+      'Open the transfer page first and establish a device session.';
+
+  @override
+  String get homeOverviewNextPickSource =>
+      'The device session is ready. Next, pick a local source directory in the transfer page.';
+
+  @override
+  String get homeOverviewNextBuildPreview =>
+      'The source directory is ready. Next, build a preview in the transfer page.';
+
+  @override
+  String get homeOverviewNextOpenTransfer =>
+      'Everything needed to continue is ready. Open the transfer page.';
+
+  @override
+  String get homeOverviewPreviewPending => 'Preview not built';
+
+  @override
+  String homeOverviewPreviewReady(int count) {
+    return 'Preview ready, $count item(s)';
+  }
+
+  @override
+  String get homeSourceStateReady => 'Source directory selected';
+
+  @override
+  String get homeSourceStatePending => 'Source directory not selected';
+
+  @override
+  String get transferTitle => 'Transfer';
+
+  @override
   String get homeStepConnectionTitle => 'Step 1: Establish Device Session';
 
   @override
@@ -82,6 +143,18 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get homeStepPreviewHint =>
       'Analysis starts automatically after both directories are ready. Refresh the target index only if needed.';
+
+  @override
+  String get homeOpenPreviewWorkspace => 'Open Preview Workspace';
+
+  @override
+  String get homeViewPreviewList => 'View Preview List';
+
+  @override
+  String get homePreviewStateReady => 'Preview ready';
+
+  @override
+  String get homePreviewStatePending => 'Preview not built';
 
   @override
   String get homeAdvancedTitle => 'Advanced and Debug';
@@ -659,8 +732,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get executionStop => 'Stop Sync';
 
   @override
+  String get executionResultDone => 'Completed';
+
+  @override
+  String get executionResultPartialDone => 'Partially Completed';
+
+  @override
+  String get executionResultFailed => 'Sync Failed';
+
+  @override
+  String executionResultProcessed(int done, int total) {
+    return 'Processed: $done / $total';
+  }
+
+  @override
+  String get executionMetricCopy => 'Copy';
+
+  @override
+  String get executionMetricDelete => 'Delete';
+
+  @override
+  String get executionMetricFailed => 'Failed';
+
+  @override
   String get executionCancelled =>
-      'Sync was stopped manually. Incomplete temporary files were cleaned when possible.';
+      'Sync ended early. Temporary sync files were cleaned when possible.';
 
   @override
   String executionCurrentFile(Object path) {
@@ -790,6 +886,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsRulesTitle => 'Rules';
+
+  @override
+  String get settingsDeviceAliasTitle => 'Device Name';
+
+  @override
+  String get settingsDeviceAliasDescription =>
+      'Leave empty to use the device model automatically, then fall back to the device type if needed.';
+
+  @override
+  String get settingsDeviceAliasField => 'Device Name';
+
+  @override
+  String get settingsDeviceAliasHint =>
+      'For example Bedroom Tablet or My Windows PC';
 
   @override
   String get settingsAutoStartListeningTitle => 'Auto Listen on Launch';

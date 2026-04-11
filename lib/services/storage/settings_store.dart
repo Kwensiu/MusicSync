@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:music_sync/core/utils/extension_normalizer.dart';
 import 'package:music_sync/features/settings/state/settings_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,6 +10,8 @@ class SettingsStore {
   static const String _ignoredExtensionsKey = 'ignored_extensions';
   static const String _themeModeKey = 'theme_mode';
   static const String _paletteKey = 'palette';
+  static const String _deviceIdentityKey = 'device_identity';
+  static const String _deviceAliasKey = 'device_alias';
 
   Future<bool> loadAutoStartListening() async {
     final SharedPreferences preferences = await SharedPreferences.getInstance();
@@ -91,5 +95,41 @@ class SettingsStore {
       AppPaletteSetting.tonalSpot => 'tonal_spot',
     };
     await preferences.setString(_paletteKey, raw);
+  }
+
+  Future<String> loadDeviceAlias() async {
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    return preferences.getString(_deviceAliasKey)?.trim() ?? '';
+  }
+
+  Future<void> saveDeviceAlias(String value) async {
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    final String normalized = value.trim();
+    if (normalized.isEmpty) {
+      await preferences.remove(_deviceAliasKey);
+      return;
+    }
+    await preferences.setString(_deviceAliasKey, normalized);
+  }
+
+  Future<String> loadOrCreateDeviceIdentity() async {
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    final String? existing = preferences.getString(_deviceIdentityKey)?.trim();
+    if (existing != null && existing.isNotEmpty) {
+      return existing;
+    }
+
+    final String created = _generateDeviceIdentity();
+    await preferences.setString(_deviceIdentityKey, created);
+    return created;
+  }
+
+  String _generateDeviceIdentity() {
+    final Random random = Random.secure();
+    final String randomHex = List<String>.generate(
+      16,
+      (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+    ).join();
+    return 'ms-${DateTime.now().microsecondsSinceEpoch.toRadixString(16)}-$randomHex';
   }
 }

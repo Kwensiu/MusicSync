@@ -22,6 +22,7 @@ dependencies:
   dart_tags: ^0.4.1
   basic_utils: ^5.8.2
   smooth_list_view: ^2.0.2
+  device_info_plus: ^13.0.0
 
 dev_dependencies:
   flutter_test:

@@ -4,21 +4,35 @@ MusicSync is a Flutter-based LAN music folder mirror sync tool for Windows and A
 
 ## Status
 
-This repository currently contains:
+This repository now contains a working first-pass product flow built around:
+
+- `Home` as a lightweight overview and entry page
+- `Transfer` as the main working page for:
+  - connecting to a peer
+  - selecting the local source directory
+  - opening the preview/detail workflow
+- `Preview` as the detailed review-and-sync page
+  - preview summary
+  - diff list and filtering
+  - sync execution
+  - in-page execution result feedback
+
+The repository also contains:
 
 - product and implementation docs in `docs/`
-- an initial Flutter app skeleton in `lib/`
-- the first pass of routing and placeholder screens
+- the Flutter application in `lib/`
+- widget and unit tests in `test/`
 
 ## Next Steps
 
 1. Run `flutter pub get`.
 2. Let Flutter generate missing platform folders if needed.
-3. Implement:
-   - directory access
-   - TCP connection flow
-   - scanning and diff engine
-   - preview and execution wiring
+3. Continue hardening the current flow:
+   - device discovery stability
+   - HTTP control plane robustness
+   - preview/detail UX polish
+   - sync execution resilience and reporting
+   - music metadata and conflict semantics
 
 ## CI Build Artifacts
 

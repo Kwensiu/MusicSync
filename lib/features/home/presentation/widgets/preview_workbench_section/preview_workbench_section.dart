@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:music_sync/app/routes/route_names.dart';
 import 'package:music_sync/core/errors/app_error_localizer.dart';
 import 'package:music_sync/core/utils/byte_format.dart';
 import 'package:music_sync/features/connection/state/connection_state.dart'
     as peer_connection;
 import 'package:music_sync/features/directory/state/directory_state.dart';
 import 'package:music_sync/features/execution/state/execution_state.dart';
-import 'package:music_sync/features/home/presentation/widgets/preview_workbench_section/preview_plan_section.dart';
 import 'package:music_sync/features/preview/state/preview_state.dart';
 import 'package:music_sync/l10n/app_localizations_ext.dart';
-import 'package:music_sync/models/diff_item.dart';
 
 class PreviewWorkbenchSection extends StatelessWidget {
   const PreviewWorkbenchSection({
@@ -19,71 +15,51 @@ class PreviewWorkbenchSection extends StatelessWidget {
     required this.connectionState,
     required this.previewState,
     required this.executionState,
-    required this.ignoredExtensions,
-    required this.filteredCopyItems,
-    required this.filteredDeleteItems,
-    required this.filteredConflictItems,
-    required this.activeItems,
-    required this.extensionOptions,
     required this.scanWarnings,
     required this.isStalePlan,
     required this.isBusy,
     required this.isExecuting,
     required this.canStartRemoteSync,
-    required this.canOpenResult,
     required this.showExecutionPanel,
     required this.hasRemoteDirectoryReady,
-    required this.isAllExtensionsSelected,
-    required this.selectAllSections,
-    required this.selectedSections,
-    required this.selectedExtensions,
     required this.sourceDeviceLabel,
     required this.targetDeviceLabel,
     required this.isTransferConnected,
     required this.onBuildRemotePreview,
     required this.onStartRemoteSync,
     required this.onCancelSync,
-    required this.onToggleSection,
-    required this.onToggleExtension,
     required this.localizeUiError,
     required this.localizedExecutionStatus,
     required this.isScanTimeoutError,
+    this.sourceRiskMessage,
+    this.showActionButtons = true,
+    this.showBuildPreviewButton = true,
   });
 
   final DirectoryState directoryState;
   final peer_connection.ConnectionState connectionState;
   final PreviewState previewState;
   final ExecutionState executionState;
-  final List<String> ignoredExtensions;
-  final List<DiffItem> filteredCopyItems;
-  final List<DiffItem> filteredDeleteItems;
-  final List<DiffItem> filteredConflictItems;
-  final List<DiffItem> activeItems;
-  final List<String> extensionOptions;
   final List<String> scanWarnings;
   final bool isStalePlan;
   final bool isBusy;
   final bool isExecuting;
   final bool canStartRemoteSync;
-  final bool canOpenResult;
   final bool showExecutionPanel;
   final bool hasRemoteDirectoryReady;
-  final bool isAllExtensionsSelected;
-  final bool selectAllSections;
-  final Set<DiffType> selectedSections;
-  final Set<String> selectedExtensions;
   final String sourceDeviceLabel;
   final String targetDeviceLabel;
   final bool isTransferConnected;
   final Future<void> Function() onBuildRemotePreview;
   final Future<void> Function() onStartRemoteSync;
   final VoidCallback onCancelSync;
-  final ValueChanged<DiffType?> onToggleSection;
-  final ValueChanged<String> onToggleExtension;
   final String Function(BuildContext context, String value) localizeUiError;
   final String Function(BuildContext context, ExecutionStatus status)
   localizedExecutionStatus;
   final bool Function(String value) isScanTimeoutError;
+  final String? sourceRiskMessage;
+  final bool showActionButtons;
+  final bool showBuildPreviewButton;
 
   @override
   Widget build(BuildContext context) {
@@ -108,83 +84,93 @@ class PreviewWorkbenchSection extends StatelessWidget {
         executionErrorMessage != null &&
         resolvedExecutionError != AppErrorCode.remoteDirectoryNotSelected &&
         resolvedExecutionError != AppErrorCode.remoteDeviceDisconnected;
+    final bool showExecutionProgress =
+        executionState.status == ExecutionStatus.running;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        _InfoPanel(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  _MetaChipGroup(
-                    label: context.l10n.previewTransferDirectionLabel,
-                    chip: _TransferStatusChip(
-                      sourceLabel: sourceDeviceLabel,
-                      targetLabel: targetDeviceLabel,
-                      connected: isTransferConnected,
-                    ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                _MetaChipGroup(
+                  label: context.l10n.previewTransferDirectionLabel,
+                  chip: _TransferStatusChip(
+                    sourceLabel: sourceDeviceLabel,
+                    targetLabel: targetDeviceLabel,
+                    connected: isTransferConnected,
                   ),
-                  const SizedBox(height: 8),
-                  _MetaChipGroup(
-                    label: context.l10n.previewDirectoryStatusLabel,
-                    chip: _DirectoryStatusChip(
-                      hasLocalDirectory: hasLocalDirectory,
-                      hasRemoteDirectory: hasRemoteDirectory,
-                    ),
+                ),
+                const SizedBox(height: 8),
+                _MetaChipGroup(
+                  label: context.l10n.previewDirectoryStatusLabel,
+                  chip: _DirectoryStatusChip(
+                    hasLocalDirectory: hasLocalDirectory,
+                    hasRemoteDirectory: hasRemoteDirectory,
                   ),
-                ],
+                ),
+              ],
+            ),
+            if (primaryStatus != null) ...<Widget>[
+              const SizedBox(height: 12),
+              _InlineMessage(
+                tone: primaryStatus.tone,
+                text: primaryStatus.text,
+                detail: primaryStatus.detail,
               ),
-              if (primaryStatus != null) ...<Widget>[
-                const SizedBox(height: 12),
-                _InlineMessage(
-                  tone: primaryStatus.tone,
-                  text: primaryStatus.text,
-                  detail: primaryStatus.detail,
+            ],
+            if (sourceRiskMessage != null) ...<Widget>[
+              const SizedBox(height: 12),
+              _CompactNotice(
+                tone: _NoticeTone.warning,
+                text: sourceRiskMessage!,
+              ),
+            ],
+            if (scanWarnings.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 12),
+              _CompactNotice(
+                tone: _NoticeTone.warning,
+                text: context.l10n.previewPartialScanWarning(
+                  scanWarnings.length,
                 ),
-              ],
-              if (scanWarnings.isNotEmpty) ...<Widget>[
-                const SizedBox(height: 12),
-                _CompactNotice(
-                  tone: _NoticeTone.warning,
-                  text: context.l10n.previewPartialScanWarning(
-                    scanWarnings.length,
-                  ),
-                  detail: context.l10n.previewPartialScanAdvice,
-                  extraLines: scanWarnings
-                      .take(3)
-                      .map(context.l10n.previewSkippedPath)
-                      .toList(),
-                ),
-              ],
-              if (isStalePlan) ...<Widget>[
-                const SizedBox(height: 12),
-                _CompactNotice(
-                  tone: _NoticeTone.warning,
-                  text: context.l10n.previewStalePlan,
-                ),
-              ],
+                detail: context.l10n.previewPartialScanAdvice,
+                extraLines: scanWarnings
+                    .take(3)
+                    .map(context.l10n.previewSkippedPath)
+                    .toList(),
+              ),
+            ],
+            if (isStalePlan) ...<Widget>[
+              const SizedBox(height: 12),
+              _CompactNotice(
+                tone: _NoticeTone.warning,
+                text: context.l10n.previewStalePlan,
+              ),
+            ],
+            if (showActionButtons) ...<Widget>[
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: <Widget>[
-                  FilledButton.tonalIcon(
-                    onPressed:
-                        isBusy ||
-                            directoryState.handle == null ||
-                            !hasRemoteDirectoryReady
-                        ? null
-                        : onBuildRemotePreview,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: scheme.secondaryContainer,
-                      foregroundColor: scheme.onSecondaryContainer,
+                  if (showBuildPreviewButton)
+                    FilledButton.tonalIcon(
+                      onPressed:
+                          isBusy ||
+                              directoryState.handle == null ||
+                              !hasRemoteDirectoryReady
+                          ? null
+                          : onBuildRemotePreview,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: scheme.secondaryContainer,
+                        foregroundColor: scheme.onSecondaryContainer,
+                      ),
+                      icon: const Icon(Icons.file_download_rounded),
+                      label: Text(context.l10n.previewBuildRemotePlan),
                     ),
-                    icon: const Icon(Icons.file_download_rounded),
-                    label: Text(context.l10n.previewBuildRemotePlan),
-                  ),
                   if (isExecuting)
                     FilledButton.icon(
                       onPressed: onCancelSync,
@@ -199,149 +185,72 @@ class PreviewWorkbenchSection extends StatelessWidget {
                     ),
                 ],
               ),
-              if (showExecutionPanel) ...<Widget>[
-                const SizedBox(height: 12),
-                _ExecutionPanel(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        localizedExecutionStatus(
-                          context,
-                          executionState.status,
-                        ),
-                        style: theme.textTheme.titleSmall,
-                      ),
-                      const SizedBox(height: 10),
-                      LinearProgressIndicator(
-                        value: executionState.progress.totalBytes > 0
-                            ? executionState.progress.processedBytes /
-                                  executionState.progress.totalBytes
-                            : null,
-                        minHeight: 8,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${context.l10n.executionProgressFiles(executionState.progress.processedFiles, executionState.progress.totalFiles)}  ·  ${formatBytes(executionState.progress.processedBytes)} / ${formatBytes(executionState.progress.totalBytes)}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                      if (executionState.progress.currentPath !=
-                          null) ...<Widget>[
-                        const SizedBox(height: 4),
-                        Text(
-                          context.l10n.executionCurrentFile(
-                            executionState.progress.currentPath!,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                      if (showExecutionInlineError) ...<Widget>[
-                        const SizedBox(height: 10),
-                        _InlineMessage(
-                          tone: _InlineMessageTone.error,
-                          text: localizeUiError(context, executionErrorMessage),
-                        ),
-                      ],
-                      if (canOpenResult) ...<Widget>[
-                        const SizedBox(height: 12),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: FilledButton.tonalIcon(
-                            onPressed: () =>
-                                context.pushNamed(RouteNames.result),
-                            icon: const Icon(Icons.task_alt_rounded),
-                            label: Text(context.l10n.executionOpenResult),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
             ],
-          ),
-        ),
-        if (hasPlanItems) ...<Widget>[
-          const SizedBox(height: 12),
-          PreviewPlanSection(
-            header: _FilterPanel(
-              sectionTitle: context.l10n.previewSectionTitle,
-              sectionChild: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children:
-                    <_SectionOption>[
-                      _SectionOption(
-                        type: null,
-                        label:
-                            '${context.l10n.previewSectionAll} ${filteredCopyItems.length + filteredDeleteItems.length}',
+            if (showExecutionPanel) ...<Widget>[
+              const SizedBox(height: 12),
+              _ExecutionPanel(
+                child: showExecutionProgress
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            localizedExecutionStatus(
+                              context,
+                              executionState.status,
+                            ),
+                            style: theme.textTheme.titleSmall,
+                          ),
+                          const SizedBox(height: 10),
+                          LinearProgressIndicator(
+                            value: executionState.progress.totalBytes > 0
+                                ? executionState.progress.processedBytes /
+                                      executionState.progress.totalBytes
+                                : null,
+                            minHeight: 8,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '${context.l10n.executionProgressFiles(executionState.progress.processedFiles, executionState.progress.totalFiles)}  ·  ${formatBytes(executionState.progress.processedBytes)} / ${formatBytes(executionState.progress.totalBytes)}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                          if (executionState.progress.currentPath !=
+                              null) ...<Widget>[
+                            const SizedBox(height: 4),
+                            Text(
+                              context.l10n.executionCurrentFile(
+                                executionState.progress.currentPath!,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                          if (showExecutionInlineError) ...<Widget>[
+                            const SizedBox(height: 10),
+                            _InlineMessage(
+                              tone: _InlineMessageTone.error,
+                              text: localizeUiError(
+                                context,
+                                executionErrorMessage,
+                              ),
+                            ),
+                          ],
+                        ],
+                      )
+                    : _ExecutionResultPanel(
+                        executionState: executionState,
+                        localizedExecutionStatus: localizedExecutionStatus,
+                        localizeUiError: localizeUiError,
                       ),
-                      _SectionOption(
-                        type: DiffType.copy,
-                        label:
-                            '${context.l10n.previewSectionCopy} ${filteredCopyItems.length}',
-                      ),
-                      _SectionOption(
-                        type: DiffType.delete,
-                        label:
-                            '${context.l10n.previewSectionDelete} ${filteredDeleteItems.length}',
-                      ),
-                    ].map((option) {
-                      final bool selected = option.type == null
-                          ? selectAllSections
-                          : (!selectAllSections &&
-                                selectedSections.contains(option.type));
-                      return _CompactFilterChip(
-                        label: option.label,
-                        selected: selected,
-                        onSelected: (_) => onToggleSection(option.type),
-                      );
-                    }).toList(),
               ),
-              filterTitle: extensionOptions.length > 1
-                  ? context.l10n.previewFilterTitle
-                  : null,
-              filterSummary:
-                  extensionOptions.length > 1 && ignoredExtensions.isNotEmpty
-                  ? context.l10n.previewIgnoredExtensions(
-                      ignoredExtensions
-                          .map((String value) => '.$value')
-                          .join(', '),
-                    )
-                  : null,
-              filterChild: extensionOptions.length > 1
-                  ? Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: extensionOptions.map((String extension) {
-                        final bool selected = extension == '*'
-                            ? isAllExtensionsSelected
-                            : selectedExtensions.contains(extension);
-                        return _CompactFilterChip(
-                          label: extension == '*'
-                              ? context.l10n.previewFilterAll
-                              : extension,
-                          selected: selected,
-                          onSelected: isBusy
-                              ? null
-                              : (_) => onToggleExtension(extension),
-                        );
-                      }).toList(),
-                    )
-                  : null,
-            ),
-            items: activeItems,
-            conflictItems: filteredConflictItems,
-            targetIsRemote: previewState.mode == PreviewMode.remote,
-          ),
-        ],
+            ],
+          ],
+        ),
       ],
     );
   }
@@ -357,7 +266,7 @@ class PreviewWorkbenchSection extends StatelessWidget {
       return _PrimaryStatus(
         tone: _InlineMessageTone.error,
         text: localizeUiError(context, errorMessage),
-        detail: !isScanTimeoutError(errorMessage)
+        detail: isScanTimeoutError(errorMessage)
             ? context.l10n.previewScanTimeout
             : null,
       );
@@ -378,28 +287,6 @@ enum _InlineMessageTone { neutral, success, warning, error }
 
 enum _NoticeTone { warning }
 
-class _InfoPanel extends StatelessWidget {
-  const _InfoPanel({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: double.infinity,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: scheme.outlineVariant),
-        ),
-        child: Padding(padding: const EdgeInsets.all(14), child: child),
-      ),
-    );
-  }
-}
-
 class _ExecutionPanel extends StatelessWidget {
   const _ExecutionPanel({required this.child});
 
@@ -417,6 +304,135 @@ class _ExecutionPanel extends StatelessWidget {
           border: Border.all(color: scheme.outlineVariant),
         ),
         child: Padding(padding: const EdgeInsets.all(12), child: child),
+      ),
+    );
+  }
+}
+
+class _ExecutionResultPanel extends StatelessWidget {
+  const _ExecutionResultPanel({
+    required this.executionState,
+    required this.localizedExecutionStatus,
+    required this.localizeUiError,
+  });
+
+  final ExecutionState executionState;
+  final String Function(BuildContext context, ExecutionStatus status)
+  localizedExecutionStatus;
+  final String Function(BuildContext context, String value) localizeUiError;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final String? errorMessage = executionState.errorMessage;
+    final String? resolvedError = errorMessage == null
+        ? null
+        : AppErrorLocalizer.resolve(errorMessage);
+    final bool isCancelledError = resolvedError == AppErrorCode.syncCancelled;
+    final bool hasFailedItems = executionState.result.failedCount > 0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          context.l10n.executionResultProcessed(
+            executionState.progress.processedFiles,
+            executionState.progress.totalFiles,
+          ),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: <Widget>[
+            _ResultMetricChip(
+              icon: Icons.content_copy_rounded,
+              label:
+                  '${context.l10n.executionMetricCopy} ${executionState.result.copiedCount}',
+            ),
+            _ResultMetricChip(
+              icon: Icons.delete_outline_rounded,
+              label:
+                  '${context.l10n.executionMetricDelete} ${executionState.result.deletedCount}',
+            ),
+            _ResultMetricChip(
+              icon: Icons.error_outline_rounded,
+              label:
+                  '${context.l10n.executionMetricFailed} ${executionState.result.failedCount}',
+            ),
+            _ResultMetricChip(
+              icon: Icons.data_usage_rounded,
+              label: formatBytes(executionState.result.totalBytes),
+            ),
+          ],
+        ),
+        if (executionState.status == ExecutionStatus.completed &&
+            !hasFailedItems) ...<Widget>[
+          const SizedBox(height: 10),
+          _InlineMessage(
+            tone: _InlineMessageTone.success,
+            text: context.l10n.executionResultDone,
+          ),
+        ] else if (executionState.status == ExecutionStatus.completed &&
+            hasFailedItems) ...<Widget>[
+          const SizedBox(height: 10),
+          _InlineMessage(
+            tone: _InlineMessageTone.warning,
+            text: errorMessage == null
+                ? context.l10n.executionResultFailed
+                : localizeUiError(context, errorMessage),
+          ),
+        ] else if (isCancelledError) ...<Widget>[
+          const SizedBox(height: 10),
+          _InlineMessage(
+            tone: _InlineMessageTone.warning,
+            text: localizeUiError(context, errorMessage!),
+          ),
+        ] else if (executionState.status == ExecutionStatus.failed) ...<Widget>[
+          const SizedBox(height: 10),
+          _InlineMessage(
+            tone: _InlineMessageTone.error,
+            text: errorMessage == null
+                ? context.l10n.executionResultFailed
+                : localizeUiError(context, errorMessage),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ResultMetricChip extends StatelessWidget {
+  const _ResultMetricChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(icon, size: 14, color: scheme.onSurfaceVariant),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: Theme.of(
+                context,
+              ).textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -729,121 +745,6 @@ class _CompactNotice extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _SectionOption {
-  const _SectionOption({required this.type, required this.label});
-
-  final DiffType? type;
-  final String label;
-}
-
-class _FilterPanel extends StatelessWidget {
-  const _FilterPanel({
-    required this.sectionTitle,
-    required this.sectionChild,
-    this.filterTitle,
-    this.filterSummary,
-    this.filterChild,
-  });
-
-  final String sectionTitle;
-  final Widget sectionChild;
-  final String? filterTitle;
-  final String? filterSummary;
-  final Widget? filterChild;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 4, 10, 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          _FilterHeader(title: sectionTitle),
-          const SizedBox(height: 8),
-          sectionChild,
-          if (filterChild != null && filterTitle != null) ...<Widget>[
-            const SizedBox(height: 10),
-            _FilterHeader(
-              title: filterTitle!,
-              trailing: filterSummary == null
-                  ? null
-                  : Text(
-                      filterSummary!,
-                      textAlign: TextAlign.right,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-            ),
-            const SizedBox(height: 8),
-            filterChild!,
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _FilterHeader extends StatelessWidget {
-  const _FilterHeader({required this.title, this.trailing});
-
-  final String title;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
-    return Row(
-      children: <Widget>[
-        Text(
-          title,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: scheme.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.2,
-          ),
-        ),
-        if (trailing != null) ...<Widget>[
-          const SizedBox(width: 12),
-          Expanded(child: trailing!),
-        ],
-      ],
-    );
-  }
-}
-
-class _CompactFilterChip extends StatelessWidget {
-  const _CompactFilterChip({
-    required this.label,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  final String label;
-  final bool selected;
-  final ValueChanged<bool>? onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return FilterChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: onSelected,
-      visualDensity: VisualDensity.compact,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      labelPadding: const EdgeInsets.symmetric(horizontal: 2),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-      side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
     );
   }
 }

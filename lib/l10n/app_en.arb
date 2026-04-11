@@ -1,6 +1,31 @@
 {
   "@@locale": "en",
   "appTitle": "MusicSync",
+  "homeOverviewTitle": "Overview",
+  "homeOverviewHeadline": "Enter the transfer workspace from here",
+  "homeOverviewBody": "The home page now focuses on overview and entry points. Device session, source selection, preview, and sync execution all live in the transfer page.",
+  "homeOpenTransferPage": "Open Transfer Page",
+  "homeOverviewStatusTitle": "Current Status",
+  "homeOverviewConnectionLabel": "Device Session",
+  "homeOverviewSourceLabel": "Source Directory",
+  "homeOverviewPreviewLabel": "Preview",
+  "homeOverviewNextTitle": "Next Step",
+  "homeOverviewNextConnect": "Open the transfer page first and establish a device session.",
+  "homeOverviewNextPickSource": "The device session is ready. Next, pick a local source directory in the transfer page.",
+  "homeOverviewNextBuildPreview": "The source directory is ready. Next, build a preview in the transfer page.",
+  "homeOverviewNextOpenTransfer": "Everything needed to continue is ready. Open the transfer page.",
+  "homeOverviewPreviewPending": "Preview not built",
+  "homeOverviewPreviewReady": "Preview ready, {count} item(s)",
+  "@homeOverviewPreviewReady": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeSourceStateReady": "Source directory selected",
+  "homeSourceStatePending": "Source directory not selected",
+  "transferTitle": "Transfer",
   "homeStepConnectionTitle": "Step 1: Establish Device Session",
   "homeConnectionStateIdle": "Not listening",
   "homeConnectionStateConnecting": "Connecting",
@@ -30,6 +55,10 @@
   "homeSourcePendingBecauseRemoteReady": "The target directory is already ready. The only thing missing now is the local source directory.",
   "homeStepPreviewTitle": "Step 3: Review and Sync",
   "homeStepPreviewHint": "Analysis starts automatically after both directories are ready. Refresh the target index only if needed.",
+  "homeOpenPreviewWorkspace": "Open Preview Workspace",
+  "homeViewPreviewList": "View Preview List",
+  "homePreviewStateReady": "Preview ready",
+  "homePreviewStatePending": "Preview not built",
   "homeAdvancedTitle": "Advanced and Debug",
   "homeConnectionHelpersTitle": "Connection helpers",
   "homeConnectionActionsTitle": "Connection actions",
@@ -335,7 +364,24 @@
   "executionRunLocalDebug": "Run Local Debug Copy",
   "executionRunRemote": "Start Sync",
   "executionStop": "Stop Sync",
-  "executionCancelled": "Sync was stopped manually. Incomplete temporary files were cleaned when possible.",
+  "executionResultDone": "Completed",
+  "executionResultPartialDone": "Partially Completed",
+  "executionResultFailed": "Sync Failed",
+  "executionResultProcessed": "Processed: {done} / {total}",
+  "@executionResultProcessed": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "executionMetricCopy": "Copy",
+  "executionMetricDelete": "Delete",
+  "executionMetricFailed": "Failed",
+  "executionCancelled": "Sync ended early. Temporary sync files were cleaned when possible.",
   "executionCurrentFile": "Current file: {path}",
   "@executionCurrentFile": {
     "placeholders": {
@@ -442,6 +488,10 @@
   "settingsDefaultsTitle": "Defaults",
   "settingsDefaultsPlaceholder": "Project-wide settings will live here.",
   "settingsRulesTitle": "Rules",
+  "settingsDeviceAliasTitle": "Device Name",
+  "settingsDeviceAliasDescription": "Leave empty to use the device model automatically, then fall back to the device type if needed.",
+  "settingsDeviceAliasField": "Device Name",
+  "settingsDeviceAliasHint": "For example Bedroom Tablet or My Windows PC",
   "settingsAutoStartListeningTitle": "Auto Listen on Launch",
   "settingsAutoStartListeningDescription": "When enabled, MusicSync automatically starts listening after launch.",
   "settingsIgnoredExtensionsTitle": "Ignored File Types",
