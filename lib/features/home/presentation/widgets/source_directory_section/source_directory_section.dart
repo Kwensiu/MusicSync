@@ -33,7 +33,6 @@ class SourceDirectorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
     final DirectoryHandle? selectedHandle = directoryState.handle;
     final bool hasSelection = selectedHandle != null;
     final bool hasRisk = directoryState.preflight?.hasRisk == true;
@@ -45,23 +44,33 @@ class SourceDirectorySection extends StatelessWidget {
         ? null
         : formatDisplayPath(selectedHandle.entryId);
 
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerLow,
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: isBusy ? null : onPickDirectory,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: hasRisk ? scheme.errorContainer : scheme.outlineVariant,
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Row(
+            child: Ink(
+              decoration: BoxDecoration(
+                color: hasSelection
+                    ? scheme.secondaryContainer.withValues(alpha: 0.55)
+                    : scheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: hasSelection
+                      ? scheme.secondary
+                      : scheme.outlineVariant,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                child: Row(
                   children: <Widget>[
                     Container(
                       width: 40,
@@ -91,159 +100,141 @@ class SourceDirectorySection extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
-                          if (sourceDetail != null) ...<Widget>[
-                            const SizedBox(height: 2),
-                            Text(
-                              sourceDetail,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: scheme.onSurfaceVariant),
-                            ),
-                          ],
+                          const SizedBox(height: 2),
+                          Text(
+                            sourceDetail ?? context.l10n.homeStepSourceHint,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: scheme.onSurfaceVariant),
+                          ),
                         ],
                       ),
                     ),
                     const SizedBox(width: 8),
-                    SizedBox(
-                      width: 40,
-                      height: 40,
-                      child: hasSelection
-                          ? IconButton(
-                              tooltip: context.l10n.homeClearSelection,
-                              visualDensity: VisualDensity.compact,
-                              onPressed: isBusy ? null : onClearDirectory,
-                              icon: const Icon(Icons.close_rounded, size: 18),
-                            )
-                          : null,
-                    ),
+                    if (hasSelection)
+                      IconButton(
+                        tooltip: context.l10n.homeClearSelection,
+                        visualDensity: VisualDensity.compact,
+                        onPressed: isBusy ? null : onClearDirectory,
+                        icon: const Icon(Icons.close_rounded, size: 18),
+                      )
+                    else
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: scheme.onSurfaceVariant,
+                      ),
                   ],
                 ),
-                if (directoryState.errorMessage != null) ...<Widget>[
-                  const SizedBox(height: 12),
-                  Text(
-                    directoryState.errorMessage!,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: scheme.error),
-                  ),
-                ],
-                if (hasRisk) ...<Widget>[
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: scheme.errorContainer,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: scheme.error),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          context.l10n.directoryPreflightWarningTitle,
-                          style: Theme.of(context).textTheme.labelLarge
-                              ?.copyWith(color: scheme.onErrorContainer),
-                        ),
-                        const SizedBox(height: 6),
-                        ...directoryState.preflight!.reasons
-                            .take(2)
-                            .map(
-                              (String reason) => Padding(
-                                padding: const EdgeInsets.only(bottom: 2),
-                                child: Text(
-                                  localizePreflightReason(context, reason),
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: scheme.onErrorContainer,
-                                      ),
-                                ),
-                              ),
-                            ),
-                      ],
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.tonal(
-                    onPressed: isBusy ? null : onPickDirectory,
-                    child: Text(context.l10n.homePickDirectory),
-                  ),
-                ),
-                if (directoryState.hasTempFiles) ...<Widget>[
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: OutlinedButton(
-                      onPressed:
-                          isBusy ||
-                              selectedHandle == null ||
-                              isCleaningSourceTemp
-                          ? null
-                          : onCleanupTempFiles,
-                      child: Text(context.l10n.homeCleanupTempFiles),
-                    ),
-                  ),
-                ],
-                if (directoryState.recentHandles.isNotEmpty) ...<Widget>[
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: Text(
-                          context.l10n.homeRecentDirectories,
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: context.l10n.homeManageRecentItems,
-                        onPressed: isBusy ? null : onManageRecentDirectories,
-                        icon: const Icon(Icons.tune_rounded),
-                      ),
-                    ],
-                  ),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: directoryState.recentHandles.map((handle) {
-                      final bool isCurrent =
-                          directoryState.handle?.entryId == handle.entryId;
-                      return ActionChip(
-                        backgroundColor: isCurrent
-                            ? scheme.secondaryContainer
-                            : scheme.surface,
-                        side: BorderSide(
-                          color: isCurrent
-                              ? scheme.secondary
-                              : scheme.outlineVariant,
-                        ),
-                        avatar: isCurrent
-                            ? Icon(
-                                Icons.check_circle_outline,
-                                size: 18,
-                                color: scheme.onSecondaryContainer,
-                              )
-                            : null,
-                        label: Text(
-                          directoryState.recentLabels[handle.entryId] ??
-                              handle.displayName,
-                        ),
-                        onPressed: isBusy || isCurrent
-                            ? null
-                            : () => onUseRecentDirectory(handle),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ],
+              ),
             ),
           ),
         ),
+        if (directoryState.errorMessage != null) ...<Widget>[
+          const SizedBox(height: 12),
+          Text(
+            directoryState.errorMessage!,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: scheme.error),
+          ),
+        ],
+        if (hasRisk) ...<Widget>[
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: scheme.errorContainer,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: scheme.error),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  context.l10n.directoryPreflightWarningTitle,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: scheme.onErrorContainer,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                ...directoryState.preflight!.reasons
+                    .take(2)
+                    .map(
+                      (String reason) => Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: Text(
+                          localizePreflightReason(context, reason),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: scheme.onErrorContainer),
+                        ),
+                      ),
+                    ),
+              ],
+            ),
+          ),
+        ],
+        if (directoryState.hasTempFiles) ...<Widget>[
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton(
+              onPressed:
+                  isBusy || selectedHandle == null || isCleaningSourceTemp
+                  ? null
+                  : onCleanupTempFiles,
+              child: Text(context.l10n.homeCleanupTempFiles),
+            ),
+          ),
+        ],
+        if (directoryState.recentHandles.isNotEmpty) ...<Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  context.l10n.homeRecentDirectories,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ),
+              IconButton(
+                tooltip: context.l10n.homeManageRecentItems,
+                onPressed: isBusy ? null : onManageRecentDirectories,
+                icon: const Icon(Icons.tune_rounded),
+              ),
+            ],
+          ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: directoryState.recentHandles.map((handle) {
+              final bool isCurrent =
+                  directoryState.handle?.entryId == handle.entryId;
+              return ActionChip(
+                backgroundColor: isCurrent
+                    ? scheme.secondaryContainer
+                    : scheme.surface,
+                side: BorderSide(
+                  color: isCurrent ? scheme.secondary : scheme.outlineVariant,
+                ),
+                avatar: isCurrent
+                    ? Icon(
+                        Icons.check_circle_outline,
+                        size: 18,
+                        color: scheme.onSecondaryContainer,
+                      )
+                    : null,
+                label: Text(
+                  directoryState.recentLabels[handle.entryId] ??
+                      handle.displayName,
+                ),
+                onPressed: isBusy || isCurrent
+                    ? null
+                    : () => onUseRecentDirectory(handle),
+              );
+            }).toList(),
+          ),
+        ],
       ],
     );
   }

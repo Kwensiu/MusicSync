@@ -1,1035 +1,321 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:music_sync/app/routes/route_names.dart';
-import 'package:music_sync/app/widgets/app_confirm_dialog.dart';
+import 'package:music_sync/app/widgets/app_page_content.dart';
 import 'package:music_sync/app/widgets/app_scaffold.dart';
 import 'package:music_sync/app/widgets/section_card.dart';
-import 'package:music_sync/core/errors/app_error_localizer.dart';
 import 'package:music_sync/features/connection/state/connection_controller.dart';
 import 'package:music_sync/features/connection/state/connection_state.dart'
     as peer_connection;
 import 'package:music_sync/features/directory/state/directory_controller.dart';
-import 'package:music_sync/features/directory/state/directory_state.dart';
-import 'package:music_sync/features/execution/state/execution_controller.dart';
-import 'package:music_sync/features/execution/state/execution_state.dart';
-import 'package:music_sync/features/home/presentation/widgets/connection_section/connection_section.dart';
-import 'package:music_sync/features/home/presentation/widgets/connection_section/connection_section_actions.dart';
-import 'package:music_sync/features/home/presentation/widgets/action_chip_button.dart';
-import 'package:music_sync/features/home/presentation/widgets/home_dialogs/home_dialogs.dart';
-import 'package:music_sync/features/home/presentation/widgets/home_workspace_layout.dart';
-import 'package:music_sync/features/home/presentation/widgets/preview_workbench_section/preview_workbench_actions.dart';
-import 'package:music_sync/features/home/presentation/widgets/preview_workbench_section/preview_workbench_section.dart';
-import 'package:music_sync/features/home/presentation/widgets/recent_record_managers/recent_record_managers.dart';
-import 'package:music_sync/features/home/presentation/widgets/source_directory_section/source_directory_section.dart';
 import 'package:music_sync/features/preview/state/preview_controller.dart';
 import 'package:music_sync/features/preview/state/preview_state.dart';
-import 'package:music_sync/features/settings/state/settings_controller.dart';
 import 'package:music_sync/l10n/app_localizations_ext.dart';
-import 'package:music_sync/models/device_info.dart';
-import 'package:music_sync/models/diff_item.dart';
-import 'package:music_sync/services/file_access/file_access_entry.dart';
-import 'package:music_sync/services/file_access/file_access_provider.dart';
-import 'package:music_sync/services/platform/android_background_runtime.dart';
-import 'package:music_sync/services/scanning/temp_file_cleanup_service.dart';
-import 'package:music_sync/services/storage/recent_items_store.dart';
 
-class HomePage extends ConsumerStatefulWidget {
+class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
-  ConsumerState<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends ConsumerState<HomePage>
-    with WidgetsBindingObserver {
-  final TextEditingController _addressController = TextEditingController();
-  Set<String> _selectedExtensions = <String>{'*'};
-  bool _selectAllSections = true;
-  Set<DiffType> _selectedSections = <DiffType>{DiffType.copy, DiffType.delete};
-  bool _isCleaningSourceTemp = false;
-  bool _isCleaningTargetTemp = false;
-  AppLifecycleState? _appLifecycleState;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _addressController.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    _appLifecycleState = state;
-    _syncAndroidKeepAlive(
-      connectionState: ref.read(connectionControllerProvider),
-      executionState: ref.read(executionControllerProvider),
-    );
-    if (state != AppLifecycleState.resumed || !mounted) {
-      return;
-    }
-    final peer_connection.ConnectionState connectionState = ref.read(
-      connectionControllerProvider,
-    );
-    final ExecutionState executionState = ref.read(executionControllerProvider);
-    if (connectionState.peer == null ||
-        connectionState.status != peer_connection.ConnectionStatus.connected ||
-        executionState.status == ExecutionStatus.running) {
-      return;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) {
-        return;
-      }
-      await ref
-          .read(connectionControllerProvider.notifier)
-          .refreshRemoteSnapshot(clearTransientState: false);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    ref.listen<peer_connection.ConnectionState>(connectionControllerProvider, (
-      _,
-      peer_connection.ConnectionState next,
-    ) {
-      _syncAndroidKeepAlive(
-        connectionState: next,
-        executionState: ref.read(executionControllerProvider),
-      );
-    });
-    ref.listen<ExecutionState>(executionControllerProvider, (
-      _,
-      ExecutionState next,
-    ) {
-      _syncAndroidKeepAlive(
-        connectionState: ref.read(connectionControllerProvider),
-        executionState: next,
-      );
-    });
-    final DirectoryState directoryState = ref.watch(
-      directoryControllerProvider,
-    );
+  Widget build(BuildContext context, WidgetRef ref) {
     final peer_connection.ConnectionState connectionState = ref.watch(
       connectionControllerProvider,
     );
+    final directoryState = ref.watch(directoryControllerProvider);
     final PreviewState previewState = ref.watch(previewControllerProvider);
-    final ExecutionState executionState = ref.watch(
-      executionControllerProvider,
-    );
-    final List<String> ignoredExtensions = ref
-        .watch(settingsControllerProvider)
-        .ignoredExtensions;
-
-    final bool isStalePlan =
-        previewState.sourceRootId != null &&
-        previewState.sourceRootId != directoryState.handle?.entryId;
-    final List<String> extensionOptions = previewState.availableExtensions;
-    final List<DiffItem> filteredCopyItems =
-        PreviewWorkbenchActions.filterItemsByExtensions(
-          previewState.plan.copyItems,
-          _selectedExtensions,
-        );
-    final List<DiffItem> filteredDeleteItems =
-        PreviewWorkbenchActions.filterItemsByExtensions(
-          previewState.plan.deleteItems,
-          _selectedExtensions,
-        );
-    final List<DiffItem> filteredConflictItems =
-        PreviewWorkbenchActions.filterItemsByExtensions(
-          previewState.plan.conflictItems,
-          _selectedExtensions,
-        );
-    final bool isAllExtensionsSelected =
-        _selectedExtensions.length == 1 && _selectedExtensions.contains('*');
-    final List<DiffItem> activeItems = <DiffItem>[
-      if (_selectAllSections || _selectedSections.contains(DiffType.copy))
-        ...filteredCopyItems,
-      if (_selectAllSections || _selectedSections.contains(DiffType.delete))
-        ...filteredDeleteItems,
-    ];
-    final bool hasExecutableItems =
-        previewState.plan.copyItems.isNotEmpty ||
-        previewState.plan.deleteItems.isNotEmpty;
-    final bool isRemotePreview = previewState.mode == PreviewMode.remote;
-    final bool isLocalPreview = previewState.mode == PreviewMode.local;
-    final bool canRunRemote =
-        connectionState.remoteSnapshot != null &&
-        isRemotePreview &&
-        previewState.targetSnapshot?.rootId ==
-            connectionState.remoteSnapshot!.rootId;
-    final bool isConnecting =
-        connectionState.status == peer_connection.ConnectionStatus.connecting;
-    final bool isPreviewLoading = previewState.status == PreviewStatus.loading;
-    final bool isExecuting = executionState.status == ExecutionStatus.running;
-    final bool isRemoteSyncRunning =
-        executionState.status == ExecutionStatus.running &&
-        executionState.mode == ExecutionMode.remote;
-    final bool hasFinishedExecution =
-        executionState.status == ExecutionStatus.completed ||
-        executionState.status == ExecutionStatus.cancelled ||
-        executionState.status == ExecutionStatus.failed;
-    final bool isBusy = isConnecting || isPreviewLoading || isExecuting;
-    final bool isConnectUiBusy = isPreviewLoading || isExecuting;
+    final int previewItemCount =
+        previewState.plan.copyItems.length +
+        previewState.plan.deleteItems.length +
+        previewState.plan.conflictItems.length;
+    final bool hasSourceDirectory = directoryState.handle != null;
     final bool hasConnectedPeer =
         connectionState.peer != null &&
         connectionState.status == peer_connection.ConnectionStatus.connected;
-    final bool hasRemoteSnapshot = connectionState.remoteSnapshot != null;
-    final bool hasRemoteDirectoryReady =
-        connectionState.isRemoteDirectoryReady || hasRemoteSnapshot;
-    final bool canStartRemoteSync =
-        canRunRemote && hasExecutableItems && !isBusy;
-    final bool canOpenResult =
-        hasFinishedExecution &&
-        executionState.targetRoot != null &&
-        executionState.targetRoot!.isNotEmpty;
-    final bool showExecutionPanel =
-        isExecuting ||
-        executionState.errorMessage != null ||
-        executionState.status != ExecutionStatus.idle ||
-        executionState.progress.totalFiles > 0 ||
-        executionState.progress.totalBytes > 0;
-    final List<String> scanWarnings = <String>{
-      ...?previewState.sourceSnapshot?.warnings,
-      ...?previewState.targetSnapshot?.warnings,
-    }.toList();
-    final bool showKeepAliveBadge =
-        Platform.isAndroid &&
-        connectionState.peer != null &&
-        connectionState.status == peer_connection.ConnectionStatus.connected &&
-        isRemoteSyncRunning;
-    final bool showIncomingSyncOverlay =
-        connectionState.isIncomingSyncActive && hasConnectedPeer;
-    // TODO(home-layout): Keep overview cards outside the workbench scroller so
-    // the page always has a single obvious primary scroll target.
-    final Widget connectionSectionCard = _buildConnectionSectionCard(
-      context: context,
-      connectionState: connectionState,
-      isConnectUiBusy: isConnectUiBusy,
-      hasConnectedPeer: hasConnectedPeer,
-    );
-    final Widget sourceSectionCard = _buildSourceSectionCard(
-      context: context,
-      directoryState: directoryState,
-      isBusy: isBusy,
-      hasRemoteDirectoryReady: hasRemoteDirectoryReady,
-    );
-    // TODO(home-layout): The preview workbench is now its own scroll region.
-    // Any future expandable panels that can change height should live here.
-    final Widget previewSectionCard = _buildPreviewSectionCard(
-      context: context,
-      directoryState: directoryState,
-      connectionState: connectionState,
-      previewState: previewState,
-      executionState: executionState,
-      ignoredExtensions: ignoredExtensions,
-      filteredCopyItems: filteredCopyItems,
-      filteredDeleteItems: filteredDeleteItems,
-      filteredConflictItems: filteredConflictItems,
-      activeItems: activeItems,
-      extensionOptions: extensionOptions,
-      scanWarnings: scanWarnings,
-      isStalePlan: isStalePlan,
-      isBusy: isBusy,
-      isExecuting: isExecuting,
-      canStartRemoteSync: canStartRemoteSync,
-      canOpenResult: canOpenResult,
-      showExecutionPanel: showExecutionPanel,
-      hasRemoteDirectoryReady: hasRemoteDirectoryReady,
-      isAllExtensionsSelected: isAllExtensionsSelected,
-    );
-    final Widget advancedSection = _buildAdvancedSection(
-      context: context,
-      executionState: executionState,
-      isBusy: isBusy,
-      hasExecutableItems: hasExecutableItems,
-      isLocalPreview: isLocalPreview,
-      previewState: previewState,
-      directoryState: directoryState,
-    );
 
     return AppScaffold(
-      title: context.l10n.appTitle,
+      title: context.l10n.homeOverviewTitle,
       showBackButton: false,
       actions: <Widget>[
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ActionChipButton(
-                label: ConnectionSectionActions.listeningStateChipLabel(
-                  context,
-                  connectionState,
-                ),
-                tone: ConnectionSectionActions.listeningStateChipTone(
-                  connectionState,
-                ),
-                compact: true,
-                onPressed: isConnectUiBusy
-                    ? null
-                    : () =>
-                          ConnectionSectionActions.showConnectionStateChipDialog(
-                            context: context,
-                            ref: ref,
-                            connectionState: connectionState,
-                          ),
-              ),
-              const SizedBox(width: 8),
-              ActionChipButton(
-                label: ConnectionSectionActions.peerConnectionChipLabel(
-                  context,
-                  connectionState,
-                ),
-                tone: ConnectionSectionActions.peerConnectionChipTone(
-                  connectionState,
-                ),
-                compact: true,
-                onPressed: isConnectUiBusy || !hasConnectedPeer
-                    ? null
-                    : () => ConnectionSectionActions.disconnectConnectedPeer(
-                        ref: ref,
-                      ),
-              ),
-            ],
-          ),
-        ),
         IconButton(
           onPressed: () => context.pushNamed(RouteNames.settings),
           icon: const Icon(Icons.settings_outlined),
         ),
       ],
-      body: Stack(
-        children: <Widget>[
-          HomeWorkspaceLayout(
-            connectionSection: connectionSectionCard,
-            sourceSection: sourceSectionCard,
-            previewSection: previewSectionCard,
-            advancedSection: advancedSection,
-          ),
-          if (showKeepAliveBadge)
-            Positioned(
-              left: 12,
-              top: 12,
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.tertiaryContainer,
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    child: Text(
-                      '🏷 后台保活已就绪',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onTertiaryContainer,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+      body: AppPageContent(
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            final bool wide = constraints.maxWidth >= 900;
+
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: <Widget>[
+                _HeroCard(
+                  headline: context.l10n.homeOverviewHeadline,
+                  body: context.l10n.homeOverviewBody,
+                  primaryLabel: context.l10n.homeOpenTransferPage,
+                  onPrimaryPressed: () =>
+                      context.pushNamed(RouteNames.transfer),
                 ),
-              ),
-            ),
-          if (showIncomingSyncOverlay)
-            Positioned.fill(
-              child: ColoredBox(
-                color: Colors.black54,
-                child: Center(
-                  child: AbsorbPointer(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 380),
-                      child: Card(
-                        margin: const EdgeInsets.all(24),
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Row(
-                                children: <Widget>[
-                                  Icon(
-                                    Icons.sync_lock_rounded,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      context.l10n.homeIncomingSyncTitle,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.titleMedium,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                context.l10n.homeIncomingSyncBody(
-                                  connectionState.peer?.deviceName ??
-                                      context.l10n.previewDirectionRemote,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                context.l10n.homeIncomingSyncHint,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                                    ),
-                              ),
-                              const SizedBox(height: 14),
-                              const LinearProgressIndicator(),
-                            ],
+                const SizedBox(height: 16),
+                if (wide)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Expanded(
+                        child: _buildStatusCard(
+                          context,
+                          connectionLabel: _connectionSummary(
+                            context,
+                            connectionState,
                           ),
+                          sourceLabel: hasSourceDirectory
+                              ? context.l10n.homeSourceStateReady
+                              : context.l10n.homeSourceStatePending,
+                          previewLabel:
+                              previewState.status == PreviewStatus.loaded
+                              ? context.l10n.homeOverviewPreviewReady(
+                                  previewItemCount,
+                                )
+                              : context.l10n.homeOverviewPreviewPending,
                         ),
                       ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildNextStepCard(
+                          context,
+                          hasConnectedPeer: hasConnectedPeer,
+                          hasSourceDirectory: hasSourceDirectory,
+                          previewState: previewState,
+                        ),
+                      ),
+                    ],
+                  )
+                else ...<Widget>[
+                  _buildStatusCard(
+                    context,
+                    connectionLabel: _connectionSummary(
+                      context,
+                      connectionState,
                     ),
+                    sourceLabel: hasSourceDirectory
+                        ? context.l10n.homeSourceStateReady
+                        : context.l10n.homeSourceStatePending,
+                    previewLabel: previewState.status == PreviewStatus.loaded
+                        ? context.l10n.homeOverviewPreviewReady(
+                            previewItemCount,
+                          )
+                        : context.l10n.homeOverviewPreviewPending,
                   ),
-                ),
-              ),
-            ),
+                  const SizedBox(height: 16),
+                  _buildNextStepCard(
+                    context,
+                    hasConnectedPeer: hasConnectedPeer,
+                    hasSourceDirectory: hasSourceDirectory,
+                    previewState: previewState,
+                  ),
+                ],
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusCard(
+    BuildContext context, {
+    required String connectionLabel,
+    required String sourceLabel,
+    required String previewLabel,
+  }) {
+    return SectionCard(
+      title: context.l10n.homeOverviewStatusTitle,
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: <Widget>[
+          _OverviewPill(
+            title: context.l10n.homeOverviewConnectionLabel,
+            value: connectionLabel,
+            icon: Icons.devices_outlined,
+          ),
+          _OverviewPill(
+            title: context.l10n.homeOverviewSourceLabel,
+            value: sourceLabel,
+            icon: Icons.folder_outlined,
+          ),
+          _OverviewPill(
+            title: context.l10n.homeOverviewPreviewLabel,
+            value: previewLabel,
+            icon: Icons.library_music_outlined,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildConnectionSectionCard({
-    required BuildContext context,
-    required peer_connection.ConnectionState connectionState,
-    required bool isConnectUiBusy,
-    required bool hasConnectedPeer,
-  }) {
-    return SectionCard(
-      title: context.l10n.homeStepConnectionTitle,
-      child: ConnectionSection(
-        connectionState: connectionState,
-        isConnectUiBusy: isConnectUiBusy,
-        hasConnectedPeer: hasConnectedPeer,
-        onRefreshPresence: () {
-          ref.read(connectionControllerProvider.notifier).refreshPresence();
-        },
-        onOpenConnectionPanel: () =>
-            _showConnectionOptionsPanel(connectionState),
-        onDiscoveredDeviceTap: (DeviceInfo device) {
-          _addressController.text = '${device.address}:${device.port}';
-          ConnectionSectionActions.connectFromInput(
-            ref: ref,
-            addressController: _addressController,
-          );
-        },
-        localizeUiError: _localizeUiError,
-      ),
-    );
-  }
-
-  Widget _buildSourceSectionCard({
-    required BuildContext context,
-    required DirectoryState directoryState,
-    required bool isBusy,
-    required bool hasRemoteDirectoryReady,
-  }) {
-    return SectionCard(
-      title: context.l10n.homeStepSourceTitle,
-      child: SourceDirectorySection(
-        directoryState: directoryState,
-        isBusy: isBusy,
-        hasRemoteDirectoryReady: hasRemoteDirectoryReady,
-        isCleaningSourceTemp: _isCleaningSourceTemp,
-        onPickDirectory: () {
-          ref.read(directoryControllerProvider.notifier).pickDirectory();
-        },
-        onClearDirectory: () {
-          ref.read(directoryControllerProvider.notifier).clearDirectory();
-        },
-        onCleanupTempFiles: () => _cleanupTempFiles(
-          rootId: directoryState.handle!.entryId,
-          isSource: true,
-        ),
-        onManageRecentDirectories: _showRecentDirectoryManager,
-        onUseRecentDirectory: (DirectoryHandle handle) {
-          ref
-              .read(directoryControllerProvider.notifier)
-              .useRecentDirectory(handle);
-        },
-        localizePreflightReason: _localizePreflightReason,
-      ),
-    );
-  }
-
-  Widget _buildPreviewSectionCard({
-    required BuildContext context,
-    required DirectoryState directoryState,
-    required peer_connection.ConnectionState connectionState,
-    required PreviewState previewState,
-    required ExecutionState executionState,
-    required List<String> ignoredExtensions,
-    required List<DiffItem> filteredCopyItems,
-    required List<DiffItem> filteredDeleteItems,
-    required List<DiffItem> filteredConflictItems,
-    required List<DiffItem> activeItems,
-    required List<String> extensionOptions,
-    required List<String> scanWarnings,
-    required bool isStalePlan,
-    required bool isBusy,
-    required bool isExecuting,
-    required bool canStartRemoteSync,
-    required bool canOpenResult,
-    required bool showExecutionPanel,
-    required bool hasRemoteDirectoryReady,
-    required bool isAllExtensionsSelected,
-  }) {
-    return SectionCard(
-      title: context.l10n.homeStepPreviewTitle,
-      child: PreviewWorkbenchSection(
-        directoryState: directoryState,
-        connectionState: connectionState,
-        previewState: previewState,
-        executionState: executionState,
-        ignoredExtensions: ignoredExtensions,
-        filteredCopyItems: filteredCopyItems,
-        filteredDeleteItems: filteredDeleteItems,
-        filteredConflictItems: filteredConflictItems,
-        activeItems: activeItems,
-        extensionOptions: extensionOptions,
-        scanWarnings: scanWarnings,
-        isStalePlan: isStalePlan,
-        isBusy: isBusy,
-        isExecuting: isExecuting,
-        canStartRemoteSync: canStartRemoteSync,
-        canOpenResult: canOpenResult,
-        showExecutionPanel: showExecutionPanel,
-        hasRemoteDirectoryReady: hasRemoteDirectoryReady,
-        isAllExtensionsSelected: isAllExtensionsSelected,
-        selectAllSections: _selectAllSections,
-        selectedSections: _selectedSections,
-        selectedExtensions: _selectedExtensions,
-        sourceDeviceLabel: _localDeviceDisplayName(),
-        targetDeviceLabel: _targetDeviceDisplayName(
-          context,
-          connectionState: connectionState,
-          previewState: previewState,
-        ),
-        isTransferConnected:
-            connectionState.peer != null &&
-            connectionState.status ==
-                peer_connection.ConnectionStatus.connected,
-        onBuildRemotePreview: () => PreviewWorkbenchActions.buildRemotePreview(
-          ref: ref,
-          sourceRoot: directoryState.handle!,
-          ignoredExtensions: ignoredExtensions,
-        ),
-        onStartRemoteSync: () => PreviewWorkbenchActions.executeRemoteSyncFlow(
-          context: context,
-          ref: ref,
-          previewState: previewState,
-          directoryState: directoryState,
-          connectionState: connectionState,
-        ),
-        onCancelSync: () {
-          ref.read(executionControllerProvider.notifier).cancel();
-        },
-        onToggleSection: (DiffType? type) {
-          setState(() {
-            if (type == null) {
-              _selectAllSections = true;
-              _selectedSections = <DiffType>{DiffType.copy, DiffType.delete};
-              return;
-            }
-            final Set<DiffType> next = _selectAllSections
-                ? <DiffType>{type}
-                : <DiffType>{..._selectedSections};
-            _selectAllSections = false;
-            if (next.contains(type)) {
-              next.remove(type);
-            } else {
-              next.add(type);
-            }
-            if (next.isEmpty) {
-              next.add(type);
-            }
-            _selectedSections = next;
-          });
-        },
-        onToggleExtension: (String extension) {
-          setState(() {
-            final bool selected = extension == '*'
-                ? isAllExtensionsSelected
-                : _selectedExtensions.contains(extension);
-            _selectedExtensions =
-                PreviewWorkbenchActions.toggleExtensionSelection(
-                  current: _selectedExtensions,
-                  extension: extension,
-                  selected: !selected,
-                );
-          });
-        },
-        localizeUiError: _localizeUiError,
-        localizedExecutionStatus: _localizedExecutionStatus,
-        isScanTimeoutError: _isScanTimeoutError,
-      ),
-    );
-  }
-
-  Widget _buildAdvancedSection({
-    required BuildContext context,
-    required ExecutionState executionState,
-    required bool isBusy,
-    required bool hasExecutableItems,
-    required bool isLocalPreview,
-    required PreviewState previewState,
-    required DirectoryState directoryState,
-  }) {
-    return ExpansionTile(
-      title: Text(context.l10n.homeAdvancedTitle),
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: SectionCard(
-            title: context.l10n.executionTargetTitle,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(context.l10n.executionTargetHint),
-                const SizedBox(height: 8),
-                Text(
-                  executionState.targetRoot ?? context.l10n.executionNoTarget,
-                ),
-                const SizedBox(height: 12),
-                FilledButton.tonal(
-                  onPressed: isBusy
-                      ? null
-                      : () async {
-                          final handle = await ref
-                              .read(fileAccessGatewayProvider)
-                              .pickDirectory();
-                          ref
-                              .read(executionControllerProvider.notifier)
-                              .setTargetRoot(handle?.entryId);
-                        },
-                  child: Text(context.l10n.executionPickTarget),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed:
-                      isBusy ||
-                          executionState.targetRoot == null ||
-                          _isCleaningTargetTemp
-                      ? null
-                      : () => _cleanupTempFiles(
-                          rootId: executionState.targetRoot!,
-                          isSource: false,
-                        ),
-                  child: Text(context.l10n.homeCleanupTempFiles),
-                ),
-                const SizedBox(height: 8),
-                FilledButton.tonal(
-                  onPressed:
-                      isBusy ||
-                          executionState.targetRoot == null ||
-                          !hasExecutableItems ||
-                          !isLocalPreview
-                      ? null
-                      : () async {
-                          if (previewState.plan.deleteItems.isNotEmpty) {
-                            final bool? confirmed = await showDialog<bool>(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AppConfirmDialog(
-                                  title:
-                                      context.l10n.executionConfirmDeleteTitle,
-                                  message: context.l10n
-                                      .executionConfirmDeleteBody(
-                                        previewState.plan.deleteItems.length,
-                                      ),
-                                );
-                              },
-                            );
-                            if (confirmed != true) {
-                              return;
-                            }
-                          }
-                          await ref
-                              .read(executionControllerProvider.notifier)
-                              .execute(
-                                plan: previewState.plan,
-                                targetRoot: executionState.targetRoot!,
-                              );
-                          await PreviewWorkbenchActions.refreshPreviewAfterExecution(
-                            ref: ref,
-                            previewState: previewState,
-                            directoryState: directoryState,
-                            executionState: ref.read(
-                              executionControllerProvider,
-                            ),
-                          );
-                        },
-                  child: Text(context.l10n.executionRunLocalDebug),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _localizedExecutionStatus(
-    BuildContext context,
-    ExecutionStatus status,
-  ) {
-    switch (status) {
-      case ExecutionStatus.idle:
-        return context.l10n.statusIdle;
-      case ExecutionStatus.running:
-        return context.l10n.statusLoading;
-      case ExecutionStatus.cancelled:
-        return context.l10n.resultStatusCancelled;
-      case ExecutionStatus.completed:
-        return context.l10n.resultStatusCompleted;
-      case ExecutionStatus.failed:
-        return context.l10n.resultStatusFailed;
-    }
-  }
-
-  bool _isScanTimeoutError(String value) {
-    return AppErrorLocalizer.isScanTimeout(value);
-  }
-
-  String _localizeUiError(BuildContext context, String value) {
-    return AppErrorLocalizer.localize(context, value);
-  }
-
-  String _targetDeviceDisplayName(
+  Widget _buildNextStepCard(
     BuildContext context, {
-    required peer_connection.ConnectionState connectionState,
+    required bool hasConnectedPeer,
+    required bool hasSourceDirectory,
     required PreviewState previewState,
   }) {
-    return switch (previewState.mode) {
-      PreviewMode.remote =>
-        connectionState.peer?.deviceName ?? context.l10n.previewDirectionRemote,
-      PreviewMode.local => context.l10n.previewDirectionLocalTarget,
-      PreviewMode.none =>
-        connectionState.peer?.deviceName ?? context.l10n.previewDirectionRemote,
+    final String message = switch ((hasConnectedPeer, hasSourceDirectory)) {
+      (false, _) => context.l10n.homeOverviewNextConnect,
+      (true, false) => context.l10n.homeOverviewNextPickSource,
+      (true, true) when previewState.status != PreviewStatus.loaded =>
+        context.l10n.homeOverviewNextBuildPreview,
+      _ => context.l10n.homeOverviewNextOpenTransfer,
+    };
+
+    return SectionCard(
+      title: context.l10n.homeOverviewNextTitle,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(message),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: () => context.pushNamed(RouteNames.transfer),
+            icon: const Icon(Icons.compare_arrows_rounded),
+            label: Text(context.l10n.homeOpenTransferPage),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _connectionSummary(
+    BuildContext context,
+    peer_connection.ConnectionState connectionState,
+  ) {
+    if (connectionState.status == peer_connection.ConnectionStatus.idle &&
+        connectionState.isListening) {
+      return context.l10n.homeConnectionStateListening;
+    }
+    return switch (connectionState.status) {
+      peer_connection.ConnectionStatus.connected =>
+        context.l10n.homeConnectionStateConnected,
+      peer_connection.ConnectionStatus.connecting =>
+        context.l10n.homeConnectionStateConnecting,
+      peer_connection.ConnectionStatus.disconnected =>
+        context.l10n.homeConnectionStateDisconnected,
+      peer_connection.ConnectionStatus.failed =>
+        context.l10n.homeConnectionStateDisconnected,
+      peer_connection.ConnectionStatus.idle =>
+        context.l10n.homeConnectionStateIdle,
     };
   }
+}
 
-  String _localDeviceDisplayName() {
-    final String hostName = Platform.localHostname.trim();
-    final String fallbackName =
-        Platform.environment['COMPUTERNAME'] ??
-        Platform.environment['HOSTNAME'] ??
-        (Platform.isAndroid
-            ? 'Android'
-            : Platform.isWindows
-            ? 'Windows'
-            : Platform.operatingSystem);
-    if (hostName.isEmpty || hostName.toLowerCase() == 'localhost') {
-      return fallbackName;
-    }
-    return hostName;
-  }
+class _HeroCard extends StatelessWidget {
+  const _HeroCard({
+    required this.headline,
+    required this.body,
+    required this.primaryLabel,
+    required this.onPrimaryPressed,
+  });
 
-  void _syncAndroidKeepAlive({
-    required peer_connection.ConnectionState connectionState,
-    required ExecutionState executionState,
-  }) {
-    final bool isRemoteSyncRunning =
-        executionState.status == ExecutionStatus.running &&
-        executionState.mode == ExecutionMode.remote;
-    final bool shouldEnable =
-        Platform.isAndroid &&
-        _appLifecycleState != null &&
-        _appLifecycleState != AppLifecycleState.resumed &&
-        connectionState.peer != null &&
-        connectionState.status == peer_connection.ConnectionStatus.connected &&
-        isRemoteSyncRunning;
-    AndroidBackgroundRuntime.setKeepAliveEnabled(shouldEnable);
-  }
+  final String headline;
+  final String body;
+  final String primaryLabel;
+  final VoidCallback onPrimaryPressed;
 
-  String _localizePreflightReason(BuildContext context, String reason) {
-    switch (reason) {
-      case 'many_root_children':
-        return context.l10n.directoryPreflightManyRootChildren;
-      case 'dense_nested_directory':
-        return context.l10n.directoryPreflightDenseNestedDirectory;
-      case 'inaccessible_subdirectory':
-        return context.l10n.directoryPreflightInaccessibleSubdirectory;
-      case 'system_like_directory':
-        return context.l10n.directoryPreflightSystemLikeDirectory;
-      default:
-        return reason;
-    }
-  }
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
 
-  Future<void> _cleanupTempFiles({
-    required String rootId,
-    required bool isSource,
-  }) async {
-    setState(() {
-      if (isSource) {
-        _isCleaningSourceTemp = true;
-      } else {
-        _isCleaningTargetTemp = true;
-      }
-    });
-    try {
-      final result = await ref
-          .read(tempFileCleanupServiceProvider)
-          .cleanup(rootId: rootId);
-      if (!mounted) {
-        return;
-      }
-      final String message = result.failedPaths.isEmpty
-          ? context.l10n.homeCleanupTempSuccess(result.deletedCount)
-          : context.l10n.homeCleanupTempPartial(
-              result.deletedCount,
-              result.failedPaths.length,
-            );
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
-      if (isSource && result.deletedCount > 0 && result.failedPaths.isEmpty) {
-        ref.read(directoryControllerProvider.notifier).setHasTempFiles(false);
-      }
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.homeCleanupTempFailed)),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          if (isSource) {
-            _isCleaningSourceTemp = false;
-          } else {
-            _isCleaningTargetTemp = false;
-          }
-        });
-      }
-    }
-  }
-
-  Future<void> _showRecentDirectoryManager() async {
-    final RecentItemsStore store = ref.read(recentItemsStoreProvider);
-    List<RecentDirectoryRecord> records = await store
-        .loadRecentDirectoryRecords();
-    if (!mounted) {
-      return;
-    }
-    await showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return RecentDirectoryManagerDialog(
-          initialRecords: records,
-          onUse: (RecentDirectoryRecord record) async {
-            ref
-                .read(directoryControllerProvider.notifier)
-                .useRecentDirectory(record.handle);
-          },
-          onReorder: (List<RecentDirectoryRecord> next) async {
-            await store.reorderRecentDirectories(next);
-            await ref.read(directoryControllerProvider.notifier).reloadRecent();
-            return store.loadRecentDirectoryRecords();
-          },
-          onEdit: (RecentDirectoryRecord record) async {
-            await _showRecentAliasDialog(
-              initialValue: record.note,
-              title: context.l10n.homeRecentEditAlias,
-              onSave: (String? value) async {
-                await store.updateRecentDirectoryNote(
-                  record.handle.entryId,
-                  value,
-                );
-                await ref
-                    .read(directoryControllerProvider.notifier)
-                    .reloadRecent();
-              },
-            );
-            return store.loadRecentDirectoryRecords();
-          },
-          onDelete: (RecentDirectoryRecord record) async {
-            await store.removeRecentDirectory(record.handle.entryId);
-            await ref.read(directoryControllerProvider.notifier).reloadRecent();
-            return store.loadRecentDirectoryRecords();
-          },
-        );
-      },
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: <Color>[scheme.primaryContainer, scheme.secondaryContainer],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Icon(
+              Icons.multitrack_audio_rounded,
+              size: 36,
+              color: scheme.onPrimaryContainer,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              headline,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: scheme.onPrimaryContainer,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              body,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: scheme.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: onPrimaryPressed,
+              style: FilledButton.styleFrom(
+                backgroundColor: scheme.onPrimaryContainer,
+                foregroundColor: scheme.primaryContainer,
+              ),
+              icon: const Icon(Icons.compare_arrows_rounded),
+              label: Text(primaryLabel),
+            ),
+          ],
+        ),
+      ),
     );
   }
+}
 
-  Future<void> _showRecentAddressManager() async {
-    final RecentItemsStore store = ref.read(recentItemsStoreProvider);
-    List<RecentAddressRecord> records = await store.loadRecentAddressRecords();
-    if (!mounted) {
-      return;
-    }
-    await showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return RecentAddressManagerDialog(
-          initialRecords: records,
-          onUse: (RecentAddressRecord record) async {
-            _addressController.text = record.address;
-            ConnectionSectionActions.connectFromInput(
-              ref: ref,
-              addressController: _addressController,
-            );
-          },
-          onReorder: (List<RecentAddressRecord> next) async {
-            await store.reorderRecentAddresses(next);
-            await ref
-                .read(connectionControllerProvider.notifier)
-                .reloadRecent();
-            return store.loadRecentAddressRecords();
-          },
-          onEdit: (RecentAddressRecord record) async {
-            await _showRecentAddressDialog(
-              initialAddress: record.address,
-              initialAlias: record.note,
-              onSave:
-                  ({required String address, required String? alias}) async {
-                    await store.updateRecentAddress(
-                      oldAddress: record.address,
-                      newAddress: address,
-                      note: alias,
-                    );
-                    await ref
-                        .read(connectionControllerProvider.notifier)
-                        .reloadRecent();
-                  },
-            );
-            return store.loadRecentAddressRecords();
-          },
-          onDelete: (RecentAddressRecord record) async {
-            await store.removeRecentAddress(record.address);
-            await ref
-                .read(connectionControllerProvider.notifier)
-                .reloadRecent();
-            return store.loadRecentAddressRecords();
-          },
-        );
-      },
-    );
-  }
+class _OverviewPill extends StatelessWidget {
+  const _OverviewPill({
+    required this.title,
+    required this.value,
+    required this.icon,
+  });
 
-  Future<void> _showRecentAliasDialog({
-    required String title,
-    required Future<void> Function(String? value) onSave,
-    String? initialValue,
-  }) async {
-    final String? value = await showDialog<String>(
-      context: context,
-      builder: (BuildContext context) {
-        return RecentAliasDialog(title: title, initialValue: initialValue);
-      },
-    );
-    if (value != null) {
-      await onSave(value);
-    }
-  }
+  final String title;
+  final String value;
+  final IconData icon;
 
-  Future<void> _showRecentAddressDialog({
-    required String initialAddress,
-    required String? initialAlias,
-    required Future<void> Function({
-      required String address,
-      required String? alias,
-    })
-    onSave,
-  }) async {
-    final ({String address, String alias})? result =
-        await showDialog<({String address, String alias})>(
-          context: context,
-          builder: (BuildContext context) {
-            return RecentAddressDialog(
-              initialAddress: initialAddress,
-              initialAlias: initialAlias,
-            );
-          },
-        );
-    if (result != null) {
-      await onSave(address: result.address.trim(), alias: result.alias);
-    }
-  }
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
 
-  Future<void> _showConnectionOptionsPanel(
-    peer_connection.ConnectionState connectionState,
-  ) async {
-    await showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return ConnectionOptionsDialog(
-          addressController: _addressController,
-          recentAddresses: connectionState.recentAddresses,
-          recentLabels: connectionState.recentLabels,
-          discoveredDevices: connectionState.discoveredDevices,
-          onConnectTap: () {
-            Navigator.of(context).pop();
-            ConnectionSectionActions.connectFromInput(
-              ref: ref,
-              addressController: _addressController,
-            );
-          },
-          onRecentAddressTap: (String address) {
-            _addressController.text = address;
-            Navigator.of(context).pop();
-            ConnectionSectionActions.connectFromInput(
-              ref: ref,
-              addressController: _addressController,
-            );
-          },
-          onDiscoveredDeviceTap: (DeviceInfo device) {
-            _addressController.text = '${device.address}:${device.port}';
-            Navigator.of(context).pop();
-            ConnectionSectionActions.connectFromInput(
-              ref: ref,
-              addressController: _addressController,
-            );
-          },
-          onManageRecentAddresses: () {
-            Navigator.of(context).pop();
-            _showRecentAddressManager();
-          },
-          onPortTap: () {
-            Navigator.of(context).pop();
-            ConnectionSectionActions.showPortDialog(
-              context: this.context,
-              ref: ref,
-              currentPort: connectionState.listenPort ?? 44888,
-            );
-          },
-          onShareTap: () {
-            Navigator.of(context).pop();
-            ConnectionSectionActions.showShareDialog(
-              context: this.context,
-              connectionState: connectionState,
-            );
-          },
-        );
-      },
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(icon, size: 18, color: scheme.primary),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(title, style: Theme.of(context).textTheme.labelMedium),
+                const SizedBox(height: 2),
+                Text(value),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

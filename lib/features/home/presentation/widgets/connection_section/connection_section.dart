@@ -26,81 +26,70 @@ class ConnectionSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: scheme.outlineVariant),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
           children: <Widget>[
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    context.l10n.homeDiscoveredDevices,
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                ),
-                IconButton(
-                  tooltip: context.l10n.homeRefreshConnectionState,
-                  visualDensity: VisualDensity.compact,
-                  onPressed: isConnectUiBusy ? null : onRefreshPresence,
-                  icon: const Icon(Icons.refresh_rounded, size: 20),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              switchInCurve: Curves.easeOutCubic,
-              switchOutCurve: Curves.easeOutCubic,
-              child: connectionState.discoveredDevices.isNotEmpty
-                  ? Column(
-                      key: const ValueKey<String>('device-list'),
-                      children: List<Widget>.generate(
-                        connectionState.discoveredDevices.length,
-                        (int index) {
-                          final DeviceInfo device =
-                              connectionState.discoveredDevices[index];
-                          final bool isLast =
-                              index ==
-                              connectionState.discoveredDevices.length - 1;
-                          return Padding(
-                            padding: EdgeInsets.only(bottom: isLast ? 0 : 8),
-                            child: _DiscoveredDeviceCard(
-                              device: device,
-                              enabled: !isConnectUiBusy,
-                              connected:
-                                  connectionState.peer?.deviceId ==
-                                      device.deviceId &&
-                                  hasConnectedPeer,
-                              onTap: () => onDiscoveredDeviceTap(device),
-                            ),
-                          );
-                        },
-                      ),
-                    )
-                  : const _EmptyDeviceSkeleton(
-                      key: ValueKey<String>('empty-skeleton'),
-                    ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: onOpenConnectionPanel,
-                icon: const Icon(Icons.tune_rounded),
-                label: Text(context.l10n.homeOpenConnectionPanel),
+            Expanded(
+              child: Text(
+                context.l10n.homeDiscoveredDevices,
+                style: Theme.of(context).textTheme.titleSmall,
               ),
+            ),
+            IconButton(
+              tooltip: context.l10n.homeRefreshConnectionState,
+              visualDensity: VisualDensity.compact,
+              onPressed: isConnectUiBusy ? null : onRefreshPresence,
+              icon: const Icon(Icons.refresh_rounded, size: 20),
             ),
           ],
         ),
-      ),
+        const SizedBox(height: 8),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeOutCubic,
+          child: connectionState.discoveredDevices.isNotEmpty
+              ? Column(
+                  key: const ValueKey<String>('device-list'),
+                  children: List<Widget>.generate(
+                    connectionState.discoveredDevices.length,
+                    (int index) {
+                      final DeviceInfo device =
+                          connectionState.discoveredDevices[index];
+                      final bool isLast =
+                          index == connectionState.discoveredDevices.length - 1;
+                      return Padding(
+                        key: ValueKey<String>('device-${device.deviceId}'),
+                        padding: EdgeInsets.only(bottom: isLast ? 0 : 8),
+                        child: _DiscoveredDeviceCard(
+                          device: device,
+                          enabled: !isConnectUiBusy,
+                          connected:
+                              connectionState.peer?.deviceId ==
+                                  device.deviceId &&
+                              hasConnectedPeer,
+                          onTap: () => onDiscoveredDeviceTap(device),
+                        ),
+                      );
+                    },
+                  ),
+                )
+              : const _EmptyDeviceSkeleton(
+                  key: ValueKey<String>('empty-skeleton'),
+                ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: onOpenConnectionPanel,
+            icon: const Icon(Icons.tune_rounded),
+            label: Text(context.l10n.homeOpenConnectionPanel),
+          ),
+        ),
+      ],
     );
   }
 }
