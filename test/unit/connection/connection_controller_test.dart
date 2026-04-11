@@ -161,6 +161,7 @@ void main() {
       expect(detail?.audioMetadata?.artist, 'Remote Artist');
     });
 
+<<<<<<< HEAD
     test('connect records stream upload capability from hello response', () async {
       final _FakeHttpSyncClient client = _FakeHttpSyncClient(
         helloResponse: const HelloResponseDto(
@@ -188,6 +189,39 @@ void main() {
         isTrue,
       );
     });
+=======
+    test(
+      'connect records stream upload capability from hello response',
+      () async {
+        final _FakeHttpSyncClient client = _FakeHttpSyncClient(
+          helloResponse: const HelloResponseDto(
+            device: DeviceInfo(
+              deviceId: 'peer',
+              deviceName: 'Peer',
+              platform: 'android',
+              address: '',
+              port: 44888,
+            ),
+            directoryReady: true,
+            transferProtocols: <String>['chunk-rpc', 'stream-v1'],
+          ),
+          scanResponse: ScanResponseDto(snapshot: _remoteSnapshot('Remote A')),
+        );
+        final ProviderContainer container = _container(client: client);
+        addTearDown(container.dispose);
+
+        await container
+            .read(connectionControllerProvider.notifier)
+            .connect(address: '192.168.1.2', port: 44888);
+
+        expect(
+          container
+              .read(connectionControllerProvider.notifier)
+              .peerSupportsStreamUpload,
+          isTrue,
+        );
+      },
+    );
 
     test('disconnect clears remote state but preserves listener', () async {
       final _FakeHttpSyncClient client = _FakeHttpSyncClient(
@@ -222,6 +256,7 @@ void main() {
       expect(state.remoteSnapshot, isNull);
     });
 
+<<<<<<< HEAD
     test('failed incoming stream upload clears incoming sync active state', () async {
       final _CapturingHttpSyncServerService server = _CapturingHttpSyncServerService();
       final ProviderContainer container = ProviderContainer(
@@ -237,6 +272,135 @@ void main() {
                   port: 44888,
                 ),
                 directoryReady: false,
+=======
+    test(
+      'failed incoming stream upload clears incoming sync active state',
+      () async {
+        final _CapturingHttpSyncServerService server =
+            _CapturingHttpSyncServerService();
+        final ProviderContainer container = ProviderContainer(
+          overrides: [
+            httpSyncClientProvider.overrideWithValue(
+              _FakeHttpSyncClient(
+                helloResponse: const HelloResponseDto(
+                  device: DeviceInfo(
+                    deviceId: 'peer',
+                    deviceName: 'Peer',
+                    platform: 'android',
+                    address: '',
+                    port: 44888,
+                  ),
+                  directoryReady: false,
+                ),
+              ),
+            ),
+            httpSyncServerServiceProvider.overrideWithValue(server),
+            discoveryServiceProvider.overrideWithValue(_FakeDiscoveryService()),
+            recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+            fileAccessGatewayProvider.overrideWithValue(
+              _ThrowingFileAccessGateway(),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await container
+            .read(connectionControllerProvider.notifier)
+            .startListening(port: 44888);
+        container
+            .read(connectionControllerProvider.notifier)
+            .state = const ConnectionState(
+          status: ConnectionStatus.connected,
+          isListening: true,
+          isIncomingSyncActive: true,
+        );
+
+        final CopyFileStreamHandler handler =
+            server.onCopyFileStream ??
+            (throw StateError('Missing upload handler'));
+        final Object? error = await _postToCopyHandler(
+          handler: handler,
+          remoteRootId: 'root',
+          relativePath: 'song.mp3',
+          expectedBytes: 4,
+          body: <int>[1, 2, 3, 4],
+        );
+
+        expect(error, isA<FileSystemException>());
+
+        expect(
+          container.read(connectionControllerProvider).isIncomingSyncActive,
+          isFalse,
+        );
+      },
+    );
+
+    test(
+      'incoming upload restores original file when replacement rename fails',
+      () async {
+        final _CapturingHttpSyncServerService server =
+            _CapturingHttpSyncServerService();
+        final _RecoveringFileAccessGateway gateway =
+            _RecoveringFileAccessGateway();
+        final ProviderContainer container = ProviderContainer(
+          overrides: [
+            httpSyncClientProvider.overrideWithValue(
+              _FakeHttpSyncClient(
+                helloResponse: const HelloResponseDto(
+                  device: DeviceInfo(
+                    deviceId: 'peer',
+                    deviceName: 'Peer',
+                    platform: 'android',
+                    address: '',
+                    port: 44888,
+                  ),
+                  directoryReady: false,
+                ),
+              ),
+            ),
+            httpSyncServerServiceProvider.overrideWithValue(server),
+            discoveryServiceProvider.overrideWithValue(_FakeDiscoveryService()),
+            recentItemsStoreProvider.overrideWithValue(_FakeRecentItemsStore()),
+            fileAccessGatewayProvider.overrideWithValue(gateway),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await container
+            .read(connectionControllerProvider.notifier)
+            .startListening(port: 44888);
+
+        final CopyFileStreamHandler handler =
+            server.onCopyFileStream ??
+            (throw StateError('Missing upload handler'));
+        final Object? error = await _postToCopyHandler(
+          handler: handler,
+          remoteRootId: 'root',
+          relativePath: 'song.mp3',
+          expectedBytes: 4,
+          body: <int>[1, 2, 3, 4],
+        );
+
+        expect(error, isA<FileSystemException>());
+
+        expect(gateway.restoreAttempted, isTrue);
+        expect(gateway.deletedBackup, isFalse);
+      },
+    );
+
+    test(
+      'resetNetworkStateForProtocolChange rejects while connecting',
+      () async {
+        final ProviderContainer container = _container(
+          client: _FakeHttpSyncClient(
+            helloResponse: const HelloResponseDto(
+              device: DeviceInfo(
+                deviceId: 'peer',
+                deviceName: 'Peer',
+                platform: 'android',
+                address: '',
+                port: 44888,
+>>>>>>> origin/main
               ),
             ),
           ),
@@ -952,7 +1116,8 @@ class _RecoveringFileAccessGateway extends _FakeFileAccessGateway {
       }
       throw const FileSystemException('replacement failed');
     }
-    if (entryId == 'existing-entry' && newName.startsWith('song.mp3.music_sync_tmp.backup.')) {
+    if (entryId == 'existing-entry' &&
+        newName.startsWith('song.mp3.music_sync_tmp.backup.')) {
       return 'backup-entry';
     }
     if (entryId == 'backup-entry' && newName == 'song.mp3') {
@@ -980,7 +1145,10 @@ Future<Object?> _postToCopyHandler({
   required int expectedBytes,
   required List<int> body,
 }) async {
-  final HttpServer server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+  final HttpServer server = await HttpServer.bind(
+    InternetAddress.loopbackIPv4,
+    0,
+  );
   final Completer<Object?> completed = Completer<Object?>();
   server.listen((HttpRequest request) async {
     Object? error;
@@ -998,7 +1166,10 @@ Future<Object?> _postToCopyHandler({
       }
     }
   });
-  final Socket socket = await Socket.connect(InternetAddress.loopbackIPv4, server.port);
+  final Socket socket = await Socket.connect(
+    InternetAddress.loopbackIPv4,
+    server.port,
+  );
   final List<String> headerLines = <String>[
     'POST /test HTTP/1.1',
     'Host: ${InternetAddress.loopbackIPv4.host}:${server.port}',
