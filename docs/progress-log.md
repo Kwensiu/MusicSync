@@ -1554,3 +1554,87 @@
   - 第 36 节（Home 滚动收口与预览拆分准备）
   - 第 38 节（首页/传输页语义重排与预览工作台拆分）
   - `2026-04-12 传输页、预览页与执行结果收口`
+
+## 2026-04-13 冲突处理流 Phase 1–3 部分实现
+
+本轮把 `docs/preview-conflict-flow-v1.md` 中定义的冲突处理流推进到了 Phase 2 基本可用 + Phase 3 部分闭环的状态。
+
+已完成：
+
+- Phase 1：入口打通（全部完成）
+  - 桌面端右侧工具区 `onViewConflicts` 已接入导航
+  - 手机端预览页底部新增独立冲突入口卡
+  - 冲突页独立路由 `/preview/conflicts` 已注册
+  - 桌面 / 手机端均可通过单主入口进入同一路由
+
+- Phase 2：冲突页基本可用（大部分完成）
+  - 冲突处理列表已按三分型（跳过项 / 冲突项 / 可自动合并项）分组展示
+  - 当前冲突详情已实现桌面端左右并排对比（本地 / 远端）和手机端 sheet + 本地/远端切换
+  - 返回预览页已接入
+  - 桌面左侧主列表已移除 `conflict` 分组（筛选 chip + 列表项均已移除）
+  - 手机端旧冲突路径已收口（`PreviewResultListSection` 和 `PreviewPlanSection` 不再传递冲突项）
+  - 快照首轮分类链路尚未接入（当前 `FileEntry.fingerprint` 未被扫描器赋值，`autoMerge` 分支为预留死代码）
+
+- Phase 3：处理动作部分闭环
+  - 基础处理动作入口已添加（稍后处理 / 保留源端 / 保留目标端 / 申请自动合并）
+  - 处理动作已按"先记录草稿"落地，不立即改写 `plan`
+  - 草稿绑定当前预览会话，重建预览后清空
+  - 自动合并同意步骤、远端写入、二次复核尚未实现
+
+- 执行反馈闭环已补齐
+  - `TransferProgress` 和 `ExecutionResult` 新增 `skippedConflictCount`
+  - 本地 / 远端执行器在执行开始时统计冲突项数量并透传
+  - 执行结果卡新增"跳过冲突"指标徽标
+
+- 冲突分类逻辑已实现 V1 版本
+  - `ConflictController._classify()` 基于扩展名白名单 + size/modifiedTime + fingerprint 三级分类
+  - 音乐文件扩展名白名单已提取到 `AppConstants.musicExtensions`
+  - fingerprint 比较已提取到 `core/utils/fingerprint_utils.dart`（含 `normalizeFingerprint` + `fingerprintsMatch`）
+  - 当前 fingerprint 字段未被扫描器赋值，`autoMerge` 分类暂不可达
+
+- Discovery bind 失败优雅降级
+  - `ConnectionController._startDiscoveryReceiving()` 包裹了 `discovery.startReceiving`
+  - catch 后设置 `errorMessage` 而不是让异常 uncaught 导致 controller 崩溃
+  - 新增 `AppErrorCode.discoveryUnavailable` 错误键与 l10n 文案
+  - 补充了 `_ThrowingDiscoveryService` 单测
+
+- 移动端布局修复
+  - `PreviewConflictListPane` 和 `PreviewConflictDetailPane` 新增 `shrinkWrap` 参数
+  - 移动端冲突页使用 `shrinkWrap: true` + `showModalBottomSheet` 替代内嵌详情
+
+- 测试收口
+  - `preview_page_lifecycle_test.dart` 已更新，移除过时断言
+  - `execution_controller_test.dart` 新增 `skippedConflictCount` 透传测试
+  - `connection_controller_test.dart` 新增 discovery 降级测试
+
+当前仍待完成：
+
+- 快照首轮分类链路（需要 `DirectoryScanner` 计算 `FileEntry.fingerprint`）
+- 自动合并同意步骤
+- 默认只写远端 + 可选双向写入
+- 不确定项二次详情复核
+
+## 2026-04-13 冲突处理流文档最终收口
+
+本轮把 `docs/preview-conflict-flow-v1.md` 从“方向草案”收口到“可直接进入实现”的口径。
+
+已固定的关键决策：
+
+- 预览执行维持：`copy/delete` 可执行，冲突处理项先跳过
+- 冲突处理页使用独立路由（建议：`/preview/conflicts`）
+- 桌面端主入口收口到右侧工具与操作区；手机端保持单主入口紧凑表达
+- 冲突处理状态绑定当前预览会话，重建预览后清空
+- V1 动作统一为“先记录草稿”，不立即改写当前 `plan`
+- 自动合并默认只写远端，且必须经过用户同意
+- 元数据链路采用“扩展快照后批量比对 + 按需详情补充”
+- 详情中的 Tag 字段改为常驻显示，缺失值统一“未知”
+- 非音乐文件与 Tag 读取失败不再视为流程错误
+
+同时明确了过渡退出条件：
+
+- 冲突处理页达到 Phase 2（列表 + 详情 + 返回）后，桌面左侧主列表移除 `conflict` 分组
+
+验证：
+
+- `flutter analyze`
+- `flutter test test/unit/preview/local_audio_metadata_reader_test.dart`

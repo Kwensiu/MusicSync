@@ -331,6 +331,7 @@
   "errorDirectoryTreeAccessDenied": "扫描失败，目录树中包含不可访问的子目录。",
   "errorDirectoryAccessDenied": "目录访问被拒绝，请选择你有权限读取的文件夹。",
   "errorDirectoryNotExists": "当前选择的目录已不存在，请重新选择。",
+  "errorDiscoveryUnavailable": "当前设备无法启用局域网自动发现。附近设备发现将被禁用，但手动连接仍可继续使用。",
   "errorListenPortInUse": "监听失败：端口已被占用。请更换端口，或关闭占用该端口的程序。",
   "errorWindowsWriteCreateFailed": "无法写入 Windows 目标目录。请检查权限和文件占用后重试。",
   "errorWindowsRenameFailed": "无法完成一个或多个文件的最终写入。请检查权限和文件占用后重试。",
@@ -566,5 +567,66 @@
         "type": "int"
       }
     }
-  }
+  },
+  "conflictPageTitle": "冲突 ({count})",
+  "@conflictPageTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictListTitle": "冲突项",
+  "conflictListEmpty": "没有冲突项。",
+  "conflictCategorySkip": "跳过 ({count})",
+  "@conflictCategorySkip": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictCategoryConflict": "冲突 ({count})",
+  "@conflictCategoryConflict": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictCategoryAutoMerge": "可自动合并 ({count})",
+  "@conflictCategoryAutoMerge": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictCategoryNoTag": "无标签 ({count})",
+  "@conflictCategoryNoTag": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictDetailTitle": "冲突详情",
+  "conflictDetailEmpty": "选择一项以查看详情",
+  "conflictActionLabel": "处理决定",
+  "conflictActionLater": "稍后处理",
+  "conflictActionKeepSource": "保留源端",
+  "conflictActionKeepTarget": "保留目标端",
+  "conflictActionAutoMerge": "申请自动合并",
+  "executionSkippedConflict": "已执行 {done} 项，跳过冲突 {conflict} 项",
+  "@executionSkippedConflict": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "conflict": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictViewConflicts": "处理冲突"
 }

@@ -196,6 +196,36 @@ void main() {
       controller.cancel();
     });
 
+    test(
+      'completed execution carries skipped conflict count from result',
+      () async {
+        final bundle = _createController(
+          localExecutor: _FakeLocalSyncExecutor(
+            result: const ExecutionResult(
+              copiedCount: 1,
+              deletedCount: 1,
+              failedCount: 0,
+              totalBytes: 64,
+              targetRoot: 'local-target',
+              skippedConflictCount: 3,
+            ),
+          ),
+          remoteExecutor: _FakeRemoteSyncExecutor(),
+        );
+        addTearDown(bundle.container.dispose);
+        final controller = bundle.controller;
+
+        await controller.execute(
+          plan: SyncPlan.empty(),
+          targetRoot: 'local-target',
+        );
+
+        expect(controller.state.status, ExecutionStatus.completed);
+        expect(controller.state.result.skippedConflictCount, 3);
+        expect(controller.state.progress.skippedConflictCount, 3);
+      },
+    );
+
     test('cancelled local execution can run again', () async {
       final bundle = _createController(
         localExecutor: _BlockingLocalSyncExecutor(),

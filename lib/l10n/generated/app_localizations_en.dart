@@ -625,6 +625,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'The selected directory no longer exists. Please choose it again.';
 
   @override
+  String get errorDiscoveryUnavailable =>
+      'Local network discovery is unavailable on this device right now. Nearby device discovery is disabled, but manual connection still works.';
+
+  @override
   String get errorListenPortInUse =>
       'Failed to start listening because the port is already in use. Pick another port or stop the process using it.';
 
@@ -1068,4 +1072,64 @@ class AppLocalizationsEn extends AppLocalizations {
   String previewViewCount(int count) {
     return '$count items';
   }
+
+  @override
+  String conflictPageTitle(int count) {
+    return 'Conflicts ($count)';
+  }
+
+  @override
+  String get conflictListTitle => 'Conflict Items';
+
+  @override
+  String get conflictListEmpty => 'No conflict items.';
+
+  @override
+  String conflictCategorySkip(int count) {
+    return 'Skip ($count)';
+  }
+
+  @override
+  String conflictCategoryConflict(int count) {
+    return 'Conflict ($count)';
+  }
+
+  @override
+  String conflictCategoryAutoMerge(int count) {
+    return 'Auto Merge ($count)';
+  }
+
+  @override
+  String conflictCategoryNoTag(int count) {
+    return 'No Tag ($count)';
+  }
+
+  @override
+  String get conflictDetailTitle => 'Conflict Detail';
+
+  @override
+  String get conflictDetailEmpty => 'Select an item to view details';
+
+  @override
+  String get conflictActionLabel => 'Resolution';
+
+  @override
+  String get conflictActionLater => 'Later';
+
+  @override
+  String get conflictActionKeepSource => 'Keep Source';
+
+  @override
+  String get conflictActionKeepTarget => 'Keep Target';
+
+  @override
+  String get conflictActionAutoMerge => 'Auto Merge';
+
+  @override
+  String executionSkippedConflict(int done, int conflict) {
+    return 'Executed $done item(s), skipped $conflict conflict(s)';
+  }
+
+  @override
+  String get conflictViewConflicts => 'Handle Conflicts';
 }

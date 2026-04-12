@@ -1164,6 +1164,12 @@ abstract class AppLocalizations {
   /// **'The selected directory no longer exists. Please choose it again.'**
   String get errorDirectoryNotExists;
 
+  /// No description provided for @errorDiscoveryUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Local network discovery is unavailable on this device right now. Nearby device discovery is disabled, but manual connection still works.'**
+  String get errorDiscoveryUnavailable;
+
   /// No description provided for @errorListenPortInUse.
   ///
   /// In en, this message translates to:
@@ -1931,6 +1937,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} items'**
   String previewViewCount(int count);
+
+  /// No description provided for @conflictPageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Conflicts ({count})'**
+  String conflictPageTitle(int count);
+
+  /// No description provided for @conflictListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Conflict Items'**
+  String get conflictListTitle;
+
+  /// No description provided for @conflictListEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No conflict items.'**
+  String get conflictListEmpty;
+
+  /// No description provided for @conflictCategorySkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip ({count})'**
+  String conflictCategorySkip(int count);
+
+  /// No description provided for @conflictCategoryConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Conflict ({count})'**
+  String conflictCategoryConflict(int count);
+
+  /// No description provided for @conflictCategoryAutoMerge.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Merge ({count})'**
+  String conflictCategoryAutoMerge(int count);
+
+  /// No description provided for @conflictCategoryNoTag.
+  ///
+  /// In en, this message translates to:
+  /// **'No Tag ({count})'**
+  String conflictCategoryNoTag(int count);
+
+  /// No description provided for @conflictDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Conflict Detail'**
+  String get conflictDetailTitle;
+
+  /// No description provided for @conflictDetailEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an item to view details'**
+  String get conflictDetailEmpty;
+
+  /// No description provided for @conflictActionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolution'**
+  String get conflictActionLabel;
+
+  /// No description provided for @conflictActionLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get conflictActionLater;
+
+  /// No description provided for @conflictActionKeepSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Source'**
+  String get conflictActionKeepSource;
+
+  /// No description provided for @conflictActionKeepTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Target'**
+  String get conflictActionKeepTarget;
+
+  /// No description provided for @conflictActionAutoMerge.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto Merge'**
+  String get conflictActionAutoMerge;
+
+  /// No description provided for @executionSkippedConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Executed {done} item(s), skipped {conflict} conflict(s)'**
+  String executionSkippedConflict(int done, int conflict);
+
+  /// No description provided for @conflictViewConflicts.
+  ///
+  /// In en, this message translates to:
+  /// **'Handle Conflicts'**
+  String get conflictViewConflicts;
 }
 
 class _AppLocalizationsDelegate

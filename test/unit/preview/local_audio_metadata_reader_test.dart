@@ -63,6 +63,27 @@ void main() {
     },
   );
 
+  test('returns null for non-audio payload', () async {
+    final AudioMetadataReader reader = AudioMetadataReader(
+      _FakeGateway(
+        Uint8List.fromList(<int>[
+          0x00,
+          0xFF,
+          0x10,
+          0xAB,
+          0xCD,
+          0xEF,
+          0x01,
+          0x02,
+        ]),
+      ),
+    );
+
+    final metadata = await reader.read('entry');
+
+    expect(metadata, isNull);
+  });
+
   test('falls back to ID3v1 metadata when ID3v2 is missing', () async {
     final Tag id3v1 = Tag()
       ..type = 'ID3'

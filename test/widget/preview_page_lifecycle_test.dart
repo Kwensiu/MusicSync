@@ -200,11 +200,8 @@ void main() {
       expect(find.text('Transfer Status'), findsNothing);
       expect(find.text('Directory Status'), findsNothing);
       expect(find.text('Filters & Summary'), findsOneWidget);
-      expect(find.text('Detail'), findsOneWidget);
-      expect(find.text('Select an item to view details'), findsOneWidget);
       expect(find.text('Build Preview'), findsOneWidget);
       expect(find.text('Start Sync'), findsOneWidget);
-      expect(find.text('Conflict: 0'), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );

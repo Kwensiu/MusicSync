@@ -331,6 +331,7 @@
   "errorDirectoryTreeAccessDenied": "Scanning failed because part of the directory tree is not accessible.",
   "errorDirectoryAccessDenied": "Directory access was denied. Please choose a folder you can read.",
   "errorDirectoryNotExists": "The selected directory no longer exists. Please choose it again.",
+  "errorDiscoveryUnavailable": "Local network discovery is unavailable on this device right now. Nearby device discovery is disabled, but manual connection still works.",
   "errorListenPortInUse": "Failed to start listening because the port is already in use. Pick another port or stop the process using it.",
   "errorWindowsWriteCreateFailed": "Unable to write to the Windows target directory. Check permissions and file locks, then try again.",
   "errorWindowsRenameFailed": "Unable to finalize one or more file writes. Check permissions and file locks, then try again.",
@@ -566,5 +567,66 @@
         "type": "int"
       }
     }
-  }
+  },
+  "conflictPageTitle": "Conflicts ({count})",
+  "@conflictPageTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictListTitle": "Conflict Items",
+  "conflictListEmpty": "No conflict items.",
+  "conflictCategorySkip": "Skip ({count})",
+  "@conflictCategorySkip": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictCategoryConflict": "Conflict ({count})",
+  "@conflictCategoryConflict": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictCategoryAutoMerge": "Auto Merge ({count})",
+  "@conflictCategoryAutoMerge": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictCategoryNoTag": "No Tag ({count})",
+  "@conflictCategoryNoTag": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictDetailTitle": "Conflict Detail",
+  "conflictDetailEmpty": "Select an item to view details",
+  "conflictActionLabel": "Resolution",
+  "conflictActionLater": "Later",
+  "conflictActionKeepSource": "Keep Source",
+  "conflictActionKeepTarget": "Keep Target",
+  "conflictActionAutoMerge": "Auto Merge",
+  "executionSkippedConflict": "Executed {done} item(s), skipped {conflict} conflict(s)",
+  "@executionSkippedConflict": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "conflict": {
+        "type": "int"
+      }
+    }
+  },
+  "conflictViewConflicts": "Handle Conflicts"
 }

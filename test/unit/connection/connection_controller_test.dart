@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:music_sync/core/errors/app_error_localizer.dart';
 import 'package:music_sync/features/connection/state/connection_controller.dart';
 import 'package:music_sync/features/connection/state/connection_state.dart';
 import 'package:music_sync/features/directory/state/directory_controller.dart';
@@ -60,6 +61,37 @@ void main() {
         expect(state.peer?.address, '192.168.1.2');
         expect(state.isRemoteDirectoryReady, isFalse);
         expect(state.remoteSnapshot, isNull);
+      },
+    );
+
+    test(
+      'discovery bind failure degrades gracefully and keeps manual flows usable',
+      () async {
+        final ProviderContainer container = _container(
+          client: _FakeHttpSyncClient(
+            helloResponse: const HelloResponseDto(
+              device: DeviceInfo(
+                deviceId: 'peer',
+                deviceName: 'Peer',
+                platform: 'android',
+                address: '',
+                port: 44888,
+              ),
+              directoryReady: false,
+            ),
+          ),
+          discovery: _ThrowingDiscoveryService(),
+        );
+        addTearDown(container.dispose);
+
+        container.read(connectionControllerProvider);
+        await Future<void>.delayed(Duration.zero);
+
+        final ConnectionState state = container.read(
+          connectionControllerProvider,
+        );
+        expect(state.status, ConnectionStatus.idle);
+        expect(state.errorMessage, AppErrorCode.discoveryUnavailable);
       },
     );
 
@@ -726,7 +758,7 @@ void main() {
 
 ProviderContainer _container({
   required _FakeHttpSyncClient client,
-  _FakeDiscoveryService? discovery,
+  DiscoveryService? discovery,
   _FakeHttpSyncServerService? server,
 }) {
   return ProviderContainer(
@@ -898,6 +930,27 @@ class _FakeDiscoveryService extends DiscoveryService {
   void emit(DiscoveryEvent event) {
     _callback?.call(event);
   }
+}
+
+class _ThrowingDiscoveryService extends DiscoveryService {
+  @override
+  Future<void> startReceiving({required DiscoveryCallback onDevice}) async {
+    throw const SocketException(
+      'Failed to create datagram socket (OS Error: Access is denied., errno = 10013)',
+    );
+  }
+
+  @override
+  Future<void> startBroadcasting(DeviceInfo device) async {}
+
+  @override
+  Future<void> sendGoodbye(DeviceInfo device) async {}
+
+  @override
+  Future<void> stopBroadcasting() async {}
+
+  @override
+  Future<void> dispose() async {}
 }
 
 class _FakeRecentItemsStore extends RecentItemsStore {

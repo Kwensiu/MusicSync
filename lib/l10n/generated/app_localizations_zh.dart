@@ -595,6 +595,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get errorDirectoryNotExists => '当前选择的目录已不存在，请重新选择。';
 
   @override
+  String get errorDiscoveryUnavailable =>
+      '当前设备无法启用局域网自动发现。附近设备发现将被禁用，但手动连接仍可继续使用。';
+
+  @override
   String get errorListenPortInUse => '监听失败：端口已被占用。请更换端口，或关闭占用该端口的程序。';
 
   @override
@@ -1016,4 +1020,64 @@ class AppLocalizationsZh extends AppLocalizations {
   String previewViewCount(int count) {
     return '$count 项';
   }
+
+  @override
+  String conflictPageTitle(int count) {
+    return '冲突 ($count)';
+  }
+
+  @override
+  String get conflictListTitle => '冲突项';
+
+  @override
+  String get conflictListEmpty => '没有冲突项。';
+
+  @override
+  String conflictCategorySkip(int count) {
+    return '跳过 ($count)';
+  }
+
+  @override
+  String conflictCategoryConflict(int count) {
+    return '冲突 ($count)';
+  }
+
+  @override
+  String conflictCategoryAutoMerge(int count) {
+    return '可自动合并 ($count)';
+  }
+
+  @override
+  String conflictCategoryNoTag(int count) {
+    return '无标签 ($count)';
+  }
+
+  @override
+  String get conflictDetailTitle => '冲突详情';
+
+  @override
+  String get conflictDetailEmpty => '选择一项以查看详情';
+
+  @override
+  String get conflictActionLabel => '处理决定';
+
+  @override
+  String get conflictActionLater => '稍后处理';
+
+  @override
+  String get conflictActionKeepSource => '保留源端';
+
+  @override
+  String get conflictActionKeepTarget => '保留目标端';
+
+  @override
+  String get conflictActionAutoMerge => '申请自动合并';
+
+  @override
+  String executionSkippedConflict(int done, int conflict) {
+    return '已执行 $done 项，跳过冲突 $conflict 项';
+  }
+
+  @override
+  String get conflictViewConflicts => '处理冲突';
 }
