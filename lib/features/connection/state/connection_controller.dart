@@ -127,7 +127,7 @@ class ConnectionController extends Notifier<ConnectionState> {
       const Duration(seconds: 2),
       (_) => unawaited(_pollRemoteDirectoryState()),
     );
-    unawaited(discovery.startReceiving(onDevice: _handleDiscoveryEvent));
+    unawaited(_startDiscoveryReceiving(discovery));
     ref.onDispose(() {
       _isDisposed = true;
       _discoveryCleanupTimer?.cancel();
@@ -141,6 +141,29 @@ class ConnectionController extends Notifier<ConnectionState> {
   Timer? _remoteDirectorySyncTimer;
   final Map<String, DateTime> _discoveredAt = <String, DateTime>{};
   int _connectAttemptId = 0;
+
+  Future<void> _startDiscoveryReceiving(DiscoveryService discovery) async {
+    try {
+      await discovery.startReceiving(onDevice: _handleDiscoveryEvent);
+    } catch (error) {
+      if (_isDisposed) {
+        return;
+      }
+      state = ConnectionState(
+        status: state.status,
+        isListening: state.isListening,
+        peer: state.peer,
+        remoteSnapshot: state.remoteSnapshot,
+        isRemoteDirectoryReady: state.isRemoteDirectoryReady,
+        isIncomingSyncActive: state.isIncomingSyncActive,
+        discoveredDeviceMap: state.discoveredDeviceMap,
+        recentAddresses: state.recentAddresses,
+        recentLabels: state.recentLabels,
+        listenPort: state.listenPort,
+        errorMessage: ConnectionState.localizeErrorMessage(error.toString()),
+      );
+    }
+  }
 
   Future<void> startListening({int port = AppConstants.defaultPort}) async {
     try {
