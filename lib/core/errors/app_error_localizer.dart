@@ -22,6 +22,7 @@ abstract final class AppErrorCode {
   static const String remoteProtocolInvalid = 'error.remoteProtocolInvalid';
   static const String directoryAccessDenied = 'error.directoryAccessDenied';
   static const String directoryNotExists = 'error.directoryNotExists';
+  static const String discoveryUnavailable = 'error.discoveryUnavailable';
   static const String windowsDirectoryListingFailed =
       'error.windowsDirectoryListingFailed';
   static const String scanTimedOut = 'error.scanTimedOut';
@@ -94,6 +95,10 @@ class AppErrorLocalizer {
     if (value.contains('Scanning timed out')) {
       return AppErrorCode.scanTimedOut;
     }
+    if (value.contains('Failed to create datagram socket') ||
+        value.contains('datagram socket') && value.contains('errno = 10013')) {
+      return AppErrorCode.discoveryUnavailable;
+    }
     if (value.contains('PathAccessException') ||
         value.contains('拒绝访问') ||
         value.contains('Access is denied')) {
@@ -144,6 +149,8 @@ class AppErrorLocalizer {
         return context.l10n.errorDirectoryAccessDenied;
       case AppErrorCode.directoryNotExists:
         return context.l10n.errorDirectoryNotExists;
+      case AppErrorCode.discoveryUnavailable:
+        return context.l10n.errorDiscoveryUnavailable;
       case AppErrorCode.windowsDirectoryListingFailed:
         return context.l10n.errorWindowsDirectoryListingFailed;
       case AppErrorCode.windowsEntryAccessFailed:
