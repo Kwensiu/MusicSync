@@ -5,6 +5,7 @@ class ExecutionResult {
     required this.failedCount,
     required this.totalBytes,
     required this.targetRoot,
+    this.skippedConflictCount = 0,
     this.lastError,
   });
 
@@ -13,6 +14,7 @@ class ExecutionResult {
   final int failedCount;
   final int totalBytes;
   final String targetRoot;
+  final int skippedConflictCount;
   final String? lastError;
 
   const factory ExecutionResult.empty() = _EmptyExecutionResult;

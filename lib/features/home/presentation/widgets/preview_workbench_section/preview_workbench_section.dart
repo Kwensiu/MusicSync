@@ -383,6 +383,15 @@ class _ExecutionResultPanel extends StatelessWidget {
                 icon: Icons.data_usage_rounded,
                 label: formatBytes(executionState.result.totalBytes),
               ),
+              if (executionState.result.skippedConflictCount > 0)
+                _ResultMetricChip(
+                  icon: Icons.warning_amber_rounded,
+                  label: context.l10n.executionSkippedConflict(
+                    executionState.result.copiedCount +
+                        executionState.result.deletedCount,
+                    executionState.result.skippedConflictCount,
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 10),

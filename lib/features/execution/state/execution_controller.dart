@@ -1,14 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:music_sync/core/errors/sync_cancelled_exception.dart';
 import 'package:music_sync/features/connection/state/connection_controller.dart';
 import 'package:music_sync/features/execution/state/execution_state.dart';
-import 'package:music_sync/core/errors/sync_cancelled_exception.dart';
 import 'package:music_sync/models/execution_result.dart';
 import 'package:music_sync/models/sync_plan.dart';
 import 'package:music_sync/models/transfer_progress.dart';
 import 'package:music_sync/services/file_access/file_access_provider.dart';
 import 'package:music_sync/services/sync/local_sync_executor.dart';
-import 'package:music_sync/services/sync/sync_cancel_token.dart';
 import 'package:music_sync/services/sync/remote_sync_executor.dart';
+import 'package:music_sync/services/sync/sync_cancel_token.dart';
 
 final Provider<LocalSyncExecutor> localSyncExecutorProvider =
     Provider<LocalSyncExecutor>((Ref ref) => LocalSyncExecutor());
@@ -41,6 +41,7 @@ class ExecutionController extends Notifier<ExecutionState> {
       failedCount: progress.failedCount,
       totalBytes: progress.processedBytes,
       targetRoot: targetRoot,
+      skippedConflictCount: progress.skippedConflictCount,
       lastError: lastError,
     );
   }
@@ -148,6 +149,7 @@ class ExecutionController extends Notifier<ExecutionState> {
           copiedCount: result.copiedCount,
           deletedCount: result.deletedCount,
           failedCount: result.failedCount,
+          skippedConflictCount: result.skippedConflictCount,
         ),
         result: result,
         mode: ExecutionMode.local,
@@ -173,6 +175,7 @@ class ExecutionController extends Notifier<ExecutionState> {
             copiedCount: state.progress.copiedCount,
             deletedCount: state.progress.deletedCount,
             failedCount: state.progress.failedCount,
+            skippedConflictCount: state.progress.skippedConflictCount,
             currentPath: state.progress.currentPath,
           ),
           result: state.result,
@@ -252,6 +255,7 @@ class ExecutionController extends Notifier<ExecutionState> {
           copiedCount: result.copiedCount,
           deletedCount: result.deletedCount,
           failedCount: result.failedCount,
+          skippedConflictCount: result.skippedConflictCount,
         ),
         result: result,
         mode: ExecutionMode.remote,
@@ -277,6 +281,7 @@ class ExecutionController extends Notifier<ExecutionState> {
             copiedCount: state.progress.copiedCount,
             deletedCount: state.progress.deletedCount,
             failedCount: state.progress.failedCount,
+            skippedConflictCount: state.progress.skippedConflictCount,
             currentPath: state.progress.currentPath,
           ),
           result: state.result,
@@ -319,6 +324,7 @@ class ExecutionController extends Notifier<ExecutionState> {
         copiedCount: state.progress.copiedCount,
         deletedCount: state.progress.deletedCount,
         failedCount: state.progress.failedCount,
+        skippedConflictCount: state.progress.skippedConflictCount,
         currentPath: state.progress.currentPath,
       ),
       result: state.result,
@@ -346,6 +352,7 @@ class ExecutionController extends Notifier<ExecutionState> {
         copiedCount: state.progress.copiedCount,
         deletedCount: state.progress.deletedCount,
         failedCount: state.progress.failedCount,
+        skippedConflictCount: state.progress.skippedConflictCount,
         currentPath: state.progress.currentPath,
       ),
       result: state.result,

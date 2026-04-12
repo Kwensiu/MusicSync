@@ -23,6 +23,7 @@ class LocalSyncExecutor {
     int copiedCount = 0;
     int deletedCount = 0;
     int failedCount = 0;
+    final int skippedConflictCount = plan.conflictItems.length;
     String? lastError;
 
     final int totalFiles = plan.copyItems.length + plan.deleteItems.length;
@@ -44,6 +45,7 @@ class LocalSyncExecutor {
             copiedCount: copiedCount,
             deletedCount: deletedCount,
             failedCount: failedCount,
+            skippedConflictCount: skippedConflictCount,
             currentPath: item.relativePath,
           ),
         );
@@ -78,6 +80,7 @@ class LocalSyncExecutor {
                 copiedCount: copiedCount,
                 deletedCount: deletedCount,
                 failedCount: failedCount,
+                skippedConflictCount: skippedConflictCount,
                 currentPath: item.relativePath,
               ),
             );
@@ -115,6 +118,7 @@ class LocalSyncExecutor {
             copiedCount: copiedCount,
             deletedCount: deletedCount,
             failedCount: failedCount,
+            skippedConflictCount: skippedConflictCount,
             currentPath: item.relativePath,
           ),
         );
@@ -135,6 +139,7 @@ class LocalSyncExecutor {
             copiedCount: copiedCount,
             deletedCount: deletedCount,
             failedCount: failedCount,
+            skippedConflictCount: skippedConflictCount,
             currentPath: item.relativePath,
           ),
         );
@@ -174,6 +179,7 @@ class LocalSyncExecutor {
             copiedCount: copiedCount,
             deletedCount: deletedCount,
             failedCount: failedCount,
+            skippedConflictCount: skippedConflictCount,
             currentPath: item.relativePath,
           ),
         );
@@ -194,6 +200,7 @@ class LocalSyncExecutor {
             copiedCount: copiedCount,
             deletedCount: deletedCount,
             failedCount: failedCount,
+            skippedConflictCount: skippedConflictCount,
             currentPath: item.relativePath,
           ),
         );
@@ -210,6 +217,7 @@ class LocalSyncExecutor {
         copiedCount: copiedCount,
         deletedCount: deletedCount,
         failedCount: failedCount,
+        skippedConflictCount: skippedConflictCount,
       ),
     );
 
@@ -219,6 +227,7 @@ class LocalSyncExecutor {
       failedCount: failedCount,
       totalBytes: processedBytes,
       targetRoot: targetRoot,
+      skippedConflictCount: skippedConflictCount,
       lastError: lastError,
     );
   }

@@ -22,6 +22,7 @@ class TransferProgress {
     this.copiedCount = 0,
     this.deletedCount = 0,
     this.failedCount = 0,
+    this.skippedConflictCount = 0,
     this.currentPath,
   });
 
@@ -33,5 +34,6 @@ class TransferProgress {
   final int copiedCount;
   final int deletedCount;
   final int failedCount;
+  final int skippedConflictCount;
   final String? currentPath;
 }

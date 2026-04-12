@@ -37,6 +37,7 @@ class RemoteSyncExecutor {
     int copiedCount = 0;
     int deletedCount = 0;
     int failedCount = 0;
+    final int skippedConflictCount = plan.conflictItems.length;
     String? lastError;
     final int totalFiles = plan.copyItems.length + plan.deleteItems.length;
     final int totalBytes = plan.summary.copyBytes;
@@ -65,6 +66,7 @@ class RemoteSyncExecutor {
               copiedCount: copiedCount,
               deletedCount: deletedCount,
               failedCount: failedCount,
+              skippedConflictCount: skippedConflictCount,
               currentPath: item.relativePath,
             ),
           );
@@ -91,6 +93,10 @@ class RemoteSyncExecutor {
                     totalFiles: totalFiles,
                     processedBytes: processedBytes,
                     totalBytes: totalBytes,
+                    copiedCount: copiedCount,
+                    deletedCount: deletedCount,
+                    failedCount: failedCount,
+                    skippedConflictCount: skippedConflictCount,
                     currentPath: item.relativePath,
                   ),
                 );
@@ -117,6 +123,7 @@ class RemoteSyncExecutor {
               copiedCount: copiedCount,
               deletedCount: deletedCount,
               failedCount: failedCount,
+              skippedConflictCount: skippedConflictCount,
               currentPath: item.relativePath,
             ),
           );
@@ -160,6 +167,7 @@ class RemoteSyncExecutor {
               copiedCount: copiedCount,
               deletedCount: deletedCount,
               failedCount: failedCount,
+              skippedConflictCount: skippedConflictCount,
               currentPath: item.relativePath,
             ),
           );
@@ -177,6 +185,7 @@ class RemoteSyncExecutor {
               copiedCount: copiedCount,
               deletedCount: deletedCount,
               failedCount: failedCount,
+              skippedConflictCount: skippedConflictCount,
               currentPath: item.relativePath,
             ),
           );
@@ -197,6 +206,7 @@ class RemoteSyncExecutor {
           copiedCount: copiedCount,
           deletedCount: deletedCount,
           failedCount: failedCount,
+          skippedConflictCount: skippedConflictCount,
         ),
       );
 
@@ -206,6 +216,7 @@ class RemoteSyncExecutor {
         failedCount: failedCount,
         totalBytes: processedBytes,
         targetRoot: remoteRootId,
+        skippedConflictCount: skippedConflictCount,
         lastError: lastError,
       );
     } finally {
