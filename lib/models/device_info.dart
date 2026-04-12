@@ -1,6 +1,4 @@
 class DeviceInfo {
-  // TODO(http-fingerprint): carry a stable device fingerprint alongside
-  // protocol info so HTTPS peers can be identified across rediscovery/IP changes.
   const DeviceInfo({
     required this.deviceId,
     required this.deviceName,
@@ -8,6 +6,7 @@ class DeviceInfo {
     required this.address,
     required this.port,
     this.httpEncryptionEnabled = true,
+    this.protocolVersion = 1,
   });
 
   final String deviceId;
@@ -17,6 +16,10 @@ class DeviceInfo {
   final int port;
   final bool httpEncryptionEnabled;
 
+  /// Protocol version reported by this device during hello handshake.
+  /// Used to determine feature availability (e.g. fingerprint support).
+  final int protocolVersion;
+
   Map<String, Object?> toJson() {
     return <String, Object?>{
       'deviceId': deviceId,
@@ -25,6 +28,7 @@ class DeviceInfo {
       'address': address,
       'port': port,
       'httpEncryptionEnabled': httpEncryptionEnabled,
+      'protocolVersion': protocolVersion,
     };
   }
 
@@ -39,6 +43,7 @@ class DeviceInfo {
           json['httpEncryptionEnabled'] as bool? ??
           json['https'] as bool? ??
           true,
+      protocolVersion: (json['protocolVersion'] as num?)?.toInt() ?? 1,
     );
   }
 }

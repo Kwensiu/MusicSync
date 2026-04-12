@@ -60,6 +60,7 @@ class DiscoveryService {
           'address': datagram.address.address,
           'port': payload['port'],
           'httpEncryptionEnabled': payload['httpEncryptionEnabled'],
+          'protocolVersion': payload['protocolVersion'],
         });
         final DiscoveryEventType type = payload['action'] == 'goodbye'
             ? DiscoveryEventType.goodbye
@@ -130,6 +131,7 @@ class DiscoveryService {
         'platform': device.platform,
         'port': device.port,
         'httpEncryptionEnabled': device.httpEncryptionEnabled,
+        'protocolVersion': device.protocolVersion,
       }),
     );
     for (final RawDatagramSocket sender in _senders) {

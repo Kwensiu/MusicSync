@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:music_sync/core/constants/app_constants.dart';
 import 'package:music_sync/core/utils/fingerprint_utils.dart';
+import 'package:music_sync/features/connection/state/connection_controller.dart';
+import 'package:music_sync/features/connection/state/connection_state.dart';
 import 'package:music_sync/features/preview/state/preview_controller.dart';
 import 'package:music_sync/models/diff_item.dart';
 import 'package:music_sync/models/file_entry.dart';
@@ -116,14 +118,23 @@ class ConflictController extends Notifier<ConflictState> {
       return ConflictCategory.skip;
     }
 
-    // Fingerprint comparison: currently the scanner does not compute
-    // fingerprints, so this branch is effectively dead code until
-    // DirectoryScanner is updated to populate FileEntry.fingerprint.
-    if (fingerprintsMatch(source.fingerprint, target.fingerprint)) {
+    // Fingerprint comparison: only allowed when the peer's protocol version
+    // supports fingerprint AND both sides have valid matching fingerprints.
+    // Falls back to size + mTime (conflict) when conditions are not met.
+    if (canUseFingerprintClassification(
+      peerProtocolVersion: _peerProtocolVersion,
+      localFingerprint: source.fingerprint,
+      remoteFingerprint: target.fingerprint,
+    )) {
       return ConflictCategory.autoMerge;
     }
 
     return ConflictCategory.conflict;
+  }
+
+  int get _peerProtocolVersion {
+    final ConnectionState connState = ref.read(connectionControllerProvider);
+    return connState.peer?.protocolVersion ?? 1;
   }
 
   bool _isLikelyMusicFile(String relativePath) {

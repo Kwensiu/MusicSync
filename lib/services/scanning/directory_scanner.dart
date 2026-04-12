@@ -1,5 +1,6 @@
 import 'package:music_sync/core/constants/app_constants.dart';
 import 'package:music_sync/core/errors/file_access_exception.dart';
+import 'package:music_sync/core/utils/fingerprint_compute.dart';
 import 'package:music_sync/core/utils/path_utils.dart';
 import 'package:music_sync/models/file_entry.dart';
 import 'package:music_sync/models/scan_snapshot.dart';
@@ -65,6 +66,19 @@ class DirectoryScanner {
         continue;
       }
       final String relativePath = joinRelativePath(relativeBase, child.name);
+
+      String? fingerprint;
+      if (!child.isDirectory) {
+        try {
+          fingerprint = await computePartialFingerprint(
+            gateway.openRead(child.entryId),
+            sampleSize: AppConstants.fingerprintSampleSize,
+          ).timeout(const Duration(seconds: 2), onTimeout: () => null);
+        } catch (_) {
+          fingerprint = null;
+        }
+      }
+
       final FileEntry entry = FileEntry(
         relativePath: relativePath,
         entryId: child.entryId,
@@ -72,6 +86,7 @@ class DirectoryScanner {
         isDirectory: child.isDirectory,
         size: child.size,
         modifiedTime: child.modifiedTime,
+        fingerprint: fingerprint,
       );
 
       output.add(entry);

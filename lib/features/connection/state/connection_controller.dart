@@ -321,6 +321,7 @@ class ConnectionController extends Notifier<ConnectionState> {
         address: address,
         port: port,
         httpEncryptionEnabled: response.device.httpEncryptionEnabled,
+        protocolVersion: response.device.protocolVersion,
       );
       _peerSupportsStreamUpload = response.transferProtocols.contains(
         'stream-v1',
@@ -590,6 +591,7 @@ class ConnectionController extends Notifier<ConnectionState> {
         address: remoteAddress,
         port: request.device.port,
         httpEncryptionEnabled: request.device.httpEncryptionEnabled,
+        protocolVersion: request.device.protocolVersion,
       ),
       remoteSnapshot: request.directoryReady ? state.remoteSnapshot : null,
       isRemoteDirectoryReady: request.directoryReady,
@@ -607,6 +609,7 @@ class ConnectionController extends Notifier<ConnectionState> {
           address: remoteAddress,
           port: request.device.port,
           httpEncryptionEnabled: request.device.httpEncryptionEnabled,
+          protocolVersion: request.device.protocolVersion,
         ),
         status: ConnectionStatus.connected,
       ),
@@ -956,6 +959,7 @@ class ConnectionController extends Notifier<ConnectionState> {
       address: '',
       port: port,
       httpEncryptionEnabled: _httpEncryptionEnabled,
+      protocolVersion: AppConstants.protocolVersion,
     );
   }
 

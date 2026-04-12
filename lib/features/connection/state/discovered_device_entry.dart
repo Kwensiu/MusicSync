@@ -12,6 +12,7 @@ class DiscoveredDeviceEntry {
     required this.lastSeenAt,
     required this.seenAddresses,
     required this.isConnectedPeer,
+    this.protocolVersion = 1,
   });
 
   final String deviceId;
@@ -24,6 +25,7 @@ class DiscoveredDeviceEntry {
   final DateTime lastSeenAt;
   final Set<String> seenAddresses;
   final bool isConnectedPeer;
+  final int protocolVersion;
 
   DeviceInfo toDeviceInfo() {
     return DeviceInfo(
@@ -33,6 +35,7 @@ class DiscoveredDeviceEntry {
       address: primaryAddress,
       port: port,
       httpEncryptionEnabled: httpEncryptionEnabled,
+      protocolVersion: protocolVersion,
     );
   }
 
@@ -47,6 +50,7 @@ class DiscoveredDeviceEntry {
     DateTime? lastSeenAt,
     Set<String>? seenAddresses,
     bool? isConnectedPeer,
+    int? protocolVersion,
   }) {
     return DiscoveredDeviceEntry(
       deviceId: deviceId ?? this.deviceId,
@@ -60,6 +64,7 @@ class DiscoveredDeviceEntry {
       lastSeenAt: lastSeenAt ?? this.lastSeenAt,
       seenAddresses: seenAddresses ?? this.seenAddresses,
       isConnectedPeer: isConnectedPeer ?? this.isConnectedPeer,
+      protocolVersion: protocolVersion ?? this.protocolVersion,
     );
   }
 
@@ -83,6 +88,7 @@ class DiscoveredDeviceEntry {
       lastSeenAt: seenAt,
       seenAddresses: addresses,
       isConnectedPeer: isConnectedPeer,
+      protocolVersion: device.protocolVersion,
     );
   }
 }
