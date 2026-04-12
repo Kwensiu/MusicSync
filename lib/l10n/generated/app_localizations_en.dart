@@ -1126,6 +1126,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get conflictActionAutoMerge => 'Auto Merge';
 
   @override
+  String get conflictFingerprintHit =>
+      'Fingerprint match — content likely identical';
+
+  @override
   String executionSkippedConflict(int done, int conflict) {
     return 'Executed $done item(s), skipped $conflict conflict(s)';
   }

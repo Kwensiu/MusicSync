@@ -74,6 +74,11 @@ class _DesktopLayout extends ConsumerWidget {
                         .selectedItem!
                         .relativePath]
                   : null,
+              category: conflictState.selectedItem != null
+                  ? conflictState.categories[conflictState
+                        .selectedItem!
+                        .relativePath]
+                  : null,
               sourceIsRemote: false,
               targetIsRemote: true,
               sideBySide: true,
@@ -151,6 +156,7 @@ class _MobileLayout extends ConsumerWidget {
                   shrinkWrap: true,
                   selectedItem: item,
                   draft: state.drafts[item.relativePath],
+                  category: state.categories[item.relativePath],
                   sourceIsRemote: false,
                   targetIsRemote: true,
                   onResolve: (String path, ConflictResolutionAction action) {

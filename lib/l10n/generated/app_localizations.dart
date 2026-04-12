@@ -2022,6 +2022,12 @@ abstract class AppLocalizations {
   /// **'Auto Merge'**
   String get conflictActionAutoMerge;
 
+  /// No description provided for @conflictFingerprintHit.
+  ///
+  /// In en, this message translates to:
+  /// **'Fingerprint match — content likely identical'**
+  String get conflictFingerprintHit;
+
   /// No description provided for @executionSkippedConflict.
   ///
   /// In en, this message translates to:

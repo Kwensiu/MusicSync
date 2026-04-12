@@ -617,6 +617,7 @@
   "conflictActionKeepSource": "保留源端",
   "conflictActionKeepTarget": "保留目标端",
   "conflictActionAutoMerge": "申请自动合并",
+  "conflictFingerprintHit": "指纹匹配 — 内容可能相同",
   "executionSkippedConflict": "已执行 {done} 项，跳过冲突 {conflict} 项",
   "@executionSkippedConflict": {
     "placeholders": {

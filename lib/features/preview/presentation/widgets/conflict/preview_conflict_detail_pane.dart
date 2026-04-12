@@ -4,6 +4,7 @@ import 'package:music_sync/features/preview/presentation/widgets/diff_item_detai
 import 'package:music_sync/features/preview/state/conflict_controller.dart';
 import 'package:music_sync/l10n/app_localizations_ext.dart';
 import 'package:music_sync/models/diff_item.dart';
+import 'package:music_sync/models/file_entry.dart';
 
 class PreviewConflictDetailPane extends StatelessWidget {
   const PreviewConflictDetailPane({
@@ -12,6 +13,7 @@ class PreviewConflictDetailPane extends StatelessWidget {
     required this.sourceIsRemote,
     required this.targetIsRemote,
     required this.onResolve,
+    this.category,
     this.shrinkWrap = false,
     this.sideBySide = false,
     super.key,
@@ -22,6 +24,10 @@ class PreviewConflictDetailPane extends StatelessWidget {
   final bool sourceIsRemote;
   final bool targetIsRemote;
   final void Function(String path, ConflictResolutionAction action) onResolve;
+
+  /// The conflict category for the selected item, used to show
+  /// classification evidence (e.g. fingerprint hit for autoMerge).
+  final ConflictCategory? category;
 
   /// When true, the pane sizes itself to its content height instead of
   /// expanding to fill available space. Required when placed inside a
@@ -104,6 +110,12 @@ class PreviewConflictDetailPane extends StatelessWidget {
     ColorScheme scheme,
     ThemeData theme,
   ) {
+    final Set<String> tagDiffs =
+        detailData.source?.audioMetadata?.diffFields(
+          detailData.target?.audioMetadata,
+        ) ??
+        const <String>{};
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -111,6 +123,8 @@ class PreviewConflictDetailPane extends StatelessWidget {
           _ReasonChip(reason: item.reason!),
           const SizedBox(height: 12),
         ],
+        if (category == ConflictCategory.autoMerge)
+          _FingerprintHitBadge(source: item.source, target: item.target),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -119,6 +133,7 @@ class PreviewConflictDetailPane extends StatelessWidget {
                 title: context.l10n.previewDetailTabLocal,
                 icon: Icons.laptop_rounded,
                 data: _localData(detailData),
+                diffFields: tagDiffs,
               ),
             ),
             const SizedBox(width: 12),
@@ -132,6 +147,7 @@ class PreviewConflictDetailPane extends StatelessWidget {
                 title: context.l10n.previewDetailTabRemote,
                 icon: Icons.cloud_outlined,
                 data: _remoteData(detailData),
+                diffFields: tagDiffs,
               ),
             ),
           ],
@@ -158,6 +174,8 @@ class PreviewConflictDetailPane extends StatelessWidget {
           _ReasonChip(reason: item.reason!),
           const SizedBox(height: 12),
         ],
+        if (category == ConflictCategory.autoMerge)
+          _FingerprintHitBadge(source: item.source, target: item.target),
         DiffItemDetailPanelContent(data: detailData, showHeader: true),
         const SizedBox(height: 16),
         Divider(height: 1, color: scheme.outlineVariant),
@@ -243,6 +261,44 @@ class PreviewConflictDetailPane extends StatelessWidget {
   }
 }
 
+class _FingerprintHitBadge extends StatelessWidget {
+  const _FingerprintHitBadge({this.source, this.target});
+
+  final FileEntry? source;
+  final FileEntry? target;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: scheme.tertiaryContainer.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: scheme.tertiaryContainer),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(
+            Icons.fingerprint_rounded,
+            size: 14,
+            color: scheme.onTertiaryContainer,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            context.l10n.conflictFingerprintHit,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: scheme.onTertiaryContainer,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ReasonChip extends StatelessWidget {
   const _ReasonChip({required this.reason});
 
@@ -290,11 +346,13 @@ class _SidePanel extends StatelessWidget {
     required this.title,
     required this.icon,
     required this.data,
+    this.diffFields = const <String>{},
   });
 
   final String title;
   final IconData icon;
   final DiffItemDetailViewData data;
+  final Set<String> diffFields;
 
   @override
   Widget build(BuildContext context) {
@@ -325,7 +383,11 @@ class _SidePanel extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        DiffItemDetailPanelContent(data: data, showHeader: true),
+        DiffItemDetailPanelContent(
+          data: data,
+          showHeader: true,
+          overrideDiffFields: diffFields,
+        ),
       ],
     );
   }

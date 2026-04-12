@@ -25,10 +25,16 @@ class DiffItemDetailPanelContent extends StatefulWidget {
     required this.data,
     super.key,
     this.showHeader = true,
+    this.overrideDiffFields,
   });
 
   final DiffItemDetailViewData data;
   final bool showHeader;
+
+  /// When provided, overrides the internally computed diffFields for
+  /// _PanelEntryCard.  Used by side-by-side layouts where each panel
+  /// only has one side's data.
+  final Set<String>? overrideDiffFields;
 
   @override
   State<DiffItemDetailPanelContent> createState() =>
@@ -95,6 +101,27 @@ class _DiffItemDetailPanelContentState
     }
   }
 
+  /// Computes the effective diff fields for a panel entry.
+  ///
+  /// After an async refresh, [_data] contains both source and target with
+  /// full audio metadata, so internal [AudioMetadataViewData.diffFields]
+  /// produces accurate results.  Before refresh (or when only one side is
+  /// available), falls back to [widget.overrideDiffFields] provided by the
+  /// parent (e.g. side-by-side layout).
+  Set<String> _effectiveDiffFields(
+    AudioMetadataViewData? primary,
+    AudioMetadataViewData? other,
+  ) {
+    // If both sides have audio metadata in _data (post-refresh), compute
+    // internally — this always reflects the latest data.
+    if (_data.source?.audioMetadata != null &&
+        _data.target?.audioMetadata != null) {
+      return primary?.diffFields(other) ?? const <String>{};
+    }
+    // Pre-refresh or single-side: use parent-provided override.
+    return widget.overrideDiffFields ?? const <String>{};
+  }
+
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
@@ -152,6 +179,10 @@ class _DiffItemDetailPanelContentState
             child: _PanelEntryCard(
               entry: _data.source!,
               isRemote: _data.sourceIsRemote,
+              diffFields: _effectiveDiffFields(
+                _data.source?.audioMetadata,
+                _data.target?.audioMetadata,
+              ),
             ),
           ),
         ],
@@ -162,6 +193,10 @@ class _DiffItemDetailPanelContentState
             child: _PanelEntryCard(
               entry: _data.target!,
               isRemote: _data.targetIsRemote,
+              diffFields: _effectiveDiffFields(
+                _data.target?.audioMetadata,
+                _data.source?.audioMetadata,
+              ),
             ),
           ),
         ],
@@ -327,13 +362,22 @@ class _PanelCard extends StatelessWidget {
 }
 
 class _PanelEntryCard extends StatelessWidget {
-  const _PanelEntryCard({required this.entry, required this.isRemote});
+  const _PanelEntryCard({
+    required this.entry,
+    required this.isRemote,
+    this.diffFields = const <String>{},
+  });
 
   final DiffEntryDetailViewData entry;
   final bool isRemote;
 
+  /// Set of tag field names that differ between source and target.
+  /// When non-empty, matching fields are visually highlighted.
+  final Set<String> diffFields;
+
   @override
   Widget build(BuildContext context) {
+    final bool hasDiff = diffFields.isNotEmpty;
     return _PanelCard(
       children: <Widget>[
         _PanelValueRow(
@@ -368,6 +412,7 @@ class _PanelEntryCard extends StatelessWidget {
           _PanelValueRow(
             label: context.l10n.previewDetailAudioTitle,
             value: _metadataValueOrUnknown(context, entry.audioMetadata?.title),
+            highlight: hasDiff && diffFields.contains('title'),
           ),
           _PanelValueRow(
             label: context.l10n.previewDetailAudioArtist,
@@ -375,10 +420,12 @@ class _PanelEntryCard extends StatelessWidget {
               context,
               entry.audioMetadata?.artist,
             ),
+            highlight: hasDiff && diffFields.contains('artist'),
           ),
           _PanelValueRow(
             label: context.l10n.previewDetailAudioAlbum,
             value: _metadataValueOrUnknown(context, entry.audioMetadata?.album),
+            highlight: hasDiff && diffFields.contains('album'),
           ),
           _PanelValueRow(
             label: context.l10n.previewDetailAudioComposer,
@@ -386,6 +433,7 @@ class _PanelEntryCard extends StatelessWidget {
               context,
               entry.audioMetadata?.composer,
             ),
+            highlight: hasDiff && diffFields.contains('composer'),
           ),
           _PanelValueRow(
             label: context.l10n.previewDetailAudioTrackNumber,
@@ -393,6 +441,7 @@ class _PanelEntryCard extends StatelessWidget {
               context,
               entry.audioMetadata?.trackNumber,
             ),
+            highlight: hasDiff && diffFields.contains('trackNumber'),
           ),
           _PanelValueRow(
             label: context.l10n.previewDetailAudioDiscNumber,
@@ -400,16 +449,19 @@ class _PanelEntryCard extends StatelessWidget {
               context,
               entry.audioMetadata?.discNumber,
             ),
+            highlight: hasDiff && diffFields.contains('discNumber'),
           ),
           if ((entry.audioMetadata?.lyrics ?? '').trim().isNotEmpty)
             _PanelLyricsValueRow(
               label: context.l10n.previewDetailAudioLyrics,
               value: entry.audioMetadata!.lyrics!,
+              highlight: hasDiff && diffFields.contains('lyrics'),
             )
           else
             _PanelValueRow(
               label: context.l10n.previewDetailAudioLyrics,
               value: context.l10n.previewDetailUnknownValue,
+              highlight: hasDiff && diffFields.contains('lyrics'),
             ),
         ],
       ],
@@ -426,14 +478,28 @@ String _metadataValueOrUnknown(BuildContext context, String? value) {
 }
 
 class _PanelValueRow extends StatelessWidget {
-  const _PanelValueRow({required this.label, required this.value});
+  const _PanelValueRow({
+    required this.label,
+    required this.value,
+    this.highlight = false,
+  });
 
   final String label;
   final String value;
 
+  /// When true, the value container uses a tinted background to indicate
+  /// that this field differs between source and target.
+  final bool highlight;
+
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    final Color bgColor = highlight
+        ? scheme.errorContainer.withValues(alpha: 0.35)
+        : scheme.surface;
+    final Color fgColor = highlight
+        ? scheme.onErrorContainer
+        : scheme.onSurface;
     return Padding(
       padding: const EdgeInsets.only(bottom: _PanelScale.rowGap),
       child: Column(
@@ -443,11 +509,23 @@ class _PanelValueRow extends StatelessWidget {
             padding: const EdgeInsets.only(
               left: _PanelScale.sectionLabelIndent,
             ),
-            child: Text(
-              label,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+            child: Row(
+              children: <Widget>[
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                if (highlight) ...<Widget>[
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.swap_horiz_rounded,
+                    size: 12,
+                    color: scheme.onErrorContainer,
+                  ),
+                ],
+              ],
             ),
           ),
           const SizedBox(height: _PanelScale.fieldLabelGap),
@@ -455,14 +533,14 @@ class _PanelValueRow extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: scheme.surface,
+              color: bgColor,
               borderRadius: BorderRadius.circular(_PanelScale.valueRadius),
             ),
             child: SelectableText(
               value,
               style: Theme.of(
                 context,
-              ).textTheme.bodyMedium?.copyWith(color: scheme.onSurface),
+              ).textTheme.bodyMedium?.copyWith(color: fgColor),
             ),
           ),
         ],
@@ -472,10 +550,15 @@ class _PanelValueRow extends StatelessWidget {
 }
 
 class _PanelLyricsValueRow extends StatefulWidget {
-  const _PanelLyricsValueRow({required this.label, required this.value});
+  const _PanelLyricsValueRow({
+    required this.label,
+    required this.value,
+    this.highlight = false,
+  });
 
   final String label;
   final String value;
+  final bool highlight;
 
   @override
   State<_PanelLyricsValueRow> createState() => _PanelLyricsValueRowState();
@@ -487,11 +570,15 @@ class _PanelLyricsValueRowState extends State<_PanelLyricsValueRow> {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
+    final Color bgColor = widget.highlight
+        ? scheme.errorContainer.withValues(alpha: 0.35)
+        : scheme.surface;
+    final Color fgColor = widget.highlight
+        ? scheme.onErrorContainer
+        : scheme.onSurface;
     final TextStyle style =
-        Theme.of(
-          context,
-        ).textTheme.bodyMedium?.copyWith(color: scheme.onSurface) ??
-        const TextStyle();
+        Theme.of(context).textTheme.bodyMedium?.copyWith(color: fgColor) ??
+        TextStyle(color: fgColor);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: _PanelScale.rowGap),
@@ -502,11 +589,23 @@ class _PanelLyricsValueRowState extends State<_PanelLyricsValueRow> {
             padding: const EdgeInsets.only(
               left: _PanelScale.sectionLabelIndent,
             ),
-            child: Text(
-              widget.label,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+            child: Row(
+              children: <Widget>[
+                Text(
+                  widget.label,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                if (widget.highlight) ...<Widget>[
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.swap_horiz_rounded,
+                    size: 12,
+                    color: scheme.onErrorContainer,
+                  ),
+                ],
+              ],
             ),
           ),
           const SizedBox(height: _PanelScale.fieldLabelGap),
@@ -514,7 +613,7 @@ class _PanelLyricsValueRowState extends State<_PanelLyricsValueRow> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: scheme.surface,
+              color: bgColor,
               borderRadius: BorderRadius.circular(_PanelScale.valueRadius),
             ),
             child: Column(

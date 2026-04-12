@@ -1074,6 +1074,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get conflictActionAutoMerge => '申请自动合并';
 
   @override
+  String get conflictFingerprintHit => '指纹匹配 — 内容可能相同';
+
+  @override
   String executionSkippedConflict(int done, int conflict) {
     return '已执行 $done 项，跳过冲突 $conflict 项';
   }

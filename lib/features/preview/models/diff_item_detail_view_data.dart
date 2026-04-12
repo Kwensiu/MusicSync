@@ -112,4 +112,31 @@ class AudioMetadataViewData {
       (title != null && title!.isNotEmpty) ||
       (artist != null && artist!.isNotEmpty) ||
       (album != null && album!.isNotEmpty);
+
+  /// Returns the set of field names whose values differ between this
+  /// metadata and [other].  Both sides are normalized (trimmed, null/empty
+  /// treated as equal) before comparison.
+  Set<String> diffFields(AudioMetadataViewData? other) {
+    final Set<String> diffs = <String>{};
+    final AudioMetadataViewData rhs = other ?? const AudioMetadataViewData();
+    if (_normalize(title) != _normalize(rhs.title)) diffs.add('title');
+    if (_normalize(artist) != _normalize(rhs.artist)) diffs.add('artist');
+    if (_normalize(album) != _normalize(rhs.album)) diffs.add('album');
+    if (_normalize(composer) != _normalize(rhs.composer)) {
+      diffs.add('composer');
+    }
+    if (_normalize(trackNumber) != _normalize(rhs.trackNumber)) {
+      diffs.add('trackNumber');
+    }
+    if (_normalize(discNumber) != _normalize(rhs.discNumber)) {
+      diffs.add('discNumber');
+    }
+    if (_normalize(lyrics) != _normalize(rhs.lyrics)) diffs.add('lyrics');
+    return diffs;
+  }
+
+  static String? _normalize(String? value) {
+    final String trimmed = value?.trim() ?? '';
+    return trimmed.isEmpty ? null : trimmed;
+  }
 }

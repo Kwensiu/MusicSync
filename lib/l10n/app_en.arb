@@ -617,6 +617,7 @@
   "conflictActionKeepSource": "Keep Source",
   "conflictActionKeepTarget": "Keep Target",
   "conflictActionAutoMerge": "Auto Merge",
+  "conflictFingerprintHit": "Fingerprint match — content likely identical",
   "executionSkippedConflict": "Executed {done} item(s), skipped {conflict} conflict(s)",
   "@executionSkippedConflict": {
     "placeholders": {
