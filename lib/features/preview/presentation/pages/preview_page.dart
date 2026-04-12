@@ -19,6 +19,7 @@ import 'package:music_sync/features/execution/state/execution_controller.dart';
 import 'package:music_sync/features/execution/state/execution_state.dart';
 import 'package:music_sync/features/home/presentation/widgets/preview_workbench_section/preview_workbench_actions.dart';
 import 'package:music_sync/features/home/presentation/widgets/preview_workbench_section/preview_workbench_section.dart';
+import 'package:music_sync/features/preview/presentation/widgets/desktop/preview_desktop_workbench.dart';
 import 'package:music_sync/features/preview/presentation/widgets/preview_result_list_section.dart';
 import 'package:music_sync/features/preview/state/preview_controller.dart';
 import 'package:music_sync/features/preview/state/preview_state.dart';
@@ -30,6 +31,7 @@ import 'package:music_sync/models/sync_plan.dart';
 import 'package:music_sync/services/file_access/file_access_provider.dart';
 import 'package:music_sync/services/platform/android_background_runtime.dart';
 import 'package:music_sync/services/scanning/temp_file_cleanup_service.dart';
+import 'package:smooth_list_view/smooth_list_view.dart';
 
 class PreviewPage extends ConsumerStatefulWidget {
   const PreviewPage({super.key});
@@ -45,15 +47,19 @@ class _PreviewPageState extends ConsumerState<PreviewPage>
   Set<DiffType> _selectedSections = <DiffType>{DiffType.copy, DiffType.delete};
   bool _isCleaningTargetTemp = false;
   AppLifecycleState? _appLifecycleState;
+  late final ScrollController _scrollController;
+  static const Duration _scrollDuration = Duration(milliseconds: 140);
 
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
+    _scrollController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -194,23 +200,17 @@ class _PreviewPageState extends ConsumerState<PreviewPage>
 
     return AppScaffold(
       title: context.l10n.previewTitle,
-      body: Stack(
-        children: <Widget>[
-          AppPageContent(
-            child: Scrollbar(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: <Widget>[
-                  SectionCard(
-                    title: context.l10n.previewSummaryTitle,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        _PlanSummaryWrap(
-                          previewState: previewState,
-                          summary: planSummary,
-                        ),
-                        const SizedBox(height: 16),
+      body: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final bool isDesktop = constraints.maxWidth >= 900;
+
+          if (isDesktop) {
+            return Stack(
+              children: <Widget>[
+                AppPageContent(
+                  child: Column(
+                    children: <Widget>[
+                      if (showExecutionPanel)
                         PreviewWorkbenchSection(
                           directoryState: directoryState,
                           connectionState: connectionState,
@@ -259,143 +259,283 @@ class _PreviewPageState extends ConsumerState<PreviewPage>
                           localizeUiError: _localizeUiError,
                           localizedExecutionStatus: _localizedExecutionStatus,
                           isScanTimeoutError: _isScanTimeoutError,
+                          showMetaStatus: false,
+                          showExecutionMetrics: false,
+                          showActionButtons: false,
+                          showBuildPreviewButton: false,
                         ),
+                      if (previewState.status ==
+                          PreviewStatus.loaded) ...<Widget>[
+                        if (showExecutionPanel) const SizedBox(height: 16),
+                        const Expanded(child: PreviewDesktopWorkbench()),
                       ],
-                    ),
+                      if (isLocalPreview || executionState.targetRoot != null)
+                        _buildLocalExecutionSection(
+                          context: context,
+                          executionState: executionState,
+                          isBusy: isBusy,
+                          hasExecutableItems: hasExecutableItems,
+                          isLocalPreview: isLocalPreview,
+                          previewState: previewState,
+                          directoryState: directoryState,
+                        ),
+                    ],
                   ),
-                  if (previewState.status == PreviewStatus.loaded) ...<Widget>[
-                    const SizedBox(height: 16),
-                    SectionCard(
-                      title: context.l10n.previewPlanItemsTitle,
-                      child: PreviewResultListSection(
-                        filteredCopyItems: filteredCopyItems,
-                        filteredDeleteItems: filteredDeleteItems,
-                        filteredConflictItems: filteredConflictItems,
-                        activeItems: activeItems,
-                        extensionOptions: extensionOptions,
-                        ignoredExtensions: ignoredExtensions,
-                        excludedExtensions: previewState.excludedExtensions,
-                        isAllExtensionsSelected: isAllExtensionsSelected,
-                        selectAllSections: _selectAllSections,
-                        selectedSections: _selectedSections,
-                        selectedExtensions: _selectedExtensions,
-                        isBusy: isBusy,
-                        previewMode: previewState.mode,
-                        onToggleSection: (DiffType? type) {
-                          setState(() {
-                            if (type == null) {
-                              _selectAllSections = true;
-                              _selectedSections = <DiffType>{
-                                DiffType.copy,
-                                DiffType.delete,
-                              };
-                              return;
-                            }
-                            final Set<DiffType> next = _selectAllSections
-                                ? <DiffType>{type}
-                                : <DiffType>{..._selectedSections};
-                            _selectAllSections = false;
-                            if (next.contains(type)) {
-                              next.remove(type);
-                            } else {
-                              next.add(type);
-                            }
-                            if (next.isEmpty) {
-                              next.add(type);
-                            }
-                            _selectedSections = next;
-                          });
-                        },
-                        onToggleExtension: (String extension) {
-                          setState(() {
-                            final bool selected = extension == '*'
-                                ? isAllExtensionsSelected
-                                : _selectedExtensions.contains(extension);
-                            _selectedExtensions =
-                                PreviewWorkbenchActions.toggleExtensionSelection(
-                                  current: _selectedExtensions,
-                                  extension: extension,
-                                  selected: !selected,
-                                );
-                          });
-                        },
-                        onLongPressExtension: (String extension) {
-                          HapticFeedback.mediumImpact();
-                          final bool wasExcluded = previewState
-                              .excludedExtensions
-                              .contains(extension);
-                          ref
-                              .read(previewControllerProvider.notifier)
-                              .toggleExcludedExtension(extension);
-                          setState(() {
-                            if (!wasExcluded) {
-                              _selectedExtensions = _selectedExtensions
-                                ..remove(extension);
-                              if (_selectedExtensions.isEmpty) {
-                                _selectedExtensions = <String>{'*'};
-                              }
-                            }
-                          });
-                          if (!mounted) return;
-                          final String message = wasExcluded
-                              ? context.l10n.previewExtensionRestored(extension)
-                              : context.l10n.previewExtensionExcluded(
-                                  extension,
-                                );
-                          ScaffoldMessenger.of(
+                ),
+                if (showKeepAliveBadge)
+                  Positioned(
+                    left: 12,
+                    top: 12,
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Theme.of(
                             context,
-                          ).showSnackBar(SnackBar(content: Text(message)));
-                        },
+                          ).colorScheme.tertiaryContainer,
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          child: Text(
+                            '🏷 后台保活已就绪',
+                            style: Theme.of(context).textTheme.labelMedium
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onTertiaryContainer,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ),
                       ),
                     ),
-                  ],
-                  const SizedBox(height: 16),
-                  if (isLocalPreview || executionState.targetRoot != null)
-                    _buildLocalExecutionSection(
-                      context: context,
-                      executionState: executionState,
-                      isBusy: isBusy,
-                      hasExecutableItems: hasExecutableItems,
-                      isLocalPreview: isLocalPreview,
-                      previewState: previewState,
-                      directoryState: directoryState,
-                    ),
-                ],
-              ),
-            ),
-          ),
-          if (showKeepAliveBadge)
-            Positioned(
-              left: 12,
-              top: 12,
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.tertiaryContainer,
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                    ),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    child: Text(
-                      '🏷 后台保活已就绪',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onTertiaryContainer,
-                        fontWeight: FontWeight.w600,
+              ],
+            );
+          }
+
+          return Stack(
+            children: <Widget>[
+              AppPageContent(
+                child: Scrollbar(
+                  controller: _scrollController,
+                  child: SmoothListView(
+                    duration: _scrollDuration,
+                    curve: Curves.easeOutCubic,
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    children: <Widget>[
+                      SectionCard(
+                        title: context.l10n.previewSummaryTitle,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            _PlanSummaryWrap(
+                              previewState: previewState,
+                              summary: planSummary,
+                            ),
+                            const SizedBox(height: 16),
+                            PreviewWorkbenchSection(
+                              directoryState: directoryState,
+                              connectionState: connectionState,
+                              previewState: previewState,
+                              executionState: executionState,
+                              scanWarnings: scanWarnings,
+                              isStalePlan: isStalePlan,
+                              isBusy: isBusy,
+                              isExecuting: isExecuting,
+                              canStartRemoteSync: canStartRemoteSync,
+                              showExecutionPanel: showExecutionPanel,
+                              hasRemoteDirectoryReady: hasRemoteDirectoryReady,
+                              sourceDeviceLabel: _localDeviceDisplayName(
+                                settingsState,
+                              ),
+                              targetDeviceLabel: _targetDeviceDisplayName(
+                                context,
+                                connectionState: connectionState,
+                                previewState: previewState,
+                              ),
+                              isTransferConnected:
+                                  connectionState.peer != null &&
+                                  connectionState.status ==
+                                      peer_connection
+                                          .ConnectionStatus
+                                          .connected,
+                              onBuildRemotePreview:
+                                  directoryState.handle == null
+                                  ? () async {}
+                                  : () =>
+                                        PreviewWorkbenchActions.buildRemotePreview(
+                                          ref: ref,
+                                          sourceRoot: directoryState.handle!,
+                                          ignoredExtensions: ignoredExtensions,
+                                        ),
+                              onStartRemoteSync: () =>
+                                  PreviewWorkbenchActions.executeRemoteSyncFlow(
+                                    context: context,
+                                    ref: ref,
+                                    previewState: previewState,
+                                    directoryState: directoryState,
+                                    connectionState: connectionState,
+                                  ),
+                              onCancelSync: () {
+                                ref
+                                    .read(executionControllerProvider.notifier)
+                                    .cancel();
+                              },
+                              localizeUiError: _localizeUiError,
+                              localizedExecutionStatus:
+                                  _localizedExecutionStatus,
+                              isScanTimeoutError: _isScanTimeoutError,
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (previewState.status ==
+                          PreviewStatus.loaded) ...<Widget>[
+                        const SizedBox(height: 16),
+                        SectionCard(
+                          title: context.l10n.previewPlanItemsTitle,
+                          child: PreviewResultListSection(
+                            filteredCopyItems: filteredCopyItems,
+                            filteredDeleteItems: filteredDeleteItems,
+                            filteredConflictItems: filteredConflictItems,
+                            activeItems: activeItems,
+                            extensionOptions: extensionOptions,
+                            ignoredExtensions: ignoredExtensions,
+                            excludedExtensions: previewState.excludedExtensions,
+                            isAllExtensionsSelected: isAllExtensionsSelected,
+                            selectAllSections: _selectAllSections,
+                            selectedSections: _selectedSections,
+                            selectedExtensions: _selectedExtensions,
+                            isBusy: isBusy,
+                            previewMode: previewState.mode,
+                            onToggleSection: (DiffType? type) {
+                              setState(() {
+                                if (type == null) {
+                                  _selectAllSections = true;
+                                  _selectedSections = <DiffType>{
+                                    DiffType.copy,
+                                    DiffType.delete,
+                                  };
+                                  return;
+                                }
+                                final Set<DiffType> next = _selectAllSections
+                                    ? <DiffType>{type}
+                                    : <DiffType>{..._selectedSections};
+                                _selectAllSections = false;
+                                if (next.contains(type)) {
+                                  next.remove(type);
+                                } else {
+                                  next.add(type);
+                                }
+                                if (next.isEmpty) {
+                                  next.add(type);
+                                }
+                                _selectedSections = next;
+                              });
+                            },
+                            onToggleExtension: (String extension) {
+                              setState(() {
+                                final bool selected = extension == '*'
+                                    ? isAllExtensionsSelected
+                                    : _selectedExtensions.contains(extension);
+                                _selectedExtensions =
+                                    PreviewWorkbenchActions.toggleExtensionSelection(
+                                      current: _selectedExtensions,
+                                      extension: extension,
+                                      selected: !selected,
+                                    );
+                              });
+                            },
+                            onLongPressExtension: (String extension) {
+                              HapticFeedback.mediumImpact();
+                              final bool wasExcluded = previewState
+                                  .excludedExtensions
+                                  .contains(extension);
+                              ref
+                                  .read(previewControllerProvider.notifier)
+                                  .toggleExcludedExtension(extension);
+                              setState(() {
+                                if (!wasExcluded) {
+                                  _selectedExtensions = _selectedExtensions
+                                    ..remove(extension);
+                                  if (_selectedExtensions.isEmpty) {
+                                    _selectedExtensions = <String>{'*'};
+                                  }
+                                }
+                              });
+                              if (!mounted) return;
+                              final String message = wasExcluded
+                                  ? context.l10n.previewExtensionRestored(
+                                      extension,
+                                    )
+                                  : context.l10n.previewExtensionExcluded(
+                                      extension,
+                                    );
+                              ScaffoldMessenger.of(
+                                context,
+                              ).showSnackBar(SnackBar(content: Text(message)));
+                            },
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      if (isLocalPreview || executionState.targetRoot != null)
+                        _buildLocalExecutionSection(
+                          context: context,
+                          executionState: executionState,
+                          isBusy: isBusy,
+                          hasExecutableItems: hasExecutableItems,
+                          isLocalPreview: isLocalPreview,
+                          previewState: previewState,
+                          directoryState: directoryState,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              if (showKeepAliveBadge)
+                Positioned(
+                  left: 12,
+                  top: 12,
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.tertiaryContainer,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Text(
+                          '🏷 后台保活已就绪',
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onTertiaryContainer,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }

@@ -32,8 +32,12 @@ class PreviewWorkbenchSection extends StatelessWidget {
     required this.localizedExecutionStatus,
     required this.isScanTimeoutError,
     this.sourceRiskMessage,
+    this.showMetaStatus = true,
     this.showActionButtons = true,
     this.showBuildPreviewButton = true,
+    this.showExecutionMetrics = true,
+    this.conflictCount = 0,
+    this.onViewConflicts,
   });
 
   final DirectoryState directoryState;
@@ -58,8 +62,12 @@ class PreviewWorkbenchSection extends StatelessWidget {
   localizedExecutionStatus;
   final bool Function(String value) isScanTimeoutError;
   final String? sourceRiskMessage;
+  final bool showMetaStatus;
   final bool showActionButtons;
   final bool showBuildPreviewButton;
+  final bool showExecutionMetrics;
+  final int conflictCount;
+  final VoidCallback? onViewConflicts;
 
   @override
   Widget build(BuildContext context) {
@@ -93,27 +101,28 @@ class PreviewWorkbenchSection extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                _MetaChipGroup(
-                  label: context.l10n.previewTransferDirectionLabel,
-                  chip: _TransferStatusChip(
-                    sourceLabel: sourceDeviceLabel,
-                    targetLabel: targetDeviceLabel,
-                    connected: isTransferConnected,
+            if (showMetaStatus)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  _MetaChipGroup(
+                    label: context.l10n.previewTransferDirectionLabel,
+                    chip: _TransferStatusChip(
+                      sourceLabel: sourceDeviceLabel,
+                      targetLabel: targetDeviceLabel,
+                      connected: isTransferConnected,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                _MetaChipGroup(
-                  label: context.l10n.previewDirectoryStatusLabel,
-                  chip: _DirectoryStatusChip(
-                    hasLocalDirectory: hasLocalDirectory,
-                    hasRemoteDirectory: hasRemoteDirectory,
+                  const SizedBox(height: 8),
+                  _MetaChipGroup(
+                    label: context.l10n.previewDirectoryStatusLabel,
+                    chip: _DirectoryStatusChip(
+                      hasLocalDirectory: hasLocalDirectory,
+                      hasRemoteDirectory: hasRemoteDirectory,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
             if (primaryStatus != null) ...<Widget>[
               const SizedBox(height: 12),
               _InlineMessage(
@@ -149,6 +158,10 @@ class PreviewWorkbenchSection extends StatelessWidget {
                 tone: _NoticeTone.warning,
                 text: context.l10n.previewStalePlan,
               ),
+            ],
+            if (conflictCount > 0) ...<Widget>[
+              const SizedBox(height: 12),
+              _ConflictEntryChip(count: conflictCount, onTap: onViewConflicts),
             ],
             if (showActionButtons) ...<Widget>[
               const SizedBox(height: 12),
@@ -246,6 +259,7 @@ class PreviewWorkbenchSection extends StatelessWidget {
                         executionState: executionState,
                         localizedExecutionStatus: localizedExecutionStatus,
                         localizeUiError: localizeUiError,
+                        showMetrics: showExecutionMetrics,
                       ),
               ),
             ],
@@ -314,12 +328,14 @@ class _ExecutionResultPanel extends StatelessWidget {
     required this.executionState,
     required this.localizedExecutionStatus,
     required this.localizeUiError,
+    required this.showMetrics,
   });
 
   final ExecutionState executionState;
   final String Function(BuildContext context, ExecutionStatus status)
   localizedExecutionStatus;
   final String Function(BuildContext context, String value) localizeUiError;
+  final bool showMetrics;
 
   @override
   Widget build(BuildContext context) {
@@ -333,51 +349,52 @@ class _ExecutionResultPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(
-          context.l10n.executionResultProcessed(
-            executionState.progress.processedFiles,
-            executionState.progress.totalFiles,
+        if (showMetrics) ...<Widget>[
+          Text(
+            context.l10n.executionResultProcessed(
+              executionState.progress.processedFiles,
+              executionState.progress.totalFiles,
+            ),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: <Widget>[
+              _ResultMetricChip(
+                icon: Icons.content_copy_rounded,
+                label:
+                    '${context.l10n.executionMetricCopy} ${executionState.result.copiedCount}',
+              ),
+              _ResultMetricChip(
+                icon: Icons.delete_outline_rounded,
+                label:
+                    '${context.l10n.executionMetricDelete} ${executionState.result.deletedCount}',
+              ),
+              _ResultMetricChip(
+                icon: Icons.error_outline_rounded,
+                label:
+                    '${context.l10n.executionMetricFailed} ${executionState.result.failedCount}',
+              ),
+              _ResultMetricChip(
+                icon: Icons.data_usage_rounded,
+                label: formatBytes(executionState.result.totalBytes),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: <Widget>[
-            _ResultMetricChip(
-              icon: Icons.content_copy_rounded,
-              label:
-                  '${context.l10n.executionMetricCopy} ${executionState.result.copiedCount}',
-            ),
-            _ResultMetricChip(
-              icon: Icons.delete_outline_rounded,
-              label:
-                  '${context.l10n.executionMetricDelete} ${executionState.result.deletedCount}',
-            ),
-            _ResultMetricChip(
-              icon: Icons.error_outline_rounded,
-              label:
-                  '${context.l10n.executionMetricFailed} ${executionState.result.failedCount}',
-            ),
-            _ResultMetricChip(
-              icon: Icons.data_usage_rounded,
-              label: formatBytes(executionState.result.totalBytes),
-            ),
-          ],
-        ),
+          const SizedBox(height: 10),
+        ],
         if (executionState.status == ExecutionStatus.completed &&
             !hasFailedItems) ...<Widget>[
-          const SizedBox(height: 10),
           _InlineMessage(
             tone: _InlineMessageTone.success,
             text: context.l10n.executionResultDone,
           ),
         ] else if (executionState.status == ExecutionStatus.completed &&
             hasFailedItems) ...<Widget>[
-          const SizedBox(height: 10),
           _InlineMessage(
             tone: _InlineMessageTone.warning,
             text: errorMessage == null
@@ -385,13 +402,11 @@ class _ExecutionResultPanel extends StatelessWidget {
                 : localizeUiError(context, errorMessage),
           ),
         ] else if (isCancelledError) ...<Widget>[
-          const SizedBox(height: 10),
           _InlineMessage(
             tone: _InlineMessageTone.warning,
             text: localizeUiError(context, errorMessage!),
           ),
         ] else if (executionState.status == ExecutionStatus.failed) ...<Widget>[
-          const SizedBox(height: 10),
           _InlineMessage(
             tone: _InlineMessageTone.error,
             text: errorMessage == null
@@ -744,6 +759,56 @@ class _CompactNotice extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ConflictEntryChip extends StatelessWidget {
+  const _ConflictEntryChip({required this.count, this.onTap});
+
+  final int count;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: scheme.errorContainer.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: scheme.errorContainer),
+        ),
+        child: Row(
+          children: <Widget>[
+            Icon(
+              Icons.warning_amber_rounded,
+              size: 18,
+              color: scheme.onErrorContainer,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                context.l10n.previewConflictCount(count),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: scheme.onErrorContainer,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            if (onTap != null)
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: scheme.onErrorContainer,
+              ),
+          ],
+        ),
       ),
     );
   }

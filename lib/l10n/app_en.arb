@@ -550,5 +550,21 @@
   "statusDisconnected": "disconnected",
   "statusFailed": "failed",
   "statusLoading": "loading",
-  "statusLoaded": "loaded"
+  "statusLoaded": "loaded",
+  "previewSearchHint": "Search files",
+  "previewDetailEmpty": "Select an item to view details",
+  "previewDesktopToolsTitle": "Filters & Summary",
+  "previewDesktopDetailTitle": "Detail Summary",
+  "previewViewFullDetail": "View Full Details",
+  "previewDetailViewerTitle": "Detail Viewer",
+  "previewDetailTabLocal": "Local",
+  "previewDetailTabRemote": "Remote",
+  "previewViewCount": "{count} items",
+  "@previewViewCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

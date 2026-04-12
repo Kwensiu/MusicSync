@@ -1877,6 +1877,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'loaded'**
   String get statusLoaded;
+
+  /// No description provided for @previewSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search files'**
+  String get previewSearchHint;
+
+  /// No description provided for @previewDetailEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Select an item to view details'**
+  String get previewDetailEmpty;
+
+  /// No description provided for @previewDesktopToolsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters & Summary'**
+  String get previewDesktopToolsTitle;
+
+  /// No description provided for @previewDesktopDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Detail Summary'**
+  String get previewDesktopDetailTitle;
+
+  /// No description provided for @previewViewFullDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'View Full Details'**
+  String get previewViewFullDetail;
+
+  /// No description provided for @previewDetailViewerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Detail Viewer'**
+  String get previewDetailViewerTitle;
+
+  /// No description provided for @previewDetailTabLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Local'**
+  String get previewDetailTabLocal;
+
+  /// No description provided for @previewDetailTabRemote.
+  ///
+  /// In en, this message translates to:
+  /// **'Remote'**
+  String get previewDetailTabRemote;
+
+  /// No description provided for @previewViewCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} items'**
+  String previewViewCount(int count);
 }
 
 class _AppLocalizationsDelegate

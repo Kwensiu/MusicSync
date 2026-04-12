@@ -18,6 +18,7 @@ import 'package:music_sync/models/device_info.dart';
 import 'package:music_sync/models/scan_snapshot.dart';
 import 'package:music_sync/models/sync_plan.dart';
 import 'package:music_sync/services/file_access/file_access_entry.dart';
+import 'package:smooth_list_view/smooth_list_view.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -111,6 +112,102 @@ void main() {
     expect(controller.refreshRemoteSnapshotCallCount, 1);
     expect(controller.lastClearTransientState, isFalse);
   });
+
+  testWidgets(
+    'PreviewPage binds Scrollbar and scrollable without ScrollPosition errors',
+    (WidgetTester tester) async {
+      final ProviderContainer container = ProviderContainer(
+        overrides: [
+          connectionControllerProvider.overrideWith(
+            _PreviewLifecycleConnectionController.new,
+          ),
+          directoryControllerProvider.overrideWith(
+            _PreviewLifecycleDirectoryController.new,
+          ),
+          previewControllerProvider.overrideWith(
+            _PreviewLifecyclePreviewController.new,
+          ),
+          executionControllerProvider.overrideWith(
+            _PreviewLifecycleExecutionController.new,
+          ),
+          settingsControllerProvider.overrideWith(
+            _PreviewLifecycleSettingsController.new,
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: PreviewPage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(Scrollbar), findsOneWidget);
+      expect(find.byType(SmoothListView), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'PreviewPage desktop layout moves summary and actions to sidebar',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final ProviderContainer container = ProviderContainer(
+        overrides: [
+          connectionControllerProvider.overrideWith(
+            _PreviewLifecycleConnectionController.new,
+          ),
+          directoryControllerProvider.overrideWith(
+            _PreviewLifecycleDirectoryController.new,
+          ),
+          previewControllerProvider.overrideWith(
+            _PreviewLifecyclePreviewController.new,
+          ),
+          executionControllerProvider.overrideWith(
+            _PreviewLifecycleExecutionController.new,
+          ),
+          settingsControllerProvider.overrideWith(
+            _PreviewLifecycleSettingsController.new,
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: PreviewPage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Summary'), findsNothing);
+      expect(find.text('Transfer Status'), findsNothing);
+      expect(find.text('Directory Status'), findsNothing);
+      expect(find.text('Filters & Summary'), findsOneWidget);
+      expect(find.text('Detail'), findsOneWidget);
+      expect(find.text('Select an item to view details'), findsOneWidget);
+      expect(find.text('Build Preview'), findsOneWidget);
+      expect(find.text('Start Sync'), findsOneWidget);
+      expect(find.text('Conflict: 0'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 class _PreviewLifecycleConnectionController extends ConnectionController {

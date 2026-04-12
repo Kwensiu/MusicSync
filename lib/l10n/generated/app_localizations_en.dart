@@ -1039,4 +1039,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get statusLoaded => 'loaded';
+
+  @override
+  String get previewSearchHint => 'Search files';
+
+  @override
+  String get previewDetailEmpty => 'Select an item to view details';
+
+  @override
+  String get previewDesktopToolsTitle => 'Filters & Summary';
+
+  @override
+  String get previewDesktopDetailTitle => 'Detail Summary';
+
+  @override
+  String get previewViewFullDetail => 'View Full Details';
+
+  @override
+  String get previewDetailViewerTitle => 'Detail Viewer';
+
+  @override
+  String get previewDetailTabLocal => 'Local';
+
+  @override
+  String get previewDetailTabRemote => 'Remote';
+
+  @override
+  String previewViewCount(int count) {
+    return '$count items';
+  }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_sync/features/preview/models/diff_item_detail_view_data.dart';
-import 'package:music_sync/features/preview/presentation/widgets/diff_item_detail_sheet.dart';
+import 'package:music_sync/features/preview/presentation/widgets/diff_item_detail_viewer.dart';
 import 'package:music_sync/l10n/app_localizations_ext.dart';
 import 'package:music_sync/models/diff_item.dart';
 import 'package:smooth_list_view/smooth_list_view.dart';
@@ -184,7 +184,7 @@ class _PlanItemListState extends State<PlanItemList> {
                           return Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              onTap: () => showDiffItemDetailSheet(
+                              onTap: () => showDiffItemDetailViewer(
                                 context,
                                 data: DiffItemDetailViewData.fromDiffItem(
                                   item,

@@ -987,4 +987,33 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get statusLoaded => '已完成';
+
+  @override
+  String get previewSearchHint => '搜索文件';
+
+  @override
+  String get previewDetailEmpty => '选择一项以查看详情';
+
+  @override
+  String get previewDesktopToolsTitle => '筛选与摘要';
+
+  @override
+  String get previewDesktopDetailTitle => '详情摘要';
+
+  @override
+  String get previewViewFullDetail => '查看完整详情';
+
+  @override
+  String get previewDetailViewerTitle => '详情查看器';
+
+  @override
+  String get previewDetailTabLocal => '本地';
+
+  @override
+  String get previewDetailTabRemote => '远端';
+
+  @override
+  String previewViewCount(int count) {
+    return '$count 项';
+  }
 }

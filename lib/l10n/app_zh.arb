@@ -550,5 +550,21 @@
   "statusDisconnected": "已断开",
   "statusFailed": "失败",
   "statusLoading": "加载中",
-  "statusLoaded": "已完成"
+  "statusLoaded": "已完成",
+  "previewSearchHint": "搜索文件",
+  "previewDetailEmpty": "选择一项以查看详情",
+  "previewDesktopToolsTitle": "筛选与摘要",
+  "previewDesktopDetailTitle": "详情摘要",
+  "previewViewFullDetail": "查看完整详情",
+  "previewDetailViewerTitle": "详情查看器",
+  "previewDetailTabLocal": "本地",
+  "previewDetailTabRemote": "远端",
+  "previewViewCount": "{count} 项",
+  "@previewViewCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }
