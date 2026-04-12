@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:music_sync/app/routes/route_names.dart';
 import 'package:music_sync/app/widgets/app_confirm_dialog.dart';
 import 'package:music_sync/app/widgets/app_page_content.dart';
 import 'package:music_sync/app/widgets/app_scaffold.dart';
@@ -405,7 +407,6 @@ class _PreviewPageState extends ConsumerState<PreviewPage>
                           child: PreviewResultListSection(
                             filteredCopyItems: filteredCopyItems,
                             filteredDeleteItems: filteredDeleteItems,
-                            filteredConflictItems: filteredConflictItems,
                             activeItems: activeItems,
                             extensionOptions: extensionOptions,
                             ignoredExtensions: ignoredExtensions,
@@ -484,6 +485,17 @@ class _PreviewPageState extends ConsumerState<PreviewPage>
                               ).showSnackBar(SnackBar(content: Text(message)));
                             },
                           ),
+                        ),
+                      ],
+                      if (filteredConflictItems.isNotEmpty &&
+                          previewState.status ==
+                              PreviewStatus.loaded) ...<Widget>[
+                        const SizedBox(height: 16),
+                        _ConflictEntryCard(
+                          conflictCount: filteredConflictItems.length,
+                          onTap: () {
+                            context.goNamed(RouteNames.previewConflicts);
+                          },
                         ),
                       ],
                       const SizedBox(height: 16),
@@ -873,6 +885,55 @@ class _SummaryChip extends StatelessWidget {
           style: Theme.of(
             context,
           ).textTheme.labelLarge?.copyWith(color: foreground),
+        ),
+      ),
+    );
+  }
+}
+
+class _ConflictEntryCard extends StatelessWidget {
+  const _ConflictEntryCard({required this.conflictCount, required this.onTap});
+
+  final int conflictCount;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final ThemeData theme = Theme.of(context);
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: <Widget>[
+              Icon(Icons.warning_amber_rounded, size: 20, color: scheme.error),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  context.l10n.previewConflictCount(conflictCount),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.onErrorContainer,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              FilledButton.tonal(
+                onPressed: onTap,
+                style: FilledButton.styleFrom(
+                  backgroundColor: scheme.errorContainer,
+                  foregroundColor: scheme.onErrorContainer,
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                ),
+                child: Text(context.l10n.conflictViewConflicts),
+              ),
+            ],
+          ),
         ),
       ),
     );

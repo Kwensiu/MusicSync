@@ -108,11 +108,6 @@ class _PreviewDesktopListHeaderState extends State<PreviewDesktopListHeader> {
                   label:
                       '${context.l10n.previewSectionDelete} ${widget.filteredDeleteCount}',
                 ),
-                _SectionOption(
-                  type: DiffType.conflict,
-                  label:
-                      '${context.l10n.previewSectionConflict} ${widget.filteredConflictCount}',
-                ),
               ].map((option) {
                 final bool selected = option.type == null
                     ? widget.selectAllSections

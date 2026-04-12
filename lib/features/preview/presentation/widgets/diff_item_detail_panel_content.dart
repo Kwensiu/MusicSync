@@ -364,47 +364,65 @@ class _PanelEntryCard extends StatelessWidget {
               ? context.l10n.previewDetailEntryTypeDirectory
               : context.l10n.previewDetailEntryTypeFile,
         ),
-        if (entry.audioMetadata case final AudioMetadataViewData metadata
-            when metadata.hasAnyValue) ...<Widget>[
+        if (!entry.isDirectory) ...<Widget>[
           _PanelValueRow(
             label: context.l10n.previewDetailAudioTitle,
-            value: metadata.title ?? context.l10n.previewDetailUnknownValue,
+            value: _metadataValueOrUnknown(context, entry.audioMetadata?.title),
           ),
           _PanelValueRow(
             label: context.l10n.previewDetailAudioArtist,
-            value: metadata.artist ?? context.l10n.previewDetailUnknownValue,
+            value: _metadataValueOrUnknown(
+              context,
+              entry.audioMetadata?.artist,
+            ),
           ),
           _PanelValueRow(
             label: context.l10n.previewDetailAudioAlbum,
-            value: metadata.album ?? context.l10n.previewDetailUnknownValue,
+            value: _metadataValueOrUnknown(context, entry.audioMetadata?.album),
           ),
-          if (metadata.composer case final String composer
-              when composer.isNotEmpty)
-            _PanelValueRow(
-              label: context.l10n.previewDetailAudioComposer,
-              value: composer,
+          _PanelValueRow(
+            label: context.l10n.previewDetailAudioComposer,
+            value: _metadataValueOrUnknown(
+              context,
+              entry.audioMetadata?.composer,
             ),
-          if (metadata.trackNumber case final String trackNumber
-              when trackNumber.isNotEmpty)
-            _PanelValueRow(
-              label: context.l10n.previewDetailAudioTrackNumber,
-              value: trackNumber,
+          ),
+          _PanelValueRow(
+            label: context.l10n.previewDetailAudioTrackNumber,
+            value: _metadataValueOrUnknown(
+              context,
+              entry.audioMetadata?.trackNumber,
             ),
-          if (metadata.discNumber case final String discNumber
-              when discNumber.isNotEmpty)
-            _PanelValueRow(
-              label: context.l10n.previewDetailAudioDiscNumber,
-              value: discNumber,
+          ),
+          _PanelValueRow(
+            label: context.l10n.previewDetailAudioDiscNumber,
+            value: _metadataValueOrUnknown(
+              context,
+              entry.audioMetadata?.discNumber,
             ),
-          if (metadata.lyrics case final String lyrics when lyrics.isNotEmpty)
+          ),
+          if ((entry.audioMetadata?.lyrics ?? '').trim().isNotEmpty)
             _PanelLyricsValueRow(
               label: context.l10n.previewDetailAudioLyrics,
-              value: lyrics,
+              value: entry.audioMetadata!.lyrics!,
+            )
+          else
+            _PanelValueRow(
+              label: context.l10n.previewDetailAudioLyrics,
+              value: context.l10n.previewDetailUnknownValue,
             ),
         ],
       ],
     );
   }
+}
+
+String _metadataValueOrUnknown(BuildContext context, String? value) {
+  final String normalized = value?.trim() ?? '';
+  if (normalized.isEmpty) {
+    return context.l10n.previewDetailUnknownValue;
+  }
+  return normalized;
 }
 
 class _PanelValueRow extends StatelessWidget {

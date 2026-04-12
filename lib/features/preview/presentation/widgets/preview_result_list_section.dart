@@ -9,7 +9,6 @@ class PreviewResultListSection extends StatelessWidget {
     super.key,
     required this.filteredCopyItems,
     required this.filteredDeleteItems,
-    required this.filteredConflictItems,
     required this.activeItems,
     required this.extensionOptions,
     required this.ignoredExtensions,
@@ -27,7 +26,6 @@ class PreviewResultListSection extends StatelessWidget {
 
   final List<DiffItem> filteredCopyItems;
   final List<DiffItem> filteredDeleteItems;
-  final List<DiffItem> filteredConflictItems;
   final List<DiffItem> activeItems;
   final List<String> extensionOptions;
   final List<String> ignoredExtensions;
@@ -118,7 +116,6 @@ class PreviewResultListSection extends StatelessWidget {
             : null,
       ),
       items: activeItems,
-      conflictItems: filteredConflictItems,
       targetIsRemote: previewMode == PreviewMode.remote,
     );
   }

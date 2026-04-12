@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:music_sync/app/routes/route_names.dart';
 import 'package:music_sync/features/connection/state/connection_controller.dart';
 import 'package:music_sync/features/connection/state/connection_state.dart'
     as peer_connection;
@@ -32,11 +34,7 @@ class _PreviewDesktopWorkbenchState
     extends ConsumerState<PreviewDesktopWorkbench> {
   Set<String> _selectedExtensions = <String>{'*'};
   bool _selectAllSections = true;
-  Set<DiffType> _selectedSections = <DiffType>{
-    DiffType.copy,
-    DiffType.delete,
-    DiffType.conflict,
-  };
+  Set<DiffType> _selectedSections = <DiffType>{DiffType.copy, DiffType.delete};
   String _searchQuery = '';
   DiffItem? _selectedItem;
 
@@ -90,8 +88,6 @@ class _PreviewDesktopWorkbenchState
         ...searchedCopyItems,
       if (_selectAllSections || _selectedSections.contains(DiffType.delete))
         ...searchedDeleteItems,
-      if (_selectAllSections || _selectedSections.contains(DiffType.conflict))
-        ...searchedConflictItems,
     ];
 
     final SyncPlanSummary summary = _buildVisibleSummary(
@@ -140,7 +136,7 @@ class _PreviewDesktopWorkbenchState
               activeItemCount: activeItems.length,
               filteredCopyCount: searchedCopyItems.length,
               filteredDeleteCount: searchedDeleteItems.length,
-              filteredConflictCount: searchedConflictItems.length,
+              filteredConflictCount: 0,
               targetIsRemote: previewState.mode == PreviewMode.remote,
             ),
           ),
@@ -173,7 +169,7 @@ class _PreviewDesktopWorkbenchState
             },
             onViewConflicts: previewState.plan.conflictItems.isNotEmpty
                 ? () {
-                    // TODO: Navigate to conflict page when implemented
+                    context.goNamed(RouteNames.previewConflicts);
                   }
                 : null,
             sourceDeviceLabel: _localDeviceDisplayName(),
@@ -280,11 +276,7 @@ class _PreviewDesktopWorkbenchState
     setState(() {
       if (type == null) {
         _selectAllSections = true;
-        _selectedSections = <DiffType>{
-          DiffType.copy,
-          DiffType.delete,
-          DiffType.conflict,
-        };
+        _selectedSections = <DiffType>{DiffType.copy, DiffType.delete};
         return;
       }
       final Set<DiffType> next = _selectAllSections
