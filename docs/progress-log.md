@@ -1607,9 +1607,43 @@
   - `execution_controller_test.dart` 新增 `skippedConflictCount` 透传测试
   - `connection_controller_test.dart` 新增 discovery 降级测试
 
+- Fingerprint 方案文案已收口到文档 §6.5
+  - partial hash 定位为"显著降低误判"，不承诺强一致
+  - autoMerge 语义限定为"可自动归并为同内容候选、默认不打扰用户"，不跳过最终确认
+  - 兼容性规则已补清：protocolVersion 守卫 + 字段有效性校验 + 统一回退到 size/mTime
+  - 建议实现时把协议支持判断、字段有效性、autoMerge 许可收敛到单一 helper
+
+- Fingerprint 链路已实现
+  - 新增 `xxh3` 依赖，用于 XXH3-64 快速哈希
+  - 新增 `fingerprint_compute.dart`：`computePartialFingerprint()` 从文件流读取首部 64KB 计算 XXH3 哈希，2 秒超时兜底
+  - `DirectoryScanner._walk()` 对非目录项调用 `computePartialFingerprint` 写入 `FileEntry.fingerprint`
+  - `AppConstants.protocolVersion` 从 1 升至 2，新增 `fingerprintSupportedVersion = 2` 和 `fingerprintSampleSize = 64KB`
+  - `DeviceInfo` 新增 `protocolVersion` 字段，默认 1（兼容旧版）
+  - `HelloRequestDto` / `HelloResponseDto` 透传 `DeviceInfo.protocolVersion`
+  - `DiscoveryService` 广播和接收均携带 `protocolVersion`
+  - `DiscoveredDeviceEntry` 新增 `protocolVersion`，透传到 `toDeviceInfo()`
+  - `ConnectionController` 所有 `DeviceInfo` 构造点均已补 `protocolVersion`
+  - 新增 `canUseFingerprintClassification()` 守卫 helper（收敛协议版本 + 字段有效性 + 匹配判定）
+  - `ConflictController._classify()` 使用 `canUseFingerprintClassification` 替代原来的 `fingerprintsMatch`，旧版对端自动回退到 `conflict` 分类
+  - 测试：`fingerprint_compute_test.dart`（5 例）、`fingerprint_utils_test.dart`（10 例含守卫）、`conflict_controller_test.dart`（4 例含旧版回退 + 缺失回退）
+
+- 冲突详情字段级对比 + autoMerge 依据展示
+  - `AudioMetadataViewData.diffFields()` — 标签字段差异集合计算（7 字段逐一归一化比较）
+  - `_PanelValueRow` / `_PanelLyricsValueRow` 新增 `highlight` 参数，差异字段使用 `errorContainer` 底色 + `swap_horiz` 图标
+  - `_PanelEntryCard` 新增 `diffFields` 参数，从 `DiffItemDetailPanelContent` 自动计算并透传
+  - `DiffItemDetailPanelContent` 新增 `overrideDiffFields` 参数，供并排布局外部传入
+  - `_SidePanel` 透传 `diffFields` 到 `DiffItemDetailPanelContent`
+  - `_FingerprintHitBadge` — autoMerge 项展示指纹匹配说明（tertiaryContainer 配色 + fingerprint 图标）
+  - `PreviewConflictDetailPane` 新增 `category` 参数，当 `autoMerge` 时显示 badge
+  - `preview_conflict_page.dart` 桌面/移动端均传入 `category`
+  - l10n：`conflictFingerprintHit`（EN: "Fingerprint match — content likely identical", ZH: "指纹匹配 — 内容可能相同"）
+  - 测试：`diff_item_detail_view_data_test.dart`（7 例）
+- 差异高亮语义修正
+  - `_effectiveDiffFields()` — 刷新后两侧 metadata 齐全时优先内部重算 diff，不再卡在初始快照；刷新前回退 `overrideDiffFields`
+  - `_PanelLyricsValueRow` 补齐高亮渲染（底色 + 前景色 + swap_horiz 图标），与 `_PanelValueRow` 视觉语言统一
+
 当前仍待完成：
 
-- 快照首轮分类链路（需要 `DirectoryScanner` 计算 `FileEntry.fingerprint`）
 - 自动合并同意步骤
 - 默认只写远端 + 可选双向写入
 - 不确定项二次详情复核
